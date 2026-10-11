@@ -4,11 +4,6 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [0.4.3] - 2026-10-11
 
-### Changed
-- superpowers now comes from Anthropic's official marketplace listing (v6.4.1, `obra/superpowers` at `5bf4e78`) instead of the `superpowers-dev` marketplace (v6.3.0). The catalog generator handles marketplaces whose entries point at external repos.
-
-## [0.4.3] - 2026-10-11
-
 ### Added
 - `docs/demo/council-run-interactive.gif`, recorded from an interactive Claude Code session running Specialist Council 1.3.1, with its scrubbed transcript in `tests/fixtures/council-run-interactive`.
 
@@ -26,6 +21,7 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 - council-replay redacts user names that contain spaces, and the current user's home in every form, including the project-folder slug.
 
 ### Changed
+- superpowers now comes from Anthropic's official marketplace listing (v6.4.1, `obra/superpowers` at `5bf4e78`) instead of the `superpowers-dev` marketplace (v6.3.0). The catalog generator handles marketplaces whose entries point at external repos.
 - council-replay: IBM Plex is bundled under `tools/council-replay/fonts` (SIL OFL), so the GIF renders the same on every machine and offline.
 - Checks now appear when the worker's result arrives, instead of on an invented schedule during the run.
 - Three or more agents are laid out in a two-column grid, and three or more `resolve` calls use compact rows.
