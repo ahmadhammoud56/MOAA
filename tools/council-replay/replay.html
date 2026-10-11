@@ -297,7 +297,7 @@ function agents(t) {
       font(11.5); ctx.fillStyle = C.dim;
       if (wide) ctx.fillText("arena-validated, promoted into the council", b.x + 22 + bw, b.y + 23);
     } else label(wide ? "Council role" : "Role", b.x + 14, b.y + 22);
-    tag(`${a.model || "?"} · ${a.effort || "?"}`, b.x + b.w - 14, b.y + 23, color, true);
+    tag(`${a.model || "?"}${a.effort ? " · " + a.effort : ""}`, b.x + b.w - 14, b.y + 23, color, true); // no effort: frontmatter default
     font(14.5, 600); ctx.fillStyle = C.text; ctx.fillText(fit(short(a.type), b.w - 28), b.x + 14, b.y + 46);
     let ry = b.y + 66;
     if (b.h >= 100) {

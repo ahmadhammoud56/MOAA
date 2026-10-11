@@ -7,6 +7,16 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 ### Changed
 - superpowers now comes from Anthropic's official marketplace listing (v6.4.1, `obra/superpowers` at `5bf4e78`) instead of the `superpowers-dev` marketplace (v6.3.0). The catalog generator handles marketplaces whose entries point at external repos.
 
+## [Unreleased]
+
+### Added
+- `docs/demo/council-run-interactive.gif`, recorded from an interactive Claude Code session running Specialist Council 1.3.1, with its scrubbed transcript in `tests/fixtures/council-run-interactive`.
+
+### Fixed
+- council-replay reads worker results that newer Claude Code versions return through the `SubagentHandback` tool instead of a final text block.
+- It also finds the `council.py resolve` JSON when the command was chained after other output, stops a worker's headline at a table, and accepts `**1. Label**` check headings.
+- An agent dispatched without an effort shows its model only, instead of `?`.
+
 ## [0.4.2] - 2026-10-11
 
 ### Fixed

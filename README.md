@@ -58,6 +58,10 @@ python tools/council-replay/record.py ~/.claude/projects/<project>/<session>.jso
 
 `record.py` serves the page on `127.0.0.1`, records it in a headless browser and writes the GIF. With no browser found it prints a URL instead; open it and click **Export GIF**. Run `extract.py <session>.jsonl` to see the replay data first. User paths, e-mail addresses and secret-looking strings are redacted, but check the GIF before you share it. To reproduce the demo, use `tests/fixtures/council-run/session.jsonl`.
 
+The same task in an interactive session with Specialist Council 1.3.1: both workers were dispatched on the first try. The coordinator resolved only the forged member, so the analyst ran on its frontmatter defaults (`tests/fixtures/council-run-interactive`):
+
+![Replay of an interactive Specialist Council session: one council.py resolve, two agents in parallel, both agree that 221 = 13 × 17](docs/demo/council-run-interactive.gif)
+
 ## Profiles
 
 | | Core (default) | Full (`--full`) |

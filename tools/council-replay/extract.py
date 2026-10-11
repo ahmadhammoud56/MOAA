@@ -79,7 +79,7 @@ def headline(result, limit=110):
         line = plain(raw)
         if not line or line.endswith(":") or re.fullmatch(r"\s*(\*\*[^*]+\*\*|#+ .*)\s*", raw):  # headings
             continue
-        if re.match(r"^([-*]|\d+\.)\s", line):
+        if re.match(r"^([-*]\s|\d+\.\s|\|)", line):  # list items and tables end the headline
             if out:
                 break
             continue
@@ -92,7 +92,8 @@ def headline(result, limit=110):
 
 def checks(result):
     """Bold labels of numbered items, e.g. '1. **Multiplication:** ...' -> 'Multiplication'."""
-    found = re.findall(r"(?m)^\s*\d+\.\s+\*\*(.+?)\*\*", result)
+    found = re.findall(r"(?m)^\s*(?:\d+\.\s+\*\*(.+?)\*\*|\*\*\d+\.\s+(.+?)\*\*)", result)
+    found = [a or b for a, b in found]
     return [plain(c).rstrip(".:") for c in found][:5]
 
 
@@ -107,6 +108,19 @@ def table_methods(text):
             if r is not head and len(r) > col and not set(r[0]) <= set("-: ")]
 
 
+def resolve_json(output):
+    """The council.py resolve JSON in a tool result, even after other output (e.g. a chained `cat`)."""
+    decoder = json.JSONDecoder()
+    for i in [m.start() for m in re.finditer(r"\{", output)][::-1]:
+        try:
+            data = decoder.raw_decode(output[i:])[0]
+        except ValueError:
+            continue
+        if isinstance(data, dict) and "role" in data and "model" in data:
+            return data
+    return {}
+
+
 def subagents(session_path):
     folder = session_path.with_suffix("") / "subagents"
     found = {}
@@ -115,7 +129,9 @@ def subagents(session_path):
         rows = load(meta_path.with_name(meta_path.name.replace(".meta.json", ".jsonl")))
         replies = [r for r in rows if r.get("type") == "assistant"]
         models = [r["message"].get("model") for r in replies if r["message"].get("model")]
-        final = next((t for r in reversed(replies) for t in reversed(texts(r))), "")
+        handback = [b["input"].get("message", "") for r in replies for b in blocks(r)
+                    if b.get("type") == "tool_use" and b.get("name") == "SubagentHandback"]
+        final = handback[-1] if handback else next((t for r in reversed(replies) for t in reversed(texts(r))), "")
         found[meta.get("toolUseId")] = {
             "meta": meta,
             "start": ts(rows[0].get("timestamp")) if rows else None,
@@ -161,10 +177,7 @@ def extract(session_path):
             role = re.search(r"--role\s+(\S+)", command)
             res, res_when = results.get(use_id, ({}, None))
             output = result_text(res)
-            try:
-                data = json.loads(output)
-            except ValueError:
-                data = {}
+            data = resolve_json(output)
             resolves.append({
                 "role": role.group(1).strip("\"'") if role else "?",
                 "agent": data.get("agent") or (f"specialist-council:council-{data['role']}" if data.get("role") else None),

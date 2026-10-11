@@ -51,5 +51,21 @@ class ExtractTest(unittest.TestCase):
         self.assertEqual(extract.redact("token = abc123 mail pat@example.org"), "token = [redacted] mail [email]")
 
 
+class InteractiveRunTest(unittest.TestCase):
+    """Interactive run (council 1.3.1): results arrive via SubagentHandback, and resolve was chained after a `cat`."""
+
+    def test_handback_and_chained_resolve(self):
+        r = extract.extract(ROOT / "tests" / "fixtures" / "council-run-interactive" / "session.jsonl")
+        self.assertEqual([(x["role"], x["model"], x["ok"]) for x in r["resolves"]],
+                         [("forged-independent-method-arithmetic-checker", "claude-sonnet-5-5", True)])
+        agents = {a["type"]: a for a in r["agents"]}
+        self.assertEqual(len(r["agents"]), 2)
+        self.assertIn("13 × 17", agents["council-forged-independent-method-arithmetic-checker"]["result"])
+        analyst = agents["specialist-council:council-analyst"]
+        self.assertEqual((analyst["model"], analyst["effort"]), ("claude-opus-5-5", None))  # frontmatter effort
+        self.assertIn("Fermat test, base 2", analyst["checks"])
+        self.assertNotIn("Users", json.dumps(r, ensure_ascii=False))
+
+
 if __name__ == "__main__":
     unittest.main()
