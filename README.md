@@ -24,7 +24,9 @@ Prefer to pick plugins yourself? Run `/plugin marketplace add ahmadhammoud56/MOA
 
 ## What a council run looks like
 
-This is real output from the council asked "Is 221 prime?" (lightly trimmed):
+![Replay of a real Specialist Council run: council.py resolves each role's model and effort, two agents run in parallel, the coordinator cross-checks them and returns 221 = 13 × 17](docs/demo/council-run.gif)
+
+The animation replays a real run from its transcript, compressed from 36 s. This is the coordinator's actual output (lightly trimmed):
 
 ```
 221 is not prime. 221 = 13 × 17.
@@ -45,6 +47,16 @@ The forged checker in this run is an arena agent that was validated in 2 separat
             │ score ≥ 85, spread ≤ 10)      Agent Arena (8 modes, judge + validator)
             └──────────── library of winning agents ◄─┘
 ```
+
+### Record your own
+
+`tools/council-replay` turns any council session transcript into the animation above. It is optional, isn't installed, and needs only Python and Chrome, Edge or Chromium:
+
+```bash
+python tools/council-replay/record.py ~/.claude/projects/<project>/<session>.jsonl -o council-run.gif
+```
+
+`record.py` serves the page on `127.0.0.1`, records it in a headless browser and writes the GIF. With no browser found it prints a URL instead; open it and click **Export GIF**. Run `extract.py <session>.jsonl` to see the replay data first. User paths, e-mail addresses and secret-looking strings are redacted, but check the GIF before you share it. To reproduce the demo, use `tests/fixtures/council-run/session.jsonl`.
 
 ## Profiles
 
