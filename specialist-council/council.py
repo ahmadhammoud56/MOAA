@@ -74,6 +74,27 @@ def resolve(profile, role_id, styles=()):
             "model": profile["models"][role["tier"]], "effort": effort, "base_effort": role["effort"]}
 
 
+def forged_member(role_id, skill_dir=SKILL):
+    """Registry entry for a forged role given as `slug`, `forged-<slug>` or `council-forged-<slug>`, else None."""
+    registry = Path(skill_dir) / "forged" / "registry.json"
+    if not role_id or not registry.is_file():
+        return None
+    slug = re.sub(r"^(council-)?forged-", "", role_id)
+    return json.loads(registry.read_text(encoding="utf-8")).get(slug)
+
+
+def resolve_forged(profile, role_id, member, styles=()):
+    """Forged members keep their validated model; personalities shift effort exactly as for preset roles."""
+    require(member.get("status") == "active", f"Forged member {role_id} is {member.get('status')}; do not dispatch it")
+    require(len(styles) <= 2, "Use at most two personalities")
+    levels = profile["effort_levels"]
+    base = levels.index(member["effort"])
+    ceiling = max(levels.index(profile["effort_ceiling"]), base)
+    effort = levels[min(max(base + sum(profile["personality_effort_shift"][s] for s in styles), 0), ceiling)]
+    return {"role": role_id, "agent": member.get("agent") or "council-forged-" + re.sub(r"^(council-)?forged-", "", role_id), "styles": list(styles), "forged": True,
+            "model": member["model"], "effort": effort, "base_effort": member["effort"]}
+
+
 def agent_files(agents_dir):
     return {p.stem[len("council-"):]: p for p in sorted(Path(agents_dir).glob("council-*.md"))
             if not p.stem.startswith("council-forged-")}
@@ -227,7 +248,9 @@ def main(argv=None):
             validate(profile, agent_files(a.agents), personality_ids())
             result = {"changed": apply(a.agents, profile)}
         elif a.command == "resolve":
-            result = resolve(profile, a.role, [s for s in a.style.split(",") if s])
+            styles = [s for s in a.style.split(",") if s]
+            forged = forged_member(a.role)
+            result = resolve_forged(profile, a.role, forged, styles) if forged else resolve(profile, a.role, styles)
         elif a.command == "render":
             text = render(profile)
             if a.out:

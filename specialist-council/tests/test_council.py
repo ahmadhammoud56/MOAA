@@ -113,6 +113,19 @@ class CouncilTests(unittest.TestCase):
             with self.subTest(case=i), self.assertRaises(council.CouncilError):
                 council.check_forged(agents, self.profile, skill)
 
+    def test_resolve_forged_member_and_refuse_suspended(self):
+        home = self.tmp / "home"
+        skill = home / "skills" / "specialist-council"
+        self.forged_member(home)
+        self.forged_member(home, "parked", status="suspended", card=False)
+        for name in ("keep", "forged-keep", "council-forged-keep"):
+            member = council.forged_member(name, skill)
+            r = council.resolve_forged(self.profile, name, member, ["skeptic"])
+            self.assertEqual((r["model"], r["base_effort"], r["effort"]), ("claude-sonnet-5-5", "high", "xhigh"))
+        with self.assertRaises(council.CouncilError):
+            council.resolve_forged(self.profile, "parked", council.forged_member("parked", skill))
+        self.assertIsNone(council.forged_member("scout", skill))
+
     def test_install_into_fresh_home_and_preserve_forged_members(self):
         home = self.tmp / "home"
         forged = self.forged_member(home)
