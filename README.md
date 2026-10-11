@@ -26,7 +26,7 @@ Prefer to pick plugins yourself? Run `/plugin marketplace add ahmadhammoud56/MOA
 
 ![Replay of a real Specialist Council run: council.py resolves each role's model and effort, two agents run in parallel, the coordinator cross-checks them and returns 221 = 13 × 17](docs/demo/council-run.gif)
 
-The animation replays a real run from its transcript, compressed from 36 s. This is the coordinator's actual output (lightly trimmed):
+The animation replays a real run from its transcript, compressed from 44 s. Here is the coordinator's text output from an earlier run of the same task (lightly trimmed):
 
 ```
 221 is not prime. 221 = 13 × 17.

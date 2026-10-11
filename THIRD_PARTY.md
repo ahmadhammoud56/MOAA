@@ -15,6 +15,7 @@ MOAA's own code (the Specialist Council, the Agent Arena, the installer) is MIT 
 | `skills/reverse-engineer-anything` | [morluto/rea](https://github.com/morluto/rea) | MIT | ok |
 | `skills/paper2agent` | [jmiao24/Paper2Agent](https://github.com/jmiao24/Paper2Agent) | MIT (code). The bundled paper and supplement text was licence-checked by the maintainer. | ok |
 | `vendor/ansys-mcp-server.patch` | [vorobjewsen30-max/ansys-mcp-server](https://github.com/vorobjewsen30-max/ansys-mcp-server) @ `36b18a9` | MIT, declared in its `pyproject.toml` (the repo has no LICENSE file) | ok; only a patch is shipped, and upstream is cloned at install time |
+| `tools/council-replay/fonts` | [IBM/plex](https://github.com/IBM/plex) (IBM Plex Sans and Mono, latin subset, woff2) | SIL Open Font License 1.1 (`OFL.txt`) | ok |
 | `plugins/plot-deck` | [kyryl-shtefiienko/LPS](https://github.com/kyryl-shtefiienko/LPS) `mods/`, by Kyryl Shtefiienko | none upstream; redistributed **with the author's permission** (see `PERMISSION.md`) | ok |
 | `skills/agent-teams`, `skills/local-build`, `skills/path-safety`, `agents/code-improver.md` | own work (Ahmad Hammoud) | MIT (root LICENSE) | ok |
 

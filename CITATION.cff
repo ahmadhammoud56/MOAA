@@ -8,6 +8,6 @@ authors:
     given-names: Ahmad
 repository-code: "https://github.com/ahmadhammoud56/MOAA"
 license: MIT
-version: 0.4.1
+version: 0.4.2
 date-released: 2026-10-11
 keywords: [claude-code, multi-agent, agent-arena, specialist-council, plugins]

@@ -7,10 +7,23 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 ### Changed
 - superpowers now comes from Anthropic's official marketplace listing (v6.4.1, `obra/superpowers` at `5bf4e78`) instead of the `superpowers-dev` marketplace (v6.3.0). The catalog generator handles marketplaces whose entries point at external repos.
 
+## [0.4.2] - 2026-10-11
+
+### Fixed
+- Specialist Council 1.3.1: the runtime guide no longer tells the coordinator to pass full model IDs to the Agent tool. Its `model` field only takes the tier aliases `haiku`, `sonnet`, `opus` and `fable`, so a full ID failed validation and the first dispatch had to be retried. The frontmatter already pins the full ID.
+- council-replay redacts user names that contain spaces, and the current user's home in every form, including the project-folder slug.
+
+### Changed
+- council-replay: IBM Plex is bundled under `tools/council-replay/fonts` (SIL OFL), so the GIF renders the same on every machine and offline.
+- Checks now appear when the worker's result arrives, instead of on an invented schedule during the run.
+- Three or more agents are laid out in a two-column grid, and three or more `resolve` calls use compact rows.
+- `extract.py` skips Agent calls that were rejected, reads methods from the coordinator's summary table, and falls back to the resolved model and effort when the Agent call omits them.
+- The demo GIF and test fixture come from a new real run with a cleaner prompt: "Is 221 prime? Factor it. Include the forged arithmetic checker."
+
 ## [0.4.1] - 2026-10-11
 
 ### Added
-- `tools/council-replay`: replays a real Specialist Council transcript as an animation and records it as a GIF. `extract.py` turns a session into replay data and redacts paths and secrets, `replay.html` animates it on a canvas with a built-in GIF encoder, and `record.py` records it in headless Chrome, Edge or Chromium. It is optional and not installed. Standard library only, with no third-party JavaScript; the page uses IBM Plex from Google Fonts and falls back to system fonts offline.
+- `tools/council-replay`: replays a real Specialist Council transcript as an animation and records it as a GIF. `extract.py` turns a session into replay data and redacts paths and secrets, `replay.html` animates it on a canvas with a built-in GIF encoder, and `record.py` records it in headless Chrome, Edge or Chromium. It is optional and not installed. Standard library only, with no third-party JavaScript.
 - `docs/demo/council-run.gif` near the top of the README, recorded from a scrubbed real run in `tests/fixtures/council-run`.
 
 ## [0.4.0] - 2026-10-11

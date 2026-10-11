@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Council Replay</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
+  /* IBM Plex, bundled under the SIL Open Font License (fonts/OFL.txt) */
+  @font-face { font-family: "IBM Plex Sans"; src: url(fonts/IBMPlexSans-Variable.woff2) format("woff2"); font-weight: 100 700; }
+  @font-face { font-family: "IBM Plex Mono"; src: url(fonts/IBMPlexMono-Regular.woff2) format("woff2"); font-weight: 400; }
+  @font-face { font-family: "IBM Plex Mono"; src: url(fonts/IBMPlexMono-Medium.woff2) format("woff2"); font-weight: 500; }
   :root { color-scheme: dark; }
   html, body { margin: 0; background: #0b0d10; color: #e6e8eb; font: 14px "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; }
   main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
@@ -34,7 +35,7 @@
 // Replays a council run (replay.json from extract.py) on a canvas and exports it as a GIF.
 // URL params: data=<url> (default replay.json), t=<seconds> (static frame), fps=<n>,
 // export=1 (encode on load and POST to /gif), post=1 (POST instead of download).
-// Fonts: IBM Plex from Google Fonts; falls back to system fonts when offline.
+// Fonts: IBM Plex from fonts/ (served by record.py); system fonts if they fail to load.
 const W = 960, H = 540;
 const P = new URLSearchParams(location.search);
 const cv = document.getElementById("c"), ctx = cv.getContext("2d", { willReadFrequently: true });
@@ -202,26 +203,34 @@ function resolves(t) {
   const n = D.resolves.length, x = LX, y = 222, w = LW, h = 194;
   if (!n || !panel(x, y, w, h, at(t, T.R0 - 0.3), t >= T.R0 - 0.3 && t < T.rEnd ? 1 : 0)) return;
   label("council.py resolve", x + 14, y + 22);
-  const rowH = Math.min(62, (h - 64) / n);
-  D.resolves.forEach((r, i) => {
+  // full rows show the command line; past 2 resolves rows go compact, past 3 the rest are summarised
+  const avail = h - 64, full = n <= 2, shown = full ? n : Math.min(n, Math.floor(avail / 36));
+  const rowH = full ? Math.min(62, avail / n) : avail / shown, off = full ? 17 : 0;
+  D.resolves.slice(0, shown).forEach((r, i) => {
     const t0 = T.R0 + i * T.RS, ry = y + 34 + i * rowH;
     if (t < t0) return;
-    font(11.5, 400, true); ctx.fillStyle = C.dim;
-    ctx.fillText("$ council.py resolve --role".slice(0, Math.ceil(27 * clamp((t - t0) / 0.35))), x + 14, ry + 12);
-    if (t < t0 + 0.3) return;
+    if (full) {
+      font(11.5, 400, true); ctx.fillStyle = C.dim;
+      ctx.fillText("$ council.py resolve --role".slice(0, Math.ceil(27 * clamp((t - t0) / 0.35))), x + 14, ry + 12);
+      if (t < t0 + 0.3) return;
+    }
     ctx.globalAlpha = PA * at(t, t0 + 0.3, 0.3);
-    font(12, 500); ctx.fillStyle = C.text; ctx.fillText(fit(r.role, w - 28), x + 14, ry + 29);
+    font(12, 500); ctx.fillStyle = C.text; ctx.fillText(fit(r.role, w - 28), x + 14, ry + 12 + off);
     ctx.globalAlpha = PA;
     if (t < t0 + 0.65) return;
     ctx.globalAlpha = PA * at(t, t0 + 0.65, 0.3);
-    if (r.ok) tag(`${r.model} · ${r.effort}`, x + 14, ry + 49, tierColor(r.model));
-    else tag(fit(r.note || "needed approval", 200), x + 14, ry + 49, C.warn);
+    if (r.ok) tag(`${r.model} · ${r.effort}`, x + 14, ry + 30 + off + (full ? 2 : 0), tierColor(r.model));
+    else tag(fit(r.note || "needed approval", 200), x + 14, ry + 30 + off + (full ? 2 : 0), C.warn);
     if (r.t != null) {
       font(11.5, 400, true); ctx.fillStyle = C.dim; ctx.textAlign = "right";
-      ctx.fillText(`t+${r.t.toFixed(1)}s`, x + w - 14, ry + 49); ctx.textAlign = "left";
+      ctx.fillText(`t+${r.t.toFixed(1)}s`, x + w - 14, ry + 30 + off + (full ? 2 : 0)); ctx.textAlign = "left";
     }
     ctx.globalAlpha = PA;
   });
+  if (shown < n && t >= T.R0 + shown * T.RS) {
+    font(12); ctx.fillStyle = C.muted; ctx.textAlign = "right";
+    ctx.fillText(`+${n - shown} more`, x + w - 14, y + 22); ctx.textAlign = "left";
+  }
   if (t >= T.rEnd) {
     const ok = D.resolves.every((r) => r.ok);
     ctx.globalAlpha = PA * at(t, T.rEnd, 0.4);
@@ -252,18 +261,21 @@ function mode(t) {
   ctx.restore();
 }
 
-function cardBox(i) {
-  const n = D.agents.length, ch = Math.min(136, (282 - 10 * (n - 1)) / n);
-  return { x: RX, y: 64 + i * (ch + 10), w: RW, h: ch };
+function cardBox(i) { // one column for up to 2 agents, then a 2-column grid
+  const n = D.agents.length, cols = n <= 2 ? 1 : 2, rows = Math.ceil(n / cols);
+  const cw = (RW - 10 * (cols - 1)) / cols, ch = Math.min(136, (282 - 10 * (rows - 1)) / rows);
+  return { x: RX + (i % cols) * (cw + 10), y: 64 + Math.floor(i / cols) * (ch + 10), w: cw, h: ch };
 }
 
 function agents(t) {
-  D.agents.forEach((a, i) => {
+  // two passes, so cards cover the connectors that run behind them in the grid layout
+  for (const lines of [true, false]) D.agents.forEach((a, i) => {
     const tl = T.agents[i], b = cardBox(i), color = tierColor(a.model);
     const p = clamp((t - tl.a0) / (tl.a1 - tl.a0)), done = t >= tl.a1;
     // connector from the mode panel to the card
-    if (t >= tl.appear) {
-      const p0 = [MODE.x + MODE.w, MODE.y + MODE.h / 2], p3 = [b.x, b.y + b.h / 2];
+    if (lines) {
+      if (t < tl.appear) return;
+      const p0 = [MODE.x + MODE.w, MODE.y + MODE.h / 2], p3 = [RX, b.y + b.h / 2]; // grid rows share the left edge
       const p1 = [p0[0] + 24, p0[1]], p2 = [p3[0] - 24, p3[1]];
       const f = at(t, tl.appear, 0.6);
       ctx.beginPath(); ctx.moveTo(...p0);
@@ -274,14 +286,17 @@ function agents(t) {
         const [px, py] = bezier(p0, p1, p2, p3, q);
         ctx.fillStyle = color; ctx.fillRect(px - 2, py - 2, 4, 4);
       }
+      return;
     }
     const appear = tl.appear + 0.3;
     if (!panel(b.x, b.y, b.w, b.h, at(t, appear), !done && t >= tl.a0 ? 1 : done ? 1 : 0, done ? C.ok : color)) return;
     const forged = a.type.includes("council-forged-");
+    const wide = b.w > 400;
     if (forged) {
-      const bw = badge("forged member", b.x + 14, b.y + 23, C.forged);
-      font(11.5); ctx.fillStyle = C.dim; ctx.fillText("arena-validated, promoted into the council", b.x + 22 + bw, b.y + 23);
-    } else label("Council role", b.x + 14, b.y + 22);
+      const bw = badge(wide ? "forged member" : "forged", b.x + 14, b.y + 23, C.forged);
+      font(11.5); ctx.fillStyle = C.dim;
+      if (wide) ctx.fillText("arena-validated, promoted into the council", b.x + 22 + bw, b.y + 23);
+    } else label(wide ? "Council role" : "Role", b.x + 14, b.y + 22);
     tag(`${a.model || "?"} · ${a.effort || "?"}`, b.x + b.w - 14, b.y + 23, color, true);
     font(14.5, 600); ctx.fillStyle = C.text; ctx.fillText(fit(short(a.type), b.w - 28), b.x + 14, b.y + 46);
     let ry = b.y + 66;
@@ -289,7 +304,7 @@ function agents(t) {
       font(12.5); ctx.fillStyle = C.muted; ctx.fillText(fit(`Method: ${a.method}`, b.w - 28), b.x + 14, ry); ry += 15;
     }
     // progress bar
-    const bw = b.w - 28 - 70;
+    const bw = b.w - 28 - 92;
     ctx.fillStyle = C.raised; ctx.fillRect(b.x + 14, ry, bw, 3);
     ctx.fillStyle = C.border; ctx.fillRect(b.x + 14, ry, bw, 1);
     if (p > 0) { ctx.fillStyle = done ? C.ok : color; ctx.fillRect(b.x + 14, ry, Math.max(2, bw * p), 3); }
@@ -303,7 +318,7 @@ function agents(t) {
       let cx = b.x + 14;
       font(12);
       a.checks.forEach((c, j) => {
-        const tj = tl.a0 + (tl.a1 - tl.a0) * (j + 1) / (a.checks.length + 1);
+        const tj = tl.a1 + 0.12 * j; // the transcript only says the checks were reported in the result
         if (t < tj) return;
         const w = ctx.measureText(c).width + 16;
         if (cx + w > b.x + b.w - 14) return;

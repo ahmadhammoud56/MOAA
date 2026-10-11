@@ -14,8 +14,14 @@ from pathlib import Path
 import re
 import sys
 
-REDACT = [
+HOME = str(Path.home())
+HOMES = sorted({HOME, HOME.replace("\\", "/"), HOME.replace("\\", "\\\\"), re.sub(r"[^A-Za-z0-9]", "-", HOME),
+                re.sub(r"^([A-Za-z]):", lambda m: "/" + m.group(1).lower(), HOME.replace("\\", "/"))}, key=len, reverse=True)
+REDACT = [(re.compile(re.escape(h), re.I), "~") for h in HOMES if len(h) > 3] + [
+    # user names may contain spaces: take everything up to the next separator
+    (re.compile(r"(?i)[A-Z]:[\\/]+Users[\\/]+[^\\/\n\"'<>]{1,40}?(?=[\\/])"), "~"),
     (re.compile(r"(?i)[A-Z]:[\\/]+Users[\\/]+[^\\/\s\"'<>]+"), "~"),
+    (re.compile(r"/(?:home|Users)/[^/\n\"'<>]{1,40}?(?=/)"), "~"),
     (re.compile(r"/(?:home|Users)/[^/\s\"'<>]+"), "~"),
     (re.compile(r"sk-ant-[A-Za-z0-9_-]{20,}"), "[redacted]"),
     (re.compile(r"gh[pousr]_[A-Za-z0-9]{30,}"), "[redacted]"),
@@ -69,9 +75,9 @@ def plain(text):
 def headline(result, limit=110):
     """First prose lines of a worker result, skipping section headers, until the first list item."""
     out = []
-    for line in result.splitlines():
-        line = plain(line)
-        if not line or line.endswith(":"):
+    for raw in result.splitlines():
+        line = plain(raw)
+        if not line or line.endswith(":") or re.fullmatch(r"\s*(\*\*[^*]+\*\*|#+ .*)\s*", raw):  # headings
             continue
         if re.match(r"^([-*]|\d+\.)\s", line):
             if out:
@@ -88,6 +94,17 @@ def checks(result):
     """Bold labels of numbered items, e.g. '1. **Multiplication:** ...' -> 'Multiplication'."""
     found = re.findall(r"(?m)^\s*\d+\.\s+\*\*(.+?)\*\*", result)
     return [plain(c).rstrip(".:") for c in found][:5]
+
+
+def table_methods(text):
+    """Rows of a markdown table with a 'Method' column: [(words of the first cell, method)]."""
+    rows = [[plain(c) for c in l.strip().strip("|").split("|")] for l in text.splitlines() if l.strip().startswith("|")]
+    head = next((r for r in rows if any(c.lower() == "method" for c in r)), None)
+    if not head:
+        return []
+    col = [c.lower() for c in head].index("method")
+    return [(set(re.findall(r"[a-z]+", r[0].lower())), r[col]) for r in rows
+            if r is not head and len(r) > col and not set(r[0]) <= set("-: ")]
 
 
 def subagents(session_path):
@@ -161,6 +178,9 @@ def extract(session_path):
         elif use["name"] in ("Agent", "Task"):
             inp = use.get("input", {})
             sub = subs.get(use_id, {})
+            if not sub and results.get(use_id, ({},))[0].get("is_error"):
+                continue  # rejected dispatch (e.g. invalid input); the coordinator retried or gave up
+
             agents.append({
                 "type": inp.get("subagent_type", "general-purpose"),
                 "description": redact(inp.get("description", "")),
@@ -180,13 +200,23 @@ def extract(session_path):
 
     final_row = next((r for r in reversed(rows) if r.get("type") == "assistant" and texts(r)), None)
     final = "\n".join(texts(final_row)) if final_row else ""
+    by_agent = {r["agent"]: r for r in resolves if r["ok"]}
+    table = table_methods(final)
     for a in agents:
         line = next((l for l in final.splitlines() if a["type"] in l and "Method:" in l), "")
-        a["method"] = redact(plain(line.split("Method:", 1)[1]).rstrip(".")) if line else a["description"]
+        words = set(re.findall(r"[a-z]+", a["type"].lower()))
+        row = next((m for who, m in table if who and who <= words), "")
+        method = plain(line.split("Method:", 1)[1]) if line else row
+        a["method"] = redact(method.rstrip(".")) if method else a["description"]
+        resolved = by_agent.get(a["type"], {})  # the Agent call may omit what council.py resolved
+        a["model"] = a["model"] or resolved.get("model")
+        a["effort"] = a["effort"] or resolved.get("effort")
 
     all_text = "\n".join(t for r in rows if r.get("type") == "assistant" for t in texts(r))
     mode = re.search(r"(?i)\bmode:\s*([^)\n.]+)", all_text)
     paragraphs = [p.strip() for p in re.split(r"\n\s*\n", final) if p.strip()]
+    verdict = next((p for p in paragraphs[1:] if re.search(r"(?i)\bagree|adjudicat|cross-check|verif|\bchecked?:", p)),
+                   paragraphs[1] if len(paragraphs) > 1 else "")
     answer = re.search(r"COUNCIL_RESULT:\s*(.+)", final)
     return {
         "version": 1,
@@ -195,7 +225,7 @@ def extract(session_path):
         "mode": plain(mode.group(1)) if mode else "ensemble",
         "resolves": resolves,
         "agents": agents,
-        "verification": redact(plain(paragraphs[1])) if len(paragraphs) > 1 else "",
+        "verification": redact(plain(verdict)),
         "headline": redact(plain(paragraphs[0].splitlines()[0])) if paragraphs else "",
         "answer": redact(plain(answer.group(1))) if answer else "",
         "duration": rel(ts(final_row.get("timestamp"))) if final_row else None,
