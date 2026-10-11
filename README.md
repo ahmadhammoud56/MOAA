@@ -2,45 +2,91 @@
 
 [![CI](https://github.com/ahmadhammoud56/MOAA/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmadhammoud56/MOAA/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/ahmadhammoud56/MOAA)](https://github.com/ahmadhammoud56/MOAA/releases) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A complete Claude Code setup: 94 plugins from 14 marketplaces, the Specialist Council (60 role agents), the Agent Arena (which forges new council members from proven agents), 10 standalone skills, and the `rea` and `ansys` MCP servers. One command installs all of it.
+**Turn Claude Code into a team.** MOAA gives you a **Specialist Council** of 60 expert agents, each with its own model and effort level, and an **Agent Arena** where agents compete and get judged. Agents that keep winning are **forged** into new permanent council members. It installs with one command or loads as a plugin marketplace.
 
 Created by **[Ahmad Hammoud](https://github.com/ahmadhammoud56)**. The Specialist Council and the Agent Arena are original work; everything else is credited in [NOTICE](NOTICE) and [THIRD_PARTY.md](THIRD_PARTY.md).
+
+## Quick start
+
+```bash
+git clone https://github.com/ahmadhammoud56/MOAA.git && cd MOAA
+./install.sh              # macOS / Linux / Git Bash  (Windows PowerShell: .\install.ps1)
+```
+
+Restart Claude Code, then try:
+
+```
+/specialist-council:specialist-council  Is 221 prime? Factor it.
+/agent-arena-mode:judge --quick -- Write fib(n) with fib(1)=fib(2)=1 and give fib(20).
+```
+
+Prefer to pick plugins yourself? Run `/plugin marketplace add ahmadhammoud56/MOAA` inside Claude Code; see [Use it as a plugin marketplace](#use-it-as-a-plugin-marketplace).
+
+## What a council run looks like
+
+This is real output from the council asked "Is 221 prime?" (lightly trimmed):
+
+```
+221 is not prime. 221 = 13 × 17.
+Both workers agree. Check: 13 × 17 = 221, and 15² − 2² = 221. 13 and 17 are prime.
+
+Dispatched (mode: ensemble, parent as judge):
+- specialist-council:council-analyst                        claude-opus-5-5 / high    (Fermat factorization, gcd test)
+- council-forged-independent-method-arithmetic-checker      claude-sonnet-5-5 / high  (trial division, difference of squares)
+council.py resolve ran for both, with no permission prompt.
+```
+
+The forged checker in this run is an arena agent that was validated in 2 separate runs with scores of 97 and 95, then promoted into the council. That loop is what MOAA is built around:
+
+```
+ task ──► Specialist Council (60 roles, per-role model + effort) ──► verified answer
+            ▲                                      │
+            │ forge (≥2 validated runs, every      ▼
+            │ score ≥ 85, spread ≤ 10)      Agent Arena (8 modes, judge + validator)
+            └──────────── library of winning agents ◄─┘
+```
+
+## Profiles
+
+| | Core (default) | Full (`--full`) |
+|---|---|---|
+| Plugins | 10: council, arena, flightdeck, plot-deck, prismantis, superpowers, mattpocock-skills, karpathy-skills, document-skills, understand-anything | 93 (95 with `--with-claude-mem`) |
+| Standalone skills | 10 | 10 |
+| MCP servers | `rea` | `rea`, `ansys` |
+| Context cost | light | heavy: 1,000+ skills and many hooks |
+
+Start with core. Rerunning with `--full` later adds the rest without disturbing anything already installed.
+
+## Security, in short
+
+MOAA installs third-party plugins, and some of them run hooks, meaning commands that fire on prompts, tool calls or session start, with your user permissions. Every third-party plugin is pinned to a tested commit, but pinning is not an audit.
+
+The core profile keeps hooks to a handful. Your `settings.json` is backed up and merged into, never overwritten, and `--uninstall` reverses every change the installer recorded. Read [SECURITY.md](SECURITY.md) before using `--full`, and use `--dry-run` to preview every command.
 
 ## Requirements
 
 - Claude Code 2.1.296 or newer, logged in (`claude --version`). The council pins `claude-*-5-5` and `claude-fable-5-1` model IDs, and older builds reject them.
 - git, Python 3.10+, and Node 20+ (for `npx`).
-- Optional: an Ansys install, so the ansys MCP server can do real work. Without one it installs but stays idle.
+- Optional: an Ansys install, so the ansys MCP server (`--full`) can do real work. Without one it installs but stays idle.
 - Windows: if your Claude config dir has a long path, marketplace clones can fail with `Filename too long`. Run `git config --global core.longpaths true` once to fix it.
 
-## Install
+## Install options
 
-```bash
-git clone https://github.com/ahmadhammoud56/MOAA.git
-cd MOAA
-./install.sh            # macOS / Linux / Git Bash
-```
-
-```powershell
-.\install.ps1           # Windows PowerShell
-```
-
-Options (both wrappers pass them through to `scripts/install.py`):
+Both wrappers pass these flags through to `scripts/install.py`:
 
 | Flag | Effect |
 |---|---|
-| `--with-claude-mem` | Also install claude-mem and claude-mem-cowork. They need a model provider key, which you configure through claude-mem's own setup, and they run a background worker on port 37777. |
-| `--skip-ansys` | Skip the ansys MCP server. |
-| `--skip-mcp` | Skip both MCP servers. |
+| `--full` | Install all 93 plugins and the ansys MCP server. The default is the core profile. |
+| `--with-claude-mem` | Also install claude-mem and claude-mem-cowork (with `--full`). They need a model-provider key, which you set up through claude-mem's own setup, and they run a background worker on port 37777. |
+| `--upstream` | Install third-party plugins from their own marketplaces at the latest version, instead of the pinned `moaa` catalog. |
+| `--skip-ansys` / `--skip-mcp` | Skip the ansys server, or both MCP servers. |
 | `--dry-run` | Print every command without changing anything. |
-| `--uninstall` | Reverse what the kit recorded in `~/.claude/.moaa-manifest.json`. |
+| `--uninstall` | Reverse everything recorded in `~/.claude/.moaa-manifest.json`. |
 
-Restart Claude Code afterwards.
-
-The installer respects `CLAUDE_CONFIG_DIR`, so you can trial it in a throwaway config directory:
+Restart Claude Code afterwards. The installer respects `CLAUDE_CONFIG_DIR`, so you can trial it in a throwaway config directory:
 
 ```bash
-CLAUDE_CONFIG_DIR=/tmp/kit-test ./install.sh --skip-ansys
+CLAUDE_CONFIG_DIR=/tmp/moaa-test ./install.sh --dry-run
 ```
 
 ## Use it as a plugin marketplace
@@ -298,7 +344,7 @@ Source: https://github.com/typesafe-ai/skills
 ## What the installer does
 
 1. Adds each needed marketplace: the upstream GitHub ones, plus this repo as the `moaa` marketplace for the vendored plugins.
-2. Installs every plugin in `config/kit.json` at user scope, from the pinned `moaa` catalog. Pass `--upstream` to take third-party plugins from their own marketplaces at the latest version instead. A plugin you already have from its upstream marketplace is kept as is. prismantis is installed disabled; enable it with `claude plugin enable prismantis@moaa`.
+2. Installs the profile's plugins from `config/kit.json` at user scope, from the pinned `moaa` catalog. Pass `--upstream` to take third-party plugins from their own marketplaces at the latest version instead. A plugin you already have from its upstream marketplace is kept as is. prismantis is installed disabled; enable it with `claude plugin enable prismantis@moaa`.
 3. Copies the standalone skills to `~/.claude/skills`. A skill that already exists there and wasn't installed by the kit is left untouched.
 4. Installs the Specialist Council as the `specialist-council@moaa` plugin (60 `specialist-council:council-*` agents plus the skill). An older standalone council install is migrated: forged members move to `~/.claude/specialist-council/forged/`, and the duplicate skill and agents are backed up and removed.
 5. Merges settings into `~/.claude/settings.json`, after writing a timestamped backup. The merge never overwrites anything:

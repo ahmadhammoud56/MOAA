@@ -1,6 +1,6 @@
 {
   "name": "moaa",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "marketplaces": {
     "superpowers-dev": "https://github.com/obra/superpowers.git",
     "ecc": "https://github.com/affaan-m/ECC.git",
@@ -20,479 +20,574 @@
     {
       "id": "academy-guide@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "dbd4588f9e10"
+      "tested_version": "dbd4588f9e10",
+      "profile": "full"
     },
     {
       "id": "agent-arena-mode@moaa",
       "enabled": true,
-      "tested_version": "0.4.4"
+      "tested_version": "0.4.4",
+      "profile": "core"
     },
     {
       "id": "agentic-awesome-skills@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-accessibility-inclusive-ux@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-agent-mcp-builder@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-ai-product-evaluation-ops@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-api-platform-builder@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-automation-builder@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-data-analytics@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-data-engineering-platform@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-devops-cloud@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-documents-presentations@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-localization-international-growth@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-marketing-seo-growth@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-mobile-app-builder@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-observability-ir@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-privacy-compliance-engineering@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-product-design-studio@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-python-api-builder@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-qa-test-automation@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-saas-launch-revenue@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-secure-app-builder@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-security-engineer@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-web-app-builder@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-agent-architect@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-apple-platform-design@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-architecture-design@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-automation-builder@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-azure-ai-cloud@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-business-analyst@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-commerce-payments@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-creative-director@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-data-analytics@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-data-engineering@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-ddd-evented-architecture@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-devops-cloud@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "agentic-bundle-essentials@agentic-awesome-skills",
       "enabled": true,
-      "tested_version": "16.9.0"
+      "tested_version": "16.9.0",
+      "profile": "full"
     },
     {
       "id": "andrej-karpathy-skills@karpathy-skills",
       "enabled": true,
-      "tested_version": "1.0.0"
+      "tested_version": "1.0.0",
+      "profile": "core"
     },
     {
       "id": "caveman@caveman",
       "enabled": true,
-      "tested_version": "5184b3d11ac6"
+      "tested_version": "5184b3d11ac6",
+      "profile": "full"
     },
     {
       "id": "claude-api@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "dbd4588f9e10"
+      "tested_version": "dbd4588f9e10",
+      "profile": "full"
     },
     {
       "id": "claude-mem-cowork@thedotmack",
       "enabled": true,
       "tested_version": "0.1.3",
-      "optional": "claude-mem"
+      "optional": "claude-mem",
+      "profile": "full"
     },
     {
       "id": "claude-mem@thedotmack",
       "enabled": true,
       "tested_version": "13.24.1",
-      "optional": "claude-mem"
+      "optional": "claude-mem",
+      "profile": "full"
     },
     {
       "id": "discernment-nudge@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "dbd4588f9e10"
+      "tested_version": "dbd4588f9e10",
+      "profile": "full"
     },
     {
       "id": "document-skills@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "dbd4588f9e10"
+      "tested_version": "dbd4588f9e10",
+      "profile": "core"
     },
     {
       "id": "ecc@ecc",
       "enabled": true,
-      "tested_version": "2.2.1"
+      "tested_version": "2.2.1",
+      "profile": "full"
     },
     {
       "id": "example-skills@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "dbd4588f9e10"
+      "tested_version": "dbd4588f9e10",
+      "profile": "full"
     },
     {
       "id": "flightdeck@moaa",
       "enabled": true,
-      "tested_version": "0.3.2"
+      "tested_version": "0.3.2",
+      "profile": "core"
     },
     {
       "id": "lps@lps-marketplace",
       "enabled": true,
-      "tested_version": "a4363de9c894"
+      "tested_version": "a4363de9c894",
+      "profile": "full"
     },
     {
       "id": "mattpocock-skills@mattpocock",
       "enabled": true,
-      "tested_version": "1.2.3"
+      "tested_version": "1.2.3",
+      "profile": "core"
     },
     {
       "id": "plot-deck@moaa",
       "enabled": true,
-      "tested_version": "0.2.0"
+      "tested_version": "0.2.0",
+      "profile": "core"
     },
     {
       "id": "ponytail@ponytail",
       "enabled": true,
-      "tested_version": "4.10.0"
+      "tested_version": "4.10.0",
+      "profile": "full"
     },
     {
       "id": "prismantis@moaa",
       "enabled": false,
-      "tested_version": "0.11.0"
+      "tested_version": "0.11.0",
+      "profile": "core"
     },
     {
       "id": "ruflo-adr@ruflo",
       "enabled": true,
-      "tested_version": "0.4.1"
+      "tested_version": "0.4.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-agent@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-agentdb@ruflo",
       "enabled": true,
-      "tested_version": "0.3.1"
+      "tested_version": "0.3.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-agntcy@ruflo",
       "enabled": true,
-      "tested_version": "0.1.0"
+      "tested_version": "0.1.0",
+      "profile": "full"
     },
     {
       "id": "ruflo-aidefence@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-arena@ruflo",
       "enabled": true,
-      "tested_version": "0.1.0"
+      "tested_version": "0.1.0",
+      "profile": "full"
     },
     {
       "id": "ruflo-autopilot@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-bbs-federation@ruflo",
       "enabled": true,
-      "tested_version": "0.1.0"
+      "tested_version": "0.1.0",
+      "profile": "full"
     },
     {
       "id": "ruflo-browser@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-business-pods@ruflo",
       "enabled": true,
-      "tested_version": "0.1.0"
+      "tested_version": "0.1.0",
+      "profile": "full"
     },
     {
       "id": "ruflo-core@ruflo",
       "enabled": true,
-      "tested_version": "0.2.6"
+      "tested_version": "0.2.6",
+      "profile": "full"
     },
     {
       "id": "ruflo-cost-tracker@ruflo",
       "enabled": true,
-      "tested_version": "0.26.3"
+      "tested_version": "0.26.3",
+      "profile": "full"
     },
     {
       "id": "ruflo-daa@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-ddd@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-docs@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-federation@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-goals@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-graph-intelligence@ruflo",
       "enabled": true,
-      "tested_version": "0.1.0-alpha.1"
+      "tested_version": "0.1.0-alpha.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-intelligence@ruflo",
       "enabled": true,
-      "tested_version": "0.3.1"
+      "tested_version": "0.3.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-iot-cognitum@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-jujutsu@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-knowledge-graph@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-loop-workers@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-market-data@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-metaharness@ruflo",
       "enabled": true,
-      "tested_version": "0.1.1"
+      "tested_version": "0.1.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-migrations@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-music@ruflo",
       "enabled": true,
-      "tested_version": "0.1.0"
+      "tested_version": "0.1.0",
+      "profile": "full"
     },
     {
       "id": "ruflo-neural-trader@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-observability@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-plugin-creator@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-rag-memory@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-ruvector@ruflo",
       "enabled": true,
-      "tested_version": "0.2.2"
+      "tested_version": "0.2.2",
+      "profile": "full"
     },
     {
       "id": "ruflo-ruvllm@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-rvf@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-security-audit@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-sparc@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-swarm@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-testgen@ruflo",
       "enabled": true,
-      "tested_version": "0.2.1"
+      "tested_version": "0.2.1",
+      "profile": "full"
     },
     {
       "id": "ruflo-workflows@ruflo",
       "enabled": true,
-      "tested_version": "0.5.1"
+      "tested_version": "0.5.1",
+      "profile": "full"
     },
     {
       "id": "specialist-council@moaa",
       "enabled": true,
-      "tested_version": "1.3.0"
+      "tested_version": "1.3.0",
+      "profile": "core"
     },
     {
       "id": "superpowers@superpowers-dev",
       "enabled": true,
-      "tested_version": "6.3.0"
+      "tested_version": "6.3.0",
+      "profile": "core"
     },
     {
       "id": "typesafe@typesafe-ai",
       "enabled": true,
-      "tested_version": "0.5.7"
+      "tested_version": "0.5.7",
+      "profile": "full"
     },
     {
       "id": "understand-anything@understand-anything",
       "enabled": true,
-      "tested_version": "2.9.5"
+      "tested_version": "2.9.5",
+      "profile": "core"
     }
   ],
   "skills": [

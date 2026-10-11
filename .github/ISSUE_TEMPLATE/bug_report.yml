@@ -1,0 +1,45 @@
+name: Bug report
+description: Something in MOAA doesn't work (installer, council, arena, catalog)
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you ran, what you expected, and what happened instead. Paste the error output.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - installer
+        - specialist-council
+        - agent-arena-mode
+        - marketplace / plugin catalog
+        - "UI mods: flightdeck, plot-deck, prismantis"
+        - docs
+        - other
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: "Output of `claude --version`, plus the MOAA release or commit"
+      placeholder: "2.1.296 (Claude Code), MOAA v0.4.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options: [Windows, macOS, Linux, WSL]
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Installer profile, flags and anything else
+      description: "For example `--full`, `--with-claude-mem` or `--upstream`. Remove any secrets or personal paths before posting."

@@ -93,3 +93,13 @@ class ReadmePluginListTests(unittest.TestCase):
         readme = (install.KIT / "README.md").read_text(encoding="utf-8")
         self.assertIn(sync_catalog.plugin_table(market), readme)
         self.assertEqual(readme.count("@moaa` |"), len(market["plugins"]))
+
+
+class ProfileTests(unittest.TestCase):
+    def test_core_profile_is_small_and_contains_the_moaa_loop(self):
+        kit = install.read_json(install.KIT / "config" / "kit.json", None)
+        core = {p["id"] for p in kit["plugins"] if p.get("profile") == "core"}
+        self.assertTrue({"specialist-council@moaa", "agent-arena-mode@moaa"} <= core)
+        self.assertLessEqual(len(core), 12)
+        self.assertTrue(all(p.get("profile") in ("core", "full") for p in kit["plugins"]))
+        self.assertFalse(any(p.get("optional") for p in kit["plugins"] if p["id"] in core))

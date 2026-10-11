@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/ahmadhammoud56/MOAA/security/advisories/new
+    about: Please report security problems privately.
+  - name: Questions and ideas
+    url: https://github.com/ahmadhammoud56/MOAA/discussions
+    about: Ask questions and share how you use MOAA.

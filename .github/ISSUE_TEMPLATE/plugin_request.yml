@@ -1,0 +1,22 @@
+name: Plugin or role request
+description: Suggest a plugin for the catalog, or a new Specialist Council role
+labels: [enhancement]
+body:
+  - type: input
+    id: what
+    attributes:
+      label: Plugin repository or role name
+      placeholder: https://github.com/owner/repo  or  council role "x"
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it belongs in MOAA
+    validations:
+      required: true
+  - type: dropdown
+    id: profile
+    attributes:
+      label: Suggested profile
+      options: [core, full]

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """MOAA (Mother of All Agents) installer. Standard library only; safe to rerun.
 
-  python scripts/install.py                 install everything (claude-mem off)
+  python scripts/install.py                 core profile: 10 plugins, council, arena, skills, rea MCP
+  python scripts/install.py --full          everything: 93 plugins (95 with --with-claude-mem) + ansys MCP
   python scripts/install.py --with-claude-mem
   python scripts/install.py --skip-mcp      no rea/ansys MCP servers
   python scripts/install.py --skip-ansys    keep rea, skip the ansys MCP server
@@ -154,7 +155,10 @@ def install(args):
               "marketplaces": manifest.get("marketplaces", []), "plugins": manifest.get("plugins", []),
               "skills": manifest.get("skills", []), "agents": manifest.get("agents", []),
               "mcp": manifest.get("mcp", []), "settings_added": manifest.get("settings_added", {})}
-    plugins = [p for p in kit["plugins"] if not p.get("optional") or (args.with_claude_mem and p["optional"] == "claude-mem")]
+    plugins = [p for p in kit["plugins"]
+               if (args.full or p.get("profile") == "core")
+               and (not p.get("optional") or (args.with_claude_mem and p["optional"] == "claude-mem"))]
+    log(f"profile: {'full' if args.full else 'core'} ({len(plugins)} plugins)")
     before = installed_plugins(home)
 
     def target(p):
@@ -243,7 +247,7 @@ def install(args):
     log("settings merged (backup written next to settings.json)")
 
     if not args.skip_mcp:
-        install_mcp(r, kit["mcp"], record, home, skip_ansys=args.skip_ansys, dry=args.dry_run)
+        install_mcp(r, kit["mcp"], record, home, skip_ansys=args.skip_ansys or not args.full, dry=args.dry_run)
 
     write_json(home / MANIFEST, record, args.dry_run)
     if not args.dry_run:
@@ -335,6 +339,8 @@ def uninstall(args):
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--with-claude-mem", action="store_true")
+    p.add_argument("--full", action="store_true",
+                   help="install all 95 plugins and the ansys MCP server (default: the 10-plugin core profile)")
     p.add_argument("--upstream", action="store_true",
                    help="install third-party plugins from their own marketplaces (latest) instead of the pinned moaa catalog")
     p.add_argument("--skip-mcp", action="store_true")

@@ -47,13 +47,19 @@ jobs:
           for p in plugins/*/; do claude plugin validate "$p"; done
 
   install:
-    name: Clean install (${{ matrix.os }})
+    name: Clean install (${{ matrix.os }}, ${{ matrix.profile }})
     needs: checks
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            profile: full
+            flags: --full --skip-ansys
+          - os: macos-latest
+            profile: core
+            flags: ""
     env:
       CLAUDE_CONFIG_DIR: ${{ github.workspace }}/../claude-home
     steps:
@@ -66,9 +72,11 @@ jobs:
           node-version: "22"
       - name: Install Claude Code CLI
         run: npm install -g @anthropic-ai/claude-code
-      - name: Install MOAA into an empty Claude home
-        run: ./install.sh --skip-ansys
+      - name: Install MOAA (${{ matrix.profile }}) into an empty Claude home
+        run: ./install.sh ${{ matrix.flags }}
       - name: Verify plugins, settings and council
+        env:
+          PROFILE: ${{ matrix.profile }}
         run: |
           python - <<'PY'
           import json, os, sys
@@ -76,7 +84,8 @@ jobs:
           installed = json.load(open(f"{home}/plugins/installed_plugins.json"))["plugins"]
           settings = json.load(open(f"{home}/settings.json"))
           kit = json.load(open("config/kit.json"))
-          expected = sum(1 for p in kit["plugins"] if not p.get("optional"))
+          full = os.environ["PROFILE"] == "full"
+          expected = sum(1 for p in kit["plugins"] if not p.get("optional") and (full or p.get("profile") == "core"))
           print(f"installed {len(installed)} of {expected} plugins")
           assert len(installed) == expected, sorted(installed)
           assert all(k.endswith("@moaa") for k in installed), "everything comes from the pinned moaa catalog"
@@ -86,7 +95,7 @@ jobs:
           python plugins/specialist-council/council.py check
           claude mcp list
       - name: Rerun is a no-op
-        run: ./install.sh --skip-ansys
+        run: ./install.sh ${{ matrix.flags }}
       - name: Uninstall leaves nothing behind
         run: |
           ./install.sh --uninstall
