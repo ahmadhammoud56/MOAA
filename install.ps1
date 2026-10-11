@@ -1,4 +1,4 @@
-# claude-kit installer (Windows PowerShell). Arguments pass through, e.g. -- --with-claude-mem, --uninstall.
+# MOAA installer (Windows PowerShell). Arguments pass through, e.g. -- --with-claude-mem, --uninstall.
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 $py = Get-Command python, py -ErrorAction SilentlyContinue | Select-Object -First 1

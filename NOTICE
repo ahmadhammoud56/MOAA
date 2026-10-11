@@ -1,0 +1,25 @@
+MOAA: Mother of All Agents
+Copyright (c) 2026 Ahmad Hammoud (https://github.com/ahmadhammoud56)
+
+Original work by Ahmad Hammoud, MIT licensed (see LICENSE):
+  - specialist-council/          Specialist Council (60 role agents, council.py)
+  - plugins/agent-arena-mode/    Agent Arena, best-agent library and council forging
+  - scripts/, config/, tests/, install.sh, install.ps1
+
+This repository also redistributes third-party components under their own
+licenses. Each one keeps its original LICENSE (and NOTICE where provided):
+
+  plugins/flightdeck/                MIT         (c) 2026 Stephen Casella        https://github.com/scasella/claude-flightdeck
+  plugins/prismantis/                MIT         (c) 2026 Nahum Litvin           https://github.com/NahumLitvin/prismantis
+  skills/networkx/                   MIT         (c) 2025 K-Dense Inc.           https://github.com/K-Dense-AI/scientific-agent-skills
+  skills/pyzotero/                   MIT         (c) 2025 K-Dense Inc.           https://github.com/K-Dense-AI/scientific-agent-skills
+  skills/scientific-brainstorming/   MIT         (c) 2025 K-Dense Inc.           https://github.com/K-Dense-AI/scientific-agent-skills
+  skills/uncertainty-and-units/      MIT         (c) 2025 K-Dense Inc.           https://github.com/K-Dense-AI/scientific-agent-skills
+  skills/headroom/                   Apache-2.0  (c) 2025 Headroom Contributors  https://github.com/headroomlabs-ai/headroom
+  skills/paper2agent/                MIT         (c) 2025 Jiacheng Miao          https://github.com/jmiao24/Paper2Agent
+  skills/reverse-engineer-anything/  MIT         (c) 2026 morluto                https://github.com/morluto/rea
+  vendor/ansys-mcp-server.patch      MIT (declared in upstream pyproject.toml)   https://github.com/vorobjewsen30-max/ansys-mcp-server
+
+Plugins installed by the installer from other marketplaces are not
+redistributed here; they are fetched from their upstream repositories under
+their own licenses (see THIRD_PARTY.md).

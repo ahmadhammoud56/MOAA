@@ -33,3 +33,7 @@ python -m unittest discover -s tests -v
 Edit `profile.json`, then `install` to apply. A backup of the pre-profile council is in
 `../backups/council-2026-10-11/`. The 5.5 model IDs need Claude Code 2.1.29x+; the older 2.1.268
 terminal CLI rejects them (`claude-code:unrecognized_model`).
+
+## Author
+
+Created by Ahmad Hammoud ([@ahmadhammoud56](https://github.com/ahmadhammoud56)). Part of [MOAA: Mother of All Agents](https://github.com/ahmadhammoud56/MOAA). MIT licensed; see [LICENSE](LICENSE).

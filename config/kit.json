@@ -1,6 +1,6 @@
 {
-  "name": "claude-kit",
-  "version": "0.1.0",
+  "name": "moaa",
+  "version": "0.2.0",
   "marketplaces": {
     "superpowers-dev": "https://github.com/obra/superpowers.git",
     "ecc": "https://github.com/affaan-m/ECC.git",
@@ -23,7 +23,7 @@
       "tested_version": "dbd4588f9e10"
     },
     {
-      "id": "agent-arena-mode@claude-kit",
+      "id": "agent-arena-mode@moaa",
       "enabled": true,
       "tested_version": "0.4.3"
     },
@@ -250,7 +250,7 @@
       "tested_version": "dbd4588f9e10"
     },
     {
-      "id": "flightdeck@claude-kit",
+      "id": "flightdeck@moaa",
       "enabled": true,
       "tested_version": "0.3.2"
     },
@@ -265,7 +265,7 @@
       "tested_version": "1.2.3"
     },
     {
-      "id": "plot-deck@claude-kit",
+      "id": "plot-deck@moaa",
       "enabled": true,
       "tested_version": "0.2.0"
     },
@@ -275,7 +275,7 @@
       "tested_version": "4.10.0"
     },
     {
-      "id": "prismantis@claude-kit",
+      "id": "prismantis@moaa",
       "enabled": false,
       "tested_version": "0.11.0"
     },
@@ -542,5 +542,13 @@
       "module": "ansys_mcp_server.server",
       "lock": "vendor/ansys-requirements.lock"
     }
+  },
+  "own_work": [
+    "plugins/agent-arena-mode",
+    "specialist-council"
+  ],
+  "public_blockers": {
+    "plugins/plot-deck": "LPS has no licence; get permission or switch to reference install",
+    "skills/paper2agent/paper2agent-paper/references": "full paper text; confirm paper licence or drop"
   }
 }

@@ -216,7 +216,7 @@ class LibraryTests(unittest.TestCase):
         home = Path(os.environ["CLAUDE_CONFIG_DIR"])
         self.assertIsNone(library.installed_database())
         older = home / "plugins" / "data" / "agent-arena-mode-old" / "library.sqlite3"
-        newer = home / "plugins" / "data" / "agent-arena-mode-claude-kit" / "library.sqlite3"
+        newer = home / "plugins" / "data" / "agent-arena-mode-moaa" / "library.sqlite3"
         for path in (older, newer):
             path.parent.mkdir(parents=True)
             path.write_bytes(b"")

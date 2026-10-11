@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Pre-push scan: secrets and machine-specific paths. Exit 1 on findings. Standard library only."""
+import json
 from pathlib import Path
 import re
 import sys
@@ -40,7 +41,24 @@ def scan(root=KIT):
     return findings
 
 
+def licence_gaps(root=KIT):
+    """Public-release check: every vendored plugin/skill/agent has a LICENSE or is declared own work."""
+    kit = json.loads((root / "config" / "kit.json").read_text(encoding="utf-8"))
+    own = set(kit.get("own_work", []))
+    gaps = [f"{rel}: {why}" for rel, why in kit.get("public_blockers", {}).items() if (root / rel).exists()]
+    units = [p for base in ("plugins", "skills") for p in sorted((root / base).iterdir()) if p.is_dir()]
+    units += sorted((root / "agents").glob("*.md"))
+    for unit in units:
+        rel = unit.relative_to(root).as_posix()
+        if rel in own or (unit.is_dir() and (unit / "LICENSE").is_file()):
+            continue
+        gaps.append(f"{rel}: no LICENSE and not declared own_work")
+    return gaps
+
+
 if __name__ == "__main__":
     hits = scan()
+    if "--public" in sys.argv:
+        hits += [f"licence: {g}" for g in licence_gaps()]
     print("\n".join(hits) if hits else "scan: clean")
     sys.exit(1 if hits else 0)

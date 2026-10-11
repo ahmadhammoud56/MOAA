@@ -1,47 +1,49 @@
-# Third-party sources
+# Third-party sources and licences
 
-This repository is **private**. Some vendored items have no licence, so you need the authors' permission before making this repository public (see "Before going public" below).
+MOAA's own code (the Specialist Council, the Agent Arena, the installer) is MIT licensed by Ahmad Hammoud; see [LICENSE](LICENSE). Every vendored component keeps its upstream LICENSE in its own directory. [NOTICE](NOTICE) has the short attribution list.
 
 ## Vendored (copied into this repo)
 
-| Path | Upstream | Licence | Notes |
+| Path | Upstream | Licence | Status |
 |---|---|---|---|
-| `plugins/agent-arena-mode` | own work | MIT | |
-| `specialist-council` | own work | none yet (own work) | Add a LICENSE before sharing. |
-| `plugins/flightdeck` | https://github.com/scasella/claude-flightdeck | MIT | See `MODIFICATIONS.md`. |
-| `plugins/prismantis` | https://github.com/NahumLitvin/prismantis | MIT | Includes local PNG-export changes; see `MODIFICATIONS.md` and `png-button.patch`. |
-| `plugins/plot-deck` | copied from kyryl-shtefiienko/LPS `mods/` | none stated | |
-| `skills/networkx` | K-Dense scientific skills | BSD-3-Clause | |
-| `skills/pyzotero` | K-Dense scientific skills | MIT | |
-| `skills/scientific-brainstorming` | K-Dense scientific skills | MIT | |
-| `skills/uncertainty-and-units` | K-Dense scientific skills | MIT | |
-| `skills/headroom` | headroomlabs-ai/headroom | Apache-2.0 | |
-| `skills/agent-teams`, `skills/local-build`, `skills/path-safety`, `skills/paper2agent`, `skills/reverse-engineer-anything` | unknown origin | none stated | |
-| `agents/code-improver.md` | unknown origin | none stated | |
-| `vendor/ansys-mcp-server.patch` | https://github.com/vorobjewsen30-max/ansys-mcp-server @ `36b18a9` | MIT | Local edits to `pyproject.toml`, `requirements.txt` and `server.py`. The installer clones upstream and applies this patch. |
+| `specialist-council` | own work | MIT | ok |
+| `plugins/agent-arena-mode` | own work | MIT | ok |
+| `plugins/flightdeck` | [scasella/claude-flightdeck](https://github.com/scasella/claude-flightdeck) | MIT | ok; local changes in `MODIFICATIONS.md` |
+| `plugins/prismantis` | [NahumLitvin/prismantis](https://github.com/NahumLitvin/prismantis) | MIT | ok; local PNG-export changes in `MODIFICATIONS.md` |
+| `skills/networkx`, `skills/pyzotero`, `skills/scientific-brainstorming`, `skills/uncertainty-and-units` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) | MIT | ok |
+| `skills/headroom` | [headroomlabs-ai/headroom](https://github.com/headroomlabs-ai/headroom) | Apache-2.0 (+ NOTICE) | ok |
+| `skills/reverse-engineer-anything` | [morluto/rea](https://github.com/morluto/rea) | MIT | ok |
+| `skills/paper2agent` | [jmiao24/Paper2Agent](https://github.com/jmiao24/Paper2Agent) | MIT (code) | **check** (see blocker 3) |
+| `vendor/ansys-mcp-server.patch` | [vorobjewsen30-max/ansys-mcp-server](https://github.com/vorobjewsen30-max/ansys-mcp-server) @ `36b18a9` | MIT, declared in its `pyproject.toml` (the repo has no LICENSE file) | ok; only a patch is shipped, and upstream is cloned at install time |
+| `plugins/plot-deck` | copied from [kyryl-shtefiienko/LPS](https://github.com/kyryl-shtefiienko/LPS) `mods/` | **none** | **blocker 1** |
+| `skills/agent-teams`, `skills/local-build`, `skills/path-safety`, `agents/code-improver.md` | not recorded | **unconfirmed** | **blocker 2** |
+
+## Blockers before making the repo public
+
+1. **plot-deck.** LPS has no licence, so by default all rights are reserved. Either get permission from kyryl-shtefiienko (or ask them to add a licence), or remove `plugins/plot-deck` and switch it to a reference install from the LPS marketplace.
+2. **Unconfirmed origin.** If Ahmad wrote `agent-teams`, `local-build`, `path-safety` and `code-improver`, add each to `own_work` in `config/kit.json` and they fall under the root MIT licence. Otherwise find the source and add its licence, or remove them.
+3. **Paper text.** `skills/paper2agent/paper2agent-paper/references/` contains the full text of the Paper2Agent paper and its supplement. The MIT licence covers the code, not necessarily the paper. Confirm the paper's licence (for example a CC BY preprint) or drop those reference files.
+
+`python scripts/scan.py --public` fails until every vendored directory either has a LICENSE or is declared own work.
 
 ## Referenced (installed from upstream, never copied)
 
-All marketplaces in `config/kit.json`:
+The installer adds these marketplaces and installs from them. Their code is not in this repository.
 
-- obra/superpowers
-- affaan-m/ECC
-- multica-ai/andrej-karpathy-skills
-- mattpocock/skills
-- anthropics/skills (the document skills are proprietary; reference only)
-- JuliusBrussee/caveman
-- thedotmack/claude-mem (optional)
-- Egonex-AI/Understand-Anything
-- ruvnet/ruflo
-- sickn33/agentic-awesome-skills
-- dietrichgebert/ponytail
-- typesafe-ai/skills
-- kyryl-shtefiienko/LPS
+| Marketplace | Upstream |
+|---|---|
+| superpowers-dev | [obra/superpowers](https://github.com/obra/superpowers) |
+| ecc | [affaan-m/ECC](https://github.com/affaan-m/ECC) |
+| karpathy-skills | [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) |
+| mattpocock | [mattpocock/skills](https://github.com/mattpocock/skills) |
+| anthropic-agent-skills | [anthropics/skills](https://github.com/anthropics/skills) (the document skills are proprietary) |
+| caveman | [JuliusBrussee/caveman](https://github.com/JuliusBrussee/caveman) |
+| thedotmack (optional) | [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) |
+| understand-anything | [Egonex-AI/Understand-Anything](https://github.com/Egonex-AI/Understand-Anything) |
+| ruflo | [ruvnet/ruflo](https://github.com/ruvnet/ruflo) |
+| agentic-awesome-skills | [sickn33/agentic-awesome-skills](https://github.com/sickn33/agentic-awesome-skills) |
+| ponytail | [dietrichgebert/ponytail](https://github.com/dietrichgebert/ponytail) |
+| typesafe-ai | [typesafe-ai/skills](https://github.com/typesafe-ai/skills) |
+| lps-marketplace | [kyryl-shtefiienko/LPS](https://github.com/kyryl-shtefiienko/LPS) |
 
-The `rea-agents@6.3.0` MCP server comes from npm.
-
-## Before going public
-
-1. Add a LICENSE to `specialist-council`.
-2. Resolve the rows marked "none stated" or "unknown origin": get permission, replace them, or drop them.
-3. Run `python scripts/scan.py`.
+The MCP server `rea-agents@6.3.0` comes from npm ([morluto/rea](https://github.com/morluto/rea), MIT).

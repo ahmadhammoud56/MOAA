@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""claude-kit installer. Standard library only; safe to rerun.
+"""MOAA (Mother of All Agents) installer. Standard library only; safe to rerun.
 
   python scripts/install.py                 install everything (claude-mem off)
   python scripts/install.py --with-claude-mem
@@ -24,7 +24,8 @@ import time
 
 KIT = Path(__file__).resolve().parents[1]
 WINDOWS = platform.system() == "Windows"
-MANIFEST = ".claude-kit-manifest.json"
+MANIFEST = ".moaa-manifest.json"
+LEGACY_MANIFEST = ".claude-kit-manifest.json"  # pre-rename name; read once, then replaced
 
 
 def claude_home():
@@ -32,7 +33,7 @@ def claude_home():
 
 
 def log(msg):
-    print(f"[claude-kit] {msg}", flush=True)
+    print(f"[moaa] {msg}", flush=True)
 
 
 class Runner:
@@ -133,7 +134,7 @@ def preflight(args):
     if not args.skip_mcp and not shutil.which("npx"):
         problems.append("`npx` (Node 20+) not found; install Node or pass --skip-mcp")
     if problems:
-        raise SystemExit("[claude-kit] preflight failed:\n  - " + "\n  - ".join(problems))
+        raise SystemExit("[moaa] preflight failed:\n  - " + "\n  - ".join(problems))
 
 
 def marketplace_names(r):
@@ -153,7 +154,7 @@ def install(args):
     home = claude_home()
     r = Runner(args.dry_run)
     kit = read_json(KIT / "config" / "kit.json", None)
-    manifest = read_json(home / MANIFEST, {})
+    manifest = read_json(home / MANIFEST, None) or read_json(home / LEGACY_MANIFEST, {})
     record = {"kit_version": kit["version"], "kit_dir": str(KIT), "installed": time.time(),
               "marketplaces": manifest.get("marketplaces", []), "plugins": manifest.get("plugins", []),
               "skills": manifest.get("skills", []), "agents": manifest.get("agents", []),
@@ -233,6 +234,8 @@ def install(args):
         install_mcp(r, kit["mcp"], record, home, skip_ansys=args.skip_ansys, dry=args.dry_run)
 
     write_json(home / MANIFEST, record, args.dry_run)
+    if not args.dry_run:
+        (home / LEGACY_MANIFEST).unlink(missing_ok=True)
     check = r.run([sys.executable, str(home / "skills" / "specialist-council" / "council.py"), "check",
                    "--agents", str(home / "agents")])
     log("council check: " + ("ok" if check.returncode == 0 else check.stderr.strip()))
@@ -284,9 +287,9 @@ def install_mcp(r, mcp, record, home, skip_ansys, dry):
 def uninstall(args):
     home = claude_home()
     r = Runner(args.dry_run)
-    record = read_json(home / MANIFEST, None)
+    record = read_json(home / MANIFEST, None) or read_json(home / LEGACY_MANIFEST, None)
     if not record:
-        raise SystemExit(f"[claude-kit] no manifest at {home / MANIFEST}; nothing recorded to undo")
+        raise SystemExit(f"[moaa] no manifest at {home / MANIFEST}; nothing recorded to undo")
     for name in record.get("mcp", []):
         r.run(["claude", "mcp", "remove", name, "--scope", "user"])
     for pid in record.get("plugins", []):
@@ -313,7 +316,8 @@ def uninstall(args):
     settings_path = home / "settings.json"
     write_json(settings_path, unmerge_settings(read_json(settings_path, {}), record.get("settings_added", {})), args.dry_run)
     if not args.dry_run:
-        (home / MANIFEST).unlink()
+        (home / MANIFEST).unlink(missing_ok=True)
+        (home / LEGACY_MANIFEST).unlink(missing_ok=True)
     log("uninstalled. Arena library data and forged council members (if any) were left in place.")
     return 0
 
