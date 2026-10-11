@@ -19,9 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----------------------------------------------------------------------------
-Scope: this license covers the files in this repository that are not inside a
-directory carrying its own LICENSE file. Directories with their own LICENSE
-(vendored third-party plugins and skills) are licensed under those terms; see
-NOTICE and THIRD_PARTY.md.

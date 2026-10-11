@@ -7,6 +7,9 @@ Original work by Ahmad Hammoud, MIT licensed (see LICENSE):
   - skills/agent-teams/, skills/local-build/, skills/path-safety/, agents/code-improver.md
   - scripts/, config/, tests/, install.sh, install.ps1
 
+License scope: the root LICENSE (MIT) covers files that are not inside a
+directory carrying its own LICENSE or PERMISSION.md.
+
 This repository also redistributes third-party components under their own
 licenses. Each one keeps its original LICENSE (and NOTICE where provided):
 
