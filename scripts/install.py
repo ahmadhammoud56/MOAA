@@ -23,6 +23,8 @@ import sys
 import time
 
 KIT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(KIT / "scripts"))
+from sync_catalog import ALIASES  # noqa: E402  reserved upstream names and their moaa catalog aliases
 WINDOWS = platform.system() == "Windows"
 MANIFEST = ".moaa-manifest.json"
 LEGACY_MANIFEST = ".claude-kit-manifest.json"  # pre-rename name; read once, then replaced
@@ -153,7 +155,19 @@ def install(args):
               "skills": manifest.get("skills", []), "agents": manifest.get("agents", []),
               "mcp": manifest.get("mcp", []), "settings_added": manifest.get("settings_added", {})}
     plugins = [p for p in kit["plugins"] if not p.get("optional") or (args.with_claude_mem and p["optional"] == "claude-mem")]
-    needed = {p["id"].split("@")[1] for p in plugins}
+    before = installed_plugins(home)
+
+    def target(p):
+        """Install id: the pinned moaa catalog entry by default; upstream marketplace with --upstream, or when the
+        plugin is already installed from its upstream marketplace (keeps that install and its data untouched)."""
+        name, market = p["id"].split("@")
+        if market == kit["name"] or args.upstream or p["id"] in before:
+            return p["id"]
+        return f"{ALIASES.get(name, name)}@{kit['name']}"
+
+    for p in plugins:
+        p["target"] = target(p)
+    needed = {p["target"].split("@")[1] for p in plugins}
 
     log(f"Claude home: {home}")
     have = marketplace_names(r)
@@ -168,23 +182,23 @@ def install(args):
     if kit["name"] in have:  # pick up local edits to the vendored plugins
         r.run(["claude", "plugin", "marketplace", "update", kit["name"]])
 
-    before = installed_plugins(home)
     failed = []
     for p in plugins:
-        if p["id"] in before:
-            if p["id"].endswith("@" + kit["name"]):  # vendored plugins: pick up new versions from this repo
-                r.run(["claude", "plugin", "update", p["id"], "--scope", "user"])
+        pid = p["target"]
+        if pid in before:
+            if pid.endswith("@" + kit["name"]) and pid == p["id"]:  # vendored plugins: pick up new versions from this repo
+                r.run(["claude", "plugin", "update", pid, "--scope", "user"])
             continue
-        log(f"installing {p['id']}")
-        result = r.run(["claude", "plugin", "install", p["id"], "--scope", "user"])
+        log(f"installing {pid}")
+        result = r.run(["claude", "plugin", "install", pid, "--scope", "user"])
         if result.returncode:
-            failed.append(p["id"])
+            failed.append(pid)
             log(f"  FAILED: {(result.stderr or result.stdout).strip()[-300:]}")
             continue
-        if p["id"] not in record["plugins"]:
-            record["plugins"].append(p["id"])
+        if pid not in record["plugins"]:
+            record["plugins"].append(pid)
         if not p["enabled"]:
-            r.run(["claude", "plugin", "disable", p["id"], "--scope", "user"])
+            r.run(["claude", "plugin", "disable", pid, "--scope", "user"])
 
     skills_dir = home / "skills"
     for name in kit["skills"]:
@@ -221,7 +235,7 @@ def install(args):
     if settings_path.is_file() and not args.dry_run:
         shutil.copy2(settings_path, settings_path.with_name(f"settings.json.bak-{time.strftime('%Y%m%d-%H%M%S')}"))
     merged, added = merge_settings(current, kit["settings"], council_permissions(home),
-                                   {p["id"]: p["enabled"] for p in plugins})
+                                   {p["target"]: p["enabled"] for p in plugins})
     for key, values in added.items():
         prior = record["settings_added"].setdefault(key, [])
         prior += [v for v in values if v not in prior]
@@ -321,6 +335,8 @@ def uninstall(args):
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--with-claude-mem", action="store_true")
+    p.add_argument("--upstream", action="store_true",
+                   help="install third-party plugins from their own marketplaces (latest) instead of the pinned moaa catalog")
     p.add_argument("--skip-mcp", action="store_true")
     p.add_argument("--skip-ansys", action="store_true")
     p.add_argument("--dry-run", action="store_true")

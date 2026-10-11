@@ -39,13 +39,47 @@ class MergeTests(unittest.TestCase):
             self.assertIn(p["id"].split("@")[1], markets, p["id"])
         for name in kit["skills"]:
             self.assertTrue((install.KIT / "skills" / name / "SKILL.md").is_file(), name)
-        listed = {e["source"].split("/")[-1] for e in install.read_json(
-            install.KIT / ".claude-plugin" / "marketplace.json", None)["plugins"]}
+        market = install.read_json(install.KIT / ".claude-plugin" / "marketplace.json", None)["plugins"]
+        listed = {e["source"].split("/")[-1] for e in market if isinstance(e["source"], str)}
         vendored = {p["id"].split("@")[0] for p in kit["plugins"] if p["id"].endswith("@" + kit["name"])}
         self.assertEqual(listed, vendored)
+        sys.path.insert(0, str(install.KIT / "scripts"))
+        import sync_catalog
+        upstream = {sync_catalog.ALIASES.get(n, n) for n in
+                    (p["id"].split("@")[0] for p in kit["plugins"] if not p["id"].endswith("@" + kit["name"]))}
+        pinned = {e["name"]: e["source"] for e in market if isinstance(e["source"], dict)}
+        self.assertEqual(set(pinned), upstream)  # every upstream plugin of the setup is in the catalog
+        for name, source in pinned.items():
+            with self.subTest(plugin=name):
+                self.assertRegex(source["sha"], r"^[0-9a-f]{40}$")
+                self.assertIn(source["source"], ("github", "git-subdir"))
         self.assertFalse(list(install.KIT.rglob("forged/registry.json")))  # no forged members shipped
         self.assertFalse((install.KIT / "specialist-council").exists())  # council lives only in plugins/
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ModelPresetTests(unittest.TestCase):
+    """Each agent's model and effort live inside the plugins; the generated MODELS.md must match them."""
+
+    def test_models_doc_is_current(self):
+        sys.path.insert(0, str(install.KIT / "scripts"))
+        import models_doc
+        self.assertEqual((install.KIT / "MODELS.md").read_text(encoding="utf-8"), models_doc.build())
+
+    def test_every_plugin_agent_carries_a_valid_model_and_effort(self):
+        sys.path.insert(0, str(install.KIT / "scripts"))
+        import models_doc
+        council = models_doc.load(models_doc.COUNCIL / "council.py", "council_t")
+        profile = council.load_profile(models_doc.COUNCIL / "profile.json")
+        ids, levels = set(profile["models"].values()), set(profile["effort_levels"])
+        agents = sorted((install.KIT / "plugins").glob("*/agents/*.md"))
+        self.assertGreaterEqual(len(agents), 61)  # 60 council roles + arena judge
+        for path in agents:
+            fm = models_doc.frontmatter(path)
+            with self.subTest(agent=path.name):
+                self.assertIn(fm.get("model"), ids)
+                self.assertIn(fm.get("effort"), levels)
+        council.check(models_doc.COUNCIL / "agents", profile, user_agents=install.KIT / "missing", forged_dir=install.KIT / "missing")

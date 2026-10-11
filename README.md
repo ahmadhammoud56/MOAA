@@ -41,25 +41,35 @@ The installer respects `CLAUDE_CONFIG_DIR`, so you can trial it in a throwaway c
 CLAUDE_CONFIG_DIR=/tmp/kit-test ./install.sh --skip-ansys
 ```
 
-## Use it as a plugin marketplace only
+## Use it as a plugin marketplace
 
-To get the vendored plugins without the full setup, add the repo as a marketplace inside Claude Code:
+The `moaa` marketplace lists all 95 plugins of the setup: the 5 MOAA plugins plus 90 third-party plugins. The third-party ones are referenced at the exact commit tested here, never copied.
 
 ```
 /plugin marketplace add ahmadhammoud56/MOAA
+/plugin install specialist-council@moaa
 /plugin install agent-arena-mode@moaa
+/plugin install superpowers@moaa        # any of the 95, e.g. ruflo-core@moaa, ecc@moaa
 ```
 
-Other plugins in this marketplace: `specialist-council@moaa` (the council), `flightdeck@moaa`, `plot-deck@moaa` and `prismantis@moaa`. Install `specialist-council@moaa` and `agent-arena-mode@moaa` together to get the full council → arena → forging loop.
+- **MOAA plugins:** `specialist-council`, `agent-arena-mode`, `flightdeck`, `plot-deck` and `prismantis`. Install the first two together to get the full council → arena → forging loop.
+- **Third-party plugins** keep their upstream names. The exceptions are three names that are reserved for Anthropic's own plugins and so can't appear in a third-party marketplace:
 
-To let `council.py` run without permission prompts, add these allow rules to your settings (the full installer adds them for you): `Bash(python *specialist-council*council.py*)` and `PowerShell(python *specialist-council*council.py*)`.
+  | Upstream name | Name in `moaa` |
+  |---|---|
+  | `claude-api` | `llm-api-reference` |
+  | `claude-mem` | `persistent-memory` |
+  | `claude-mem-cowork` | `persistent-memory-cowork` |
 
-The standalone skills, the MCP servers, the upstream plugin set and the settings come only with the full installer above.
+- **Allow rules:** to let `council.py` run without permission prompts, add `Bash(python *specialist-council*council.py*)` and `PowerShell(python *specialist-council*council.py*)` to your settings. The full installer adds them for you.
+- **Installer only:** the standalone skills, the MCP servers and the settings come only with the full installer above.
+
+Every agent's model and effort are stored inside the plugins themselves; see [MODELS.md](MODELS.md).
 
 ## What the installer does
 
 1. Adds each needed marketplace: the upstream GitHub ones, plus this repo as the `moaa` marketplace for the vendored plugins.
-2. Installs every plugin in `config/kit.json` at user scope. prismantis is installed disabled; enable it with `claude plugin enable prismantis@moaa`.
+2. Installs every plugin in `config/kit.json` at user scope, from the pinned `moaa` catalog. Pass `--upstream` to take third-party plugins from their own marketplaces at the latest version instead. A plugin you already have from its upstream marketplace is kept as is. prismantis is installed disabled; enable it with `claude plugin enable prismantis@moaa`.
 3. Copies the standalone skills to `~/.claude/skills`. A skill that already exists there and wasn't installed by the kit is left untouched.
 4. Installs the Specialist Council as the `specialist-council@moaa` plugin (60 `specialist-council:council-*` agents plus the skill). An older standalone council install is migrated: forged members move to `~/.claude/specialist-council/forged/`, and the duplicate skill and agents are backed up and removed.
 5. Merges settings into `~/.claude/settings.json`, after writing a timestamped backup. The merge never overwrites anything:
@@ -104,7 +114,7 @@ python -m unittest discover -s tests                         # installer
 
 ## Updating the kit from a working machine
 
-This repo is the canonical source: on the maintainer machine it lives at `~/code/claude-kit`, and the live install's `moaa` marketplace points at it. Edit here, bump the plugin version in `plugins/<name>/.claude-plugin/plugin.json`, then rerun the installer. It runs `claude plugin marketplace update moaa` before installing. Plugin versions that were tested together are recorded as `tested_version` in `config/kit.json`.
+This repo is the canonical source: on the maintainer machine it lives at `~/code/claude-kit`, and the live install's `moaa` marketplace points at it. Edit here, bump the plugin version in `plugins/<name>/.claude-plugin/plugin.json`, then rerun the installer. It runs `claude plugin marketplace update moaa` before installing. Plugin versions that were tested together are recorded as `tested_version` in `config/kit.json`. After updating any third-party plugin, run `python scripts/sync_catalog.py` to re-pin the catalog to the installed commits, and run `python scripts/models_doc.py` after changing any model or effort preset. The tests fail if `MODELS.md` drifts.
 
 See [THIRD_PARTY.md](THIRD_PARTY.md) for the source and licence of everything vendored or referenced.
 

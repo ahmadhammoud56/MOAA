@@ -33,6 +33,1923 @@
       "name": "prismantis",
       "source": "./plugins/prismantis",
       "description": "Colorful, themeable rendering for Claude Code replies."
+    },
+    {
+      "name": "academy-guide",
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills",
+        "sha": "dbd4588f9e1033efb41dad4bef2f7947c8993d44"
+      },
+      "description": "Recommends relevant Claude Academy courses, tutorials, and use cases when users ask how to use Claude",
+      "strict": false,
+      "skills": [
+        "./skills/academy-guide"
+      ],
+      "homepage": "https://github.com/anthropics/skills",
+      "category": "upstream",
+      "tags": [
+        "upstream:anthropic-agent-skills"
+      ]
+    },
+    {
+      "name": "agentic-awesome-skills",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-awesome-skills-claude",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Expose the plugin-safe Claude Code subset of Agentic Awesome Skills through a single marketplace entry.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "agentic-skills",
+        "plugin",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-accessibility-inclusive-ux",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-accessibility-inclusive-ux",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Accessibility & Inclusive UX\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-accessibility-inclusive-ux",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-agent-mcp-builder",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-agent-mcp-builder",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Agent & MCP Builder\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-agent-mcp-builder",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-ai-product-evaluation-ops",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-ai-product-evaluation-ops",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS AI Product & Evaluation Ops\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-ai-product-evaluation-ops",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-api-platform-builder",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-api-platform-builder",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS API Platform Builder\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-api-platform-builder",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-automation-builder",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-automation-builder",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Automation Builder\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-automation-builder",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-data-analytics",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-data-analytics",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Data Analytics\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-data-analytics",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-data-engineering-platform",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-data-engineering-platform",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Data Engineering Platform\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-data-engineering-platform",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-devops-cloud",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-devops-cloud",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS DevOps & Cloud\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-devops-cloud",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-documents-presentations",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-documents-presentations",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Documents & Presentations\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-documents-presentations",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-localization-international-growth",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-localization-international-growth",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Localization & International Growth\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-localization-international-growth",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-marketing-seo-growth",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-marketing-seo-growth",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Marketing, SEO & Growth\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-marketing-seo-growth",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-mobile-app-builder",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-mobile-app-builder",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Mobile App Builder\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-mobile-app-builder",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-observability-ir",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-observability-ir",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Observability IR\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-observability-ir",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-privacy-compliance-engineering",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-privacy-compliance-engineering",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Privacy & Compliance Engineering\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-privacy-compliance-engineering",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-product-design-studio",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-product-design-studio",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Product Design Studio\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-product-design-studio",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-python-api-builder",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-python-api-builder",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Python API Builder\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-python-api-builder",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-qa-test-automation",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-qa-test-automation",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS QA & Test Automation\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-qa-test-automation",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-saas-launch-revenue",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-saas-launch-revenue",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS SaaS Launch & Revenue\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-saas-launch-revenue",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-secure-app-builder",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-secure-app-builder",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Secure App Builder\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-secure-app-builder",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-security-engineer",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-security-engineer",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Security Engineer\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-security-engineer",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-aas-web-app-builder",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-aas-web-app-builder",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"AAS Web App Builder\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "aas-web-app-builder",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-agent-architect",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-agent-architect",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"Agent Architect\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "agent-architect",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-apple-platform-design",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-apple-platform-design",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"Apple Platform Design\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "apple-platform-design",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-architecture-design",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-architecture-design",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"Architecture & Design\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "architecture-design",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-automation-builder",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-automation-builder",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"Automation Builder\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "automation-builder",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-azure-ai-cloud",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-azure-ai-cloud",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"Azure AI & Cloud\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "azure-ai-cloud",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-business-analyst",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-business-analyst",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"Business Analyst\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "business-analyst",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-commerce-payments",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-commerce-payments",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"Commerce & Payments\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "commerce-payments",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-creative-director",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-creative-director",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"Creative Director\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "creative-director",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-data-analytics",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-data-analytics",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"Data & Analytics\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "data-analytics",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-data-engineering",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-data-engineering",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"Data Engineering\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "data-engineering",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-ddd-evented-architecture",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-ddd-evented-architecture",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"DDD & Evented Architecture\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "ddd-evented-architecture",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-devops-cloud",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-devops-cloud",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"DevOps & Cloud\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "devops-cloud",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "agentic-bundle-essentials",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/sickn33/agentic-awesome-skills.git",
+        "path": "plugins/agentic-bundle-essentials",
+        "sha": "f8d5d2c82b0cdb54a8a022bced09db53db57e94c"
+      },
+      "version": "16.9.0",
+      "description": "Install the \"Essentials\" editorial skill bundle for Claude Code.",
+      "author": {
+        "name": "sickn33 and contributors",
+        "url": "https://github.com/sickn33/agentic-awesome-skills"
+      },
+      "homepage": "https://github.com/sickn33/agentic-awesome-skills",
+      "repository": "https://github.com/sickn33/agentic-awesome-skills",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "skills",
+        "bundle",
+        "essentials",
+        "marketplace"
+      ],
+      "category": "upstream",
+      "tags": [
+        "upstream:agentic-awesome-skills"
+      ]
+    },
+    {
+      "name": "andrej-karpathy-skills",
+      "source": {
+        "source": "github",
+        "repo": "multica-ai/andrej-karpathy-skills",
+        "sha": "2c606141936f1eeef17fa3043a72095b4765b9c2"
+      },
+      "description": "Behavioral guidelines to reduce common LLM coding mistakes: Think Before Coding, Simplicity First, Surgical Changes, Goal-Driven Execution",
+      "version": "1.0.0",
+      "author": {
+        "name": "forrestchang"
+      },
+      "keywords": [
+        "guidelines",
+        "best-practices",
+        "coding",
+        "karpathy"
+      ],
+      "category": "workflow",
+      "homepage": "https://github.com/multica-ai/andrej-karpathy-skills",
+      "tags": [
+        "upstream:karpathy-skills"
+      ]
+    },
+    {
+      "name": "caveman",
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman",
+        "sha": "5184b3d11ac6a1acb7d44b9bfaa31698157cff97"
+      },
+      "description": "Talk like caveman. Cut 65% output tokens vs unprompted baseline (measured). Keep all technical accuracy.",
+      "category": "productivity",
+      "homepage": "https://github.com/JuliusBrussee/caveman",
+      "tags": [
+        "upstream:caveman"
+      ]
+    },
+    {
+      "name": "discernment-nudge",
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills",
+        "sha": "dbd4588f9e1033efb41dad4bef2f7947c8993d44"
+      },
+      "description": "Appends two or three short follow-up questions after a substantive answer to help users check key facts, probe the reasoning, and notice missing context",
+      "strict": false,
+      "skills": [
+        "./skills/discernment-nudge"
+      ],
+      "homepage": "https://github.com/anthropics/skills",
+      "category": "upstream",
+      "tags": [
+        "upstream:anthropic-agent-skills"
+      ]
+    },
+    {
+      "name": "document-skills",
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills",
+        "sha": "dbd4588f9e1033efb41dad4bef2f7947c8993d44"
+      },
+      "description": "Collection of document processing suite including Excel, Word, PowerPoint, and PDF capabilities",
+      "strict": false,
+      "skills": [
+        "./skills/xlsx",
+        "./skills/docx",
+        "./skills/pptx",
+        "./skills/pdf"
+      ],
+      "homepage": "https://github.com/anthropics/skills",
+      "category": "upstream",
+      "tags": [
+        "upstream:anthropic-agent-skills"
+      ]
+    },
+    {
+      "name": "ecc",
+      "source": {
+        "source": "github",
+        "repo": "affaan-m/ECC",
+        "sha": "e04ea0b9cc8248686edf5ac751cadff550e162b8"
+      },
+      "description": "Harness-native ECC operator layer - 68 agents, 286 skills, 94 legacy command shims, reusable hooks, rules, selective install profiles, and production-ready workflows for Claude Code, Codex, OpenCode, Cursor, and related agent harnesses",
+      "version": "2.2.1",
+      "author": {
+        "name": "Affaan Mustafa",
+        "email": "me@affaanmustafa.com"
+      },
+      "homepage": "https://ecc.tools",
+      "repository": "https://github.com/affaan-m/ECC",
+      "license": "MIT",
+      "keywords": [
+        "agents",
+        "skills",
+        "hooks",
+        "commands",
+        "tdd",
+        "code-review",
+        "security",
+        "best-practices"
+      ],
+      "category": "workflow",
+      "tags": [
+        "agents",
+        "best-practices",
+        "code-review",
+        "commands",
+        "hooks",
+        "security",
+        "skills",
+        "tdd",
+        "upstream:ecc"
+      ],
+      "strict": false
+    },
+    {
+      "name": "example-skills",
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills",
+        "sha": "dbd4588f9e1033efb41dad4bef2f7947c8993d44"
+      },
+      "description": "Collection of example skills demonstrating various capabilities including skill creation, MCP building, visual design, algorithmic art, internal communications, web testing, artifact building, Slack GIFs, and theme styling",
+      "strict": false,
+      "skills": [
+        "./skills/algorithmic-art",
+        "./skills/brand-guidelines",
+        "./skills/canvas-design",
+        "./skills/doc-coauthoring",
+        "./skills/frontend-design",
+        "./skills/internal-comms",
+        "./skills/mcp-builder",
+        "./skills/skill-creator",
+        "./skills/slack-gif-creator",
+        "./skills/theme-factory",
+        "./skills/web-artifacts-builder",
+        "./skills/webapp-testing"
+      ],
+      "homepage": "https://github.com/anthropics/skills",
+      "category": "upstream",
+      "tags": [
+        "upstream:anthropic-agent-skills"
+      ]
+    },
+    {
+      "name": "llm-api-reference",
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills",
+        "sha": "dbd4588f9e1033efb41dad4bef2f7947c8993d44"
+      },
+      "description": "Claude API and SDK documentation skill for building LLM-powered applications. Upstream plugin `claude-api` from anthropic-agent-skills; listed as `llm-api-reference` because `claude-api` is a reserved name.",
+      "strict": false,
+      "skills": [
+        "./skills/claude-api"
+      ],
+      "homepage": "https://github.com/anthropics/skills",
+      "category": "upstream",
+      "tags": [
+        "upstream:anthropic-agent-skills"
+      ]
+    },
+    {
+      "name": "lps",
+      "source": {
+        "source": "github",
+        "repo": "kyryl-shtefiienko/LPS",
+        "sha": "a4363de9c894f380f6861980c06b278d3a9d09a7"
+      },
+      "description": "Personal shared and Claude-specific skills from LPS.",
+      "skills": [
+        "./common",
+        "./claude"
+      ],
+      "strict": false,
+      "homepage": "https://github.com/kyryl-shtefiienko/LPS",
+      "category": "upstream",
+      "tags": [
+        "upstream:lps-marketplace"
+      ]
+    },
+    {
+      "name": "mattpocock-skills",
+      "source": {
+        "source": "github",
+        "repo": "mattpocock/skills",
+        "sha": "3cca18b368ae95cdbdebbff572ccafa662551015"
+      },
+      "description": "Matt Pocock's agent skills for real engineering (grilling, spec/ticket flows, TDD, code review, domain modelling and more).",
+      "category": "engineering",
+      "keywords": [
+        "engineering",
+        "skills",
+        "tdd",
+        "code-review",
+        "grilling"
+      ],
+      "homepage": "https://github.com/mattpocock/skills",
+      "tags": [
+        "upstream:mattpocock"
+      ]
+    },
+    {
+      "name": "persistent-memory",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/thedotmack/claude-mem.git",
+        "path": "plugin",
+        "sha": "3939fbb2debe73e74a295553636e776e110df90a"
+      },
+      "version": "13.24.1",
+      "description": "Persistent memory system for Claude Code - context compression across sessions. Upstream plugin `claude-mem` from thedotmack; listed as `persistent-memory` because `claude-mem` is a reserved name.",
+      "homepage": "https://github.com/thedotmack/claude-mem",
+      "category": "upstream",
+      "tags": [
+        "optional",
+        "upstream:thedotmack"
+      ]
+    },
+    {
+      "name": "persistent-memory-cowork",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/thedotmack/claude-mem.git",
+        "path": "cowork",
+        "sha": "3939fbb2debe73e74a295553636e776e110df90a"
+      },
+      "version": "0.1.3",
+      "description": "Claude-Mem for Cowork (Claude app cloud sessions) - hooks stream tool use to cmem.ai and inject observations into new sessions and agents. Upstream plugin `claude-mem-cowork` from thedotmack; listed as `persistent-memory-cowork` because `claude-mem-cowork` is a reserved name.",
+      "homepage": "https://github.com/thedotmack/claude-mem",
+      "category": "upstream",
+      "tags": [
+        "optional",
+        "upstream:thedotmack"
+      ]
+    },
+    {
+      "name": "ponytail",
+      "source": {
+        "source": "github",
+        "repo": "dietrichgebert/ponytail",
+        "sha": "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156"
+      },
+      "description": "Forces the laziest solution that works. YAGNI, stdlib first, one line over fifty.",
+      "category": "productivity",
+      "homepage": "https://github.com/dietrichgebert/ponytail",
+      "tags": [
+        "upstream:ponytail"
+      ]
+    },
+    {
+      "name": "ruflo-adr",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-adr",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "ADR lifecycle management — create, index, supersede, and link Architecture Decision Records to code",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-agent",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-agent",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Agent runtimes — local WASM-sandboxed agents (rvagent) + Anthropic Claude Managed Agents (cloud); one interface, local-vs-cloud backends",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-agentdb",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-agentdb",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "AgentDB memory controllers with HNSW vector search, RuVector embeddings, and causal graphs",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-agntcy",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-agntcy",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "AGNTCY/Outshift Internet-of-Cognition runtime integration — SLIM secure transport, CASA intent-scoped tool authorization, and AGNTCY identity/observability spans (ADR-380); optional, removable augmentation per ADR-150",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-aidefence",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-aidefence",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "AI safety scanning, PII detection, prompt injection defense, and adaptive threat learning",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-arena",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-arena",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Competitive ruliology for ruflo swarms — arenas, tournaments, and adaptive co-evolution of program strategies (ADR-147/148); strategies-as-programs compete under payoff games",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-autopilot",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-autopilot",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Autonomous /loop-driven task completion with learning, prediction, and progress tracking",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-bbs-federation",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-bbs-federation",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "AgentBBS federated business-domain BBS room integration (ADR-164 Phase 1) — register/publish/watch/human-join MCP tools wrapping the agentbbs Rust workspace as a federation peer; degrades gracefully when agentbbs is absent",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-browser",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-browser",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Agentic browser automation with Playwright for testing, scraping, and UI interaction",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-business-pods",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-business-pods",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Business-domain pod templates for the federated business autopilot (ADR-164 Phase 2) — pod templates plus a dry-run-by-default single-tick runner that validates, reserves budget, and resolves agent roles before posting to the BBS room",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-core",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-core",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Core Ruflo MCP tools, commands, and Claude Code orchestration patterns",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-cost-tracker",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-cost-tracker",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Token usage tracking, model cost attribution per agent, budget alerts, and optimization recommendations",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-daa",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-daa",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Dynamic Agentic Architecture with cognitive patterns, knowledge sharing, and adaptive agents",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-ddd",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-ddd",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Domain-Driven Design scaffolding — bounded contexts, aggregate roots, domain events, and anti-corruption layers",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-docs",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-docs",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Documentation generation, drift detection, and API docs automation",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-federation",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-federation",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Cross-installation agent federation with zero-trust security, PII-gated data flow, and compliance-grade audit trails",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-goals",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-goals",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Long-horizon goal planning, deep research orchestration, and adaptive replanning using GOAP",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-graph-intelligence",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-graph-intelligence",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Real-time graph intelligence — personalized PageRank, streaming delta updates, witness-signed reasoning, and federation-distributable vectors",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-intelligence",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-intelligence",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Self-learning neural intelligence with SONA patterns, trajectory learning, and model routing",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-iot-cognitum",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-iot-cognitum",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "IoT device lifecycle, telemetry anomaly detection, fleet management, and witness chain verification for Cognitum Seed hardware",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-jujutsu",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-jujutsu",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Advanced git workflows with diff analysis, risk scoring, and reviewer recommendations",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-knowledge-graph",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-knowledge-graph",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Knowledge graph construction — entity extraction, relation mapping, and pathfinder graph traversal",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-loop-workers",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-loop-workers",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Cache-aware /loop workers and CronCreate background automation",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-market-data",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-market-data",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Market data ingestion — feed normalization, OHLCV vectorization, and HNSW-indexed pattern matching",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-metaharness",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-metaharness",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "MetaHarness integration — surfaces score/genome/mint/mcp-scan/threat-model via skills; pairs with @metaharness/router (ADR-148/149) for cost-optimal model routing; honors ADR-150 optional-augmentation constraint",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-migrations",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-migrations",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Schema migration management — generate, validate, dry-run, and rollback database migrations",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-music",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-music",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "AI music generation via Cognitum Music (cogmusic MCP) — compose lyrics/prompts, generate tracks, separate stems, extract MIDI, and master through your own music.cognitum.one account",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-neural-trader",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-neural-trader",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Neural trading strategies — self-learning LSTM/Transformer/N-BEATS models with Rust/NAPI backtesting",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-observability",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-observability",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Structured logging, distributed tracing, and metrics — correlate agent swarm activity with application telemetry",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-plugin-creator",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-plugin-creator",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Scaffold, validate, and publish new Claude Code plugins with proper structure",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-rag-memory",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-rag-memory",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "RuVector memory with HNSW search, AgentDB, and semantic retrieval",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-ruvector",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-ruvector",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Self-learning vector database — HNSW, FlashAttention-3, Graph RAG, hybrid search, DiskANN, and Brain AGI",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-ruvllm",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-ruvllm",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "RuVLLM local inference with chat formatting, MicroLoRA fine-tuning, and SONA adaptation",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-rvf",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-rvf",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "RVF format for portable agent memory, session persistence, and cross-platform transfer",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-security-audit",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-security-audit",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Security review, dependency scanning, policy gates, and CVE monitoring",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-sparc",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-sparc",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "SPARC methodology — Specification, Pseudocode, Architecture, Refinement, Completion phases with quality gates",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-swarm",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-swarm",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Agent teams, swarm coordination, Monitor streams, and worktree isolation",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-testgen",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-testgen",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Test gap detection, coverage analysis, and automated test generation",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "ruflo-workflows",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/ruvnet/ruflo.git",
+        "path": "plugins/ruflo-workflows",
+        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+      },
+      "description": "Visual workflow automation with templates, orchestration, and lifecycle management",
+      "homepage": "https://github.com/ruvnet/ruflo",
+      "category": "upstream",
+      "tags": [
+        "upstream:ruflo"
+      ]
+    },
+    {
+      "name": "superpowers",
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers",
+        "sha": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797"
+      },
+      "description": "Core skills library for Claude Code: TDD, debugging, collaboration patterns, and proven techniques",
+      "version": "6.3.0",
+      "author": {
+        "name": "Jesse Vincent",
+        "email": "jesse@fsck.com"
+      },
+      "homepage": "https://github.com/obra/superpowers",
+      "category": "upstream",
+      "tags": [
+        "upstream:superpowers-dev"
+      ]
+    },
+    {
+      "name": "typesafe",
+      "source": {
+        "source": "github",
+        "repo": "typesafe-ai/skills",
+        "sha": "65a39f393687675ce170e6094757de20370365b9"
+      },
+      "description": "Full context on the TypeSafe API: question types, architectural patterns, and best practices",
+      "homepage": "https://github.com/typesafe-ai/skills",
+      "category": "upstream",
+      "tags": [
+        "upstream:typesafe-ai"
+      ]
+    },
+    {
+      "name": "understand-anything",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Egonex-AI/Understand-Anything.git",
+        "path": "understand-anything-plugin",
+        "sha": "787da45adbf18aab5c3e3e531b0374dd576f263c"
+      },
+      "homepage": "https://github.com/Egonex-AI/Understand-Anything",
+      "category": "upstream",
+      "tags": [
+        "upstream:understand-anything"
+      ]
     }
   ]
 }
