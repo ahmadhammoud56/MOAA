@@ -1,0 +1,49 @@
+diff --git a/pyproject.toml b/pyproject.toml
+index 513491d..1e1c92a 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -1,6 +1,6 @@
+ [build-system]
+ requires = ["setuptools>=68.0", "wheel"]
+-build-backend = "setuptools.backends._legacy:_Backend"
++build-backend = "setuptools.build_meta"
+ 
+ [project]
+ name = "ansys-mcp-server"
+diff --git a/requirements.txt b/requirements.txt
+index c413b60..3851b94 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1 +1 @@
+-mcp>=1.0.0
++mcp>=1.0.0,<2.0.0
+diff --git a/src/ansys_mcp_server/server.py b/src/ansys_mcp_server/server.py
+index 3d78983..78448ab 100644
+--- a/src/ansys_mcp_server/server.py
++++ b/src/ansys_mcp_server/server.py
+@@ -26,7 +26,7 @@ from datetime import datetime
+ from typing import Any, Optional
+ 
+ from mcp.server import Server, NotificationOptions
+-from mcp.server.models import InitializationCapabilities
++from mcp.server.models import InitializationOptions
+ from mcp.server.stdio import stdio_server
+ from mcp.types import Tool, TextContent
+ 
+@@ -1953,8 +1953,14 @@ async def main():
+     async with stdio_server() as (read_stream, write_stream):
+         await server.run(
+             read_stream, write_stream,
+-            InitializationCapabilities(sampling={}, experimental={}, roots={}),
+-            notification_options=NotificationOptions(),
++            InitializationOptions(
++                server_name="ansys-mcp-server",
++                server_version="1.0.0",
++                capabilities=server.get_capabilities(
++                    notification_options=NotificationOptions(),
++                    experimental_capabilities={},
++                ),
++            ),
+         )
+ 
+ 

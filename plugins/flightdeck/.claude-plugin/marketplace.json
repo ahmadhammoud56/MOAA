@@ -1,0 +1,17 @@
+{
+  "name": "claude-flightdeck",
+  "metadata": {
+    "description": "Flightdeck: a live agent dashboard for Claude Code. Main model vitals, an on-call architect, every permission check, subagent cards and swimlanes, a turn receipt and a session log."
+  },
+  "owner": {
+    "name": "Stephen Casella",
+    "url": "https://github.com/scasella"
+  },
+  "plugins": [
+    {
+      "name": "flightdeck",
+      "source": "./",
+      "description": "A live pane showing what your session's agents are doing, drawn only from real session events."
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "weights": {"correctness": 35, "coverage": 25, "evidence": 20, "robustness": 10, "clarity": 10},
+  "gates": {
+    "required-output": "The answer has the format and all deliverables explicitly requested in task.md; judge cites the corresponding artifact locations.",
+    "central-checks": "The task's named acceptance checks have observed passing results; unavailable or unexecuted checks are unverified."
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "claude-kit",
+  "owner": { "name": "claude-kit" },
+  "metadata": { "description": "Vendored plugins for the claude-kit setup (agent arena and UI mods)." },
+  "plugins": [
+    { "name": "agent-arena-mode", "source": "./plugins/agent-arena-mode", "description": "Eight multi-agent arena modes with a persistent best-agent library that forges Specialist Council members." },
+    { "name": "flightdeck", "source": "./plugins/flightdeck", "description": "Live agent dashboard for Claude Code." },
+    { "name": "plot-deck", "source": "./plugins/plot-deck", "description": "Side panel listing plot images; Enter copies and opens one." },
+    { "name": "prismantis", "source": "./plugins/prismantis", "description": "Colorful, themeable rendering for Claude Code replies." }
+  ]
+}

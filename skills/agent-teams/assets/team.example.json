@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "task": "Review the proposal I attach, investigate its assumptions, and produce one consolidated recommendation with evidence and unresolved questions.",
+  "worker_count": 4,
+  "max_parallel": 4,
+  "execution_mode": "auto",
+  "fallback": "ask",
+  "lead": {
+    "model": "inherit",
+    "effort": "inherit"
+  },
+  "defaults": {
+    "model": "sonnet",
+    "effort": "medium"
+  },
+  "workers": [
+    {
+      "id": "strategy",
+      "role": "Strategic analyst",
+      "assignment": "Evaluate the proposal's logic, alternatives, and decision criteria.",
+      "model": "opus",
+      "effort": "high",
+      "depends_on": []
+    },
+    {
+      "id": "evidence",
+      "role": "Evidence researcher",
+      "assignment": "Check the proposal's externally verifiable claims and identify missing evidence.",
+      "model": "sonnet",
+      "effort": "medium",
+      "depends_on": []
+    },
+    {
+      "id": "risks",
+      "role": "Risk analyst",
+      "assignment": "Independently examine failure scenarios, dependencies, and mitigations.",
+      "model": "opus",
+      "effort": "high",
+      "depends_on": []
+    },
+    {
+      "id": "clarity",
+      "role": "Clarity reviewer",
+      "assignment": "Review the original proposal for ambiguity, missing definitions, and unclear commitments.",
+      "model": "sonnet",
+      "effort": "low",
+      "depends_on": []
+    }
+  ]
+}

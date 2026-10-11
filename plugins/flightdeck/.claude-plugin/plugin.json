@@ -1,0 +1,97 @@
+{
+  "name": "flightdeck",
+  "version": "0.3.2",
+  "description": "Flightdeck: a live agent dashboard for Claude Code. Main model vitals, an on-call architect, every permission check, subagent cards and swimlanes, a turn receipt and a session log, all from real session events",
+  "author": {
+    "name": "Stephen Casella",
+    "url": "https://github.com/scasella"
+  },
+  "homepage": "https://github.com/scasella/claude-flightdeck",
+  "repository": "https://github.com/scasella/claude-flightdeck",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "claude-code-mod",
+    "claude-code-plugin",
+    "dashboard",
+    "subagents",
+    "agents",
+    "observability",
+    "tui"
+  ],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "architectPattern": {
+      "title": "Architect pattern",
+      "description": "Regular expression (case-insensitive) for the agent types and server tools that count as the on-call architect, e.g. advisor|architect|reviewer",
+      "type": "string",
+      "default": "advisor|architect"
+    },
+    "architectLabel": {
+      "title": "Architect label",
+      "description": "Name shown for the architect role",
+      "type": "string",
+      "default": "ARCHITECT"
+    },
+    "gateLabel": {
+      "title": "Gate label",
+      "description": "Name shown for the permission panel",
+      "type": "string",
+      "default": "GATE"
+    },
+    "panels": {
+      "title": "Panels",
+      "description": "Comma-separated panels in display order: main, architect, gate, agents, loops, receipt, log. Leave one out to hide it.",
+      "type": "string",
+      "default": "main,architect,gate,agents,loops,receipt,log"
+    },
+    "motion": {
+      "title": "Motion",
+      "description": "Animate the connectors while real work flows, or keep them still Allowed: while-active, off.",
+      "type": "string",
+      "default": "while-active"
+    },
+    "moments": {
+      "title": "Architect moments",
+      "description": "Show the inferred moment of each consult (before a plan, error repeats, before done)",
+      "type": "boolean",
+      "default": true
+    },
+    "matchDescriptions": {
+      "title": "Match agent descriptions",
+      "description": "Also count an agent type as the architect when its description (not just its name) matches the pattern",
+      "type": "boolean",
+      "default": false
+    },
+    "maxCards": {
+      "title": "Cards before swimlanes",
+      "description": "Agent cards drawn side by side; more agents than this switch to swimlanes (1-6)",
+      "type": "number",
+      "default": 3
+    },
+    "layout": {
+      "title": "Layout",
+      "description": "auto: a summary of at most 8 rows when the pane sits inline above the prompt, two columns from 110 columns when docked, one column otherwise Allowed: auto, compact, wide, mini.",
+      "type": "string",
+      "default": "auto"
+    },
+    "palette": {
+      "title": "Palette",
+      "description": "theme follows your Claude Code theme (light, dark, colour-blind); pastel is fixed colours tuned for dark terminals Allowed: theme, pastel.",
+      "type": "string",
+      "default": "theme"
+    },
+    "openOnStart": {
+      "title": "Open on start",
+      "description": "Open the pane when a session starts",
+      "type": "boolean",
+      "default": true
+    },
+    "statusLine": {
+      "title": "Status line",
+      "description": "Show context, agents, consults and denials in the status line",
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

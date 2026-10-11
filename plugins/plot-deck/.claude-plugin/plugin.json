@@ -1,0 +1,14 @@
+{
+  "name": "plot-deck",
+  "version": "0.2.0",
+  "description": "The spop side panel: a list of plot images; Enter copies one to the clipboard and opens it in the default viewer.",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "plotDirs": {
+      "type": "string",
+      "title": "Plot folders",
+      "description": "Comma-separated folders to scan for png/jpg plots when /spop has no folder argument, besides every image path a Bash or PowerShell call mentions. Empty scans the working directory and its figures, plots, output, out and results folders.",
+      "default": ""
+    }
+  }
+}

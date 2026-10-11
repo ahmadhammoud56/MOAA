@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.agent-arena/
+*.zip
+.venv/
+node_modules/
+# never commit Claude credentials or forged council members
+.credentials.json
+.claude.json
+**/forged/
+# created by ruflo hooks in any working dir
+.claude-flow/
+.swarm/

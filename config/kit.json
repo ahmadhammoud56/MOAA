@@ -1,0 +1,546 @@
+{
+  "name": "claude-kit",
+  "version": "0.1.0",
+  "marketplaces": {
+    "superpowers-dev": "https://github.com/obra/superpowers.git",
+    "ecc": "https://github.com/affaan-m/ECC.git",
+    "karpathy-skills": "https://github.com/multica-ai/andrej-karpathy-skills.git",
+    "mattpocock": "https://github.com/mattpocock/skills.git",
+    "anthropic-agent-skills": "https://github.com/anthropics/skills.git",
+    "caveman": "https://github.com/JuliusBrussee/caveman.git",
+    "thedotmack": "https://github.com/thedotmack/claude-mem.git",
+    "understand-anything": "https://github.com/Egonex-AI/Understand-Anything.git",
+    "ruflo": "https://github.com/ruvnet/ruflo.git",
+    "agentic-awesome-skills": "https://github.com/sickn33/agentic-awesome-skills.git",
+    "ponytail": "https://github.com/dietrichgebert/ponytail.git",
+    "typesafe-ai": "typesafe-ai/skills",
+    "lps-marketplace": "kyryl-shtefiienko/LPS"
+  },
+  "plugins": [
+    {
+      "id": "academy-guide@anthropic-agent-skills",
+      "enabled": true,
+      "tested_version": "dbd4588f9e10"
+    },
+    {
+      "id": "agent-arena-mode@claude-kit",
+      "enabled": true,
+      "tested_version": "0.4.2"
+    },
+    {
+      "id": "agentic-awesome-skills@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-accessibility-inclusive-ux@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-agent-mcp-builder@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-ai-product-evaluation-ops@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-api-platform-builder@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-automation-builder@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-data-analytics@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-data-engineering-platform@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-devops-cloud@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-documents-presentations@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-localization-international-growth@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-marketing-seo-growth@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-mobile-app-builder@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-observability-ir@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-privacy-compliance-engineering@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-product-design-studio@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-python-api-builder@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-qa-test-automation@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-saas-launch-revenue@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-secure-app-builder@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-security-engineer@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-aas-web-app-builder@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-agent-architect@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-apple-platform-design@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-architecture-design@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-automation-builder@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-azure-ai-cloud@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-business-analyst@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-commerce-payments@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-creative-director@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-data-analytics@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-data-engineering@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-ddd-evented-architecture@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-devops-cloud@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "agentic-bundle-essentials@agentic-awesome-skills",
+      "enabled": true,
+      "tested_version": "16.9.0"
+    },
+    {
+      "id": "andrej-karpathy-skills@karpathy-skills",
+      "enabled": true,
+      "tested_version": "1.0.0"
+    },
+    {
+      "id": "caveman@caveman",
+      "enabled": true,
+      "tested_version": "5184b3d11ac6"
+    },
+    {
+      "id": "claude-api@anthropic-agent-skills",
+      "enabled": true,
+      "tested_version": "dbd4588f9e10"
+    },
+    {
+      "id": "claude-mem-cowork@thedotmack",
+      "enabled": true,
+      "tested_version": "0.1.3",
+      "optional": "claude-mem"
+    },
+    {
+      "id": "claude-mem@thedotmack",
+      "enabled": true,
+      "tested_version": "13.24.1",
+      "optional": "claude-mem"
+    },
+    {
+      "id": "discernment-nudge@anthropic-agent-skills",
+      "enabled": true,
+      "tested_version": "dbd4588f9e10"
+    },
+    {
+      "id": "document-skills@anthropic-agent-skills",
+      "enabled": true,
+      "tested_version": "dbd4588f9e10"
+    },
+    {
+      "id": "ecc@ecc",
+      "enabled": true,
+      "tested_version": "2.2.1"
+    },
+    {
+      "id": "example-skills@anthropic-agent-skills",
+      "enabled": true,
+      "tested_version": "dbd4588f9e10"
+    },
+    {
+      "id": "flightdeck@claude-kit",
+      "enabled": true,
+      "tested_version": "0.3.2"
+    },
+    {
+      "id": "lps@lps-marketplace",
+      "enabled": true,
+      "tested_version": "a4363de9c894"
+    },
+    {
+      "id": "mattpocock-skills@mattpocock",
+      "enabled": true,
+      "tested_version": "1.2.3"
+    },
+    {
+      "id": "plot-deck@claude-kit",
+      "enabled": true,
+      "tested_version": "0.2.0"
+    },
+    {
+      "id": "ponytail@ponytail",
+      "enabled": true,
+      "tested_version": "4.10.0"
+    },
+    {
+      "id": "prismantis@claude-kit",
+      "enabled": false,
+      "tested_version": "0.11.0"
+    },
+    {
+      "id": "ruflo-adr@ruflo",
+      "enabled": true,
+      "tested_version": "0.4.1"
+    },
+    {
+      "id": "ruflo-agent@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-agentdb@ruflo",
+      "enabled": true,
+      "tested_version": "0.3.1"
+    },
+    {
+      "id": "ruflo-agntcy@ruflo",
+      "enabled": true,
+      "tested_version": "0.1.0"
+    },
+    {
+      "id": "ruflo-aidefence@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-arena@ruflo",
+      "enabled": true,
+      "tested_version": "0.1.0"
+    },
+    {
+      "id": "ruflo-autopilot@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-bbs-federation@ruflo",
+      "enabled": true,
+      "tested_version": "0.1.0"
+    },
+    {
+      "id": "ruflo-browser@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-business-pods@ruflo",
+      "enabled": true,
+      "tested_version": "0.1.0"
+    },
+    {
+      "id": "ruflo-core@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.6"
+    },
+    {
+      "id": "ruflo-cost-tracker@ruflo",
+      "enabled": true,
+      "tested_version": "0.26.3"
+    },
+    {
+      "id": "ruflo-daa@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-ddd@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-docs@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-federation@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-goals@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-graph-intelligence@ruflo",
+      "enabled": true,
+      "tested_version": "0.1.0-alpha.1"
+    },
+    {
+      "id": "ruflo-intelligence@ruflo",
+      "enabled": true,
+      "tested_version": "0.3.1"
+    },
+    {
+      "id": "ruflo-iot-cognitum@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-jujutsu@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-knowledge-graph@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-loop-workers@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-market-data@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-metaharness@ruflo",
+      "enabled": true,
+      "tested_version": "0.1.1"
+    },
+    {
+      "id": "ruflo-migrations@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-music@ruflo",
+      "enabled": true,
+      "tested_version": "0.1.0"
+    },
+    {
+      "id": "ruflo-neural-trader@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-observability@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-plugin-creator@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-rag-memory@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-ruvector@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.2"
+    },
+    {
+      "id": "ruflo-ruvllm@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-rvf@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-security-audit@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-sparc@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-swarm@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-testgen@ruflo",
+      "enabled": true,
+      "tested_version": "0.2.1"
+    },
+    {
+      "id": "ruflo-workflows@ruflo",
+      "enabled": true,
+      "tested_version": "0.5.1"
+    },
+    {
+      "id": "superpowers@superpowers-dev",
+      "enabled": true,
+      "tested_version": "6.3.0"
+    },
+    {
+      "id": "typesafe@typesafe-ai",
+      "enabled": true,
+      "tested_version": "0.5.7"
+    },
+    {
+      "id": "understand-anything@understand-anything",
+      "enabled": true,
+      "tested_version": "2.9.5"
+    }
+  ],
+  "skills": [
+    "agent-teams",
+    "headroom",
+    "local-build",
+    "networkx",
+    "paper2agent",
+    "path-safety",
+    "pyzotero",
+    "reverse-engineer-anything",
+    "scientific-brainstorming",
+    "uncertainty-and-units"
+  ],
+  "agents": [
+    "code-improver.md"
+  ],
+  "settings": {
+    "env": {
+      "ECC_GATEGUARD": "off"
+    },
+    "permissions_deny": [
+      "Skill(lps:dogusariturk-python-style)"
+    ],
+    "defaults": {
+      "model": "sonnet",
+      "modelSettings": {
+        "claude-sonnet-5": {
+          "effortLevel": "high"
+        }
+      },
+      "enableWorkflows": true,
+      "skipWorkflowUsageWarning": true,
+      "theme": "dark",
+      "inputNeededNotifEnabled": true,
+      "agentPushNotifEnabled": true
+    }
+  },
+  "mcp": {
+    "rea": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "rea-agents@6.3.0",
+        "mcp"
+      ]
+    },
+    "ansys": {
+      "repo": "https://github.com/vorobjewsen30-max/ansys-mcp-server.git",
+      "commit": "36b18a94f2cd936e7566b348f21f0bc51c1b1f8b",
+      "patch": "vendor/ansys-mcp-server.patch",
+      "module": "ansys_mcp_server.server",
+      "lock": "vendor/ansys-requirements.lock"
+    }
+  }
+}
