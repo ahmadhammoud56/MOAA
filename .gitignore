@@ -11,3 +11,5 @@ node_modules/
 # created by ruflo hooks in any working dir
 .claude-flow/
 .swarm/
+# Claude Code local state and session worktrees
+.claude/

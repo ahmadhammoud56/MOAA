@@ -28,7 +28,7 @@ The installer adds these marketplaces and installs from them. Their code is not 
 
 | Marketplace | Upstream |
 |---|---|
-| superpowers-dev | [obra/superpowers](https://github.com/obra/superpowers) |
+| claude-plugins-official (superpowers only) | [obra/superpowers](https://github.com/obra/superpowers), at the commit Anthropic's official marketplace pins |
 | ecc | [affaan-m/ECC](https://github.com/affaan-m/ECC) |
 | karpathy-skills | [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) |
 | mattpocock | [mattpocock/skills](https://github.com/mattpocock/skills) |

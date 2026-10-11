@@ -1909,18 +1909,13 @@
       "source": {
         "source": "github",
         "repo": "obra/superpowers",
-        "sha": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797"
+        "sha": "5bf4e78011075bcfc0dc295f0724994cd123ee71"
       },
-      "description": "Core skills library for Claude Code: TDD, debugging, collaboration patterns, and proven techniques",
-      "version": "6.3.0",
-      "author": {
-        "name": "Jesse Vincent",
-        "email": "jesse@fsck.com"
-      },
-      "homepage": "https://github.com/obra/superpowers",
-      "category": "upstream",
+      "description": "Superpowers teaches Claude brainstorming, subagent driven development with built in code review, systematic debugging, and red/green TDD. Additionally, it teaches Claude how to author and test new skills.",
+      "category": "development",
+      "homepage": "https://github.com/obra/superpowers.git",
       "tags": [
-        "upstream:superpowers-dev"
+        "upstream:claude-plugins-official"
       ]
     },
     {

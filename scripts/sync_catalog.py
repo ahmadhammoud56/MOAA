@@ -47,8 +47,13 @@ def upstream_entries(home, kit):
         sha = record.get("gitCommitSha")
         if not (sha and SHA.match(sha)):
             raise ValueError(f"{item['id']}: no full commit SHA recorded in installed_plugins.json")
-        repo = repo_slug(kit["marketplaces"][market])
-        rel = str(upstream["source"]).removeprefix("./").strip("/")
+        src = upstream["source"]
+        if isinstance(src, dict):  # the marketplace already points at an external repo (e.g. Anthropic's official one)
+            repo = repo_slug(src.get("repo") or src["url"])
+            rel = src.get("path", "")
+        else:
+            repo = repo_slug(kit["marketplaces"][market])
+            rel = str(src).removeprefix("./").strip("/")
         source = ({"source": "github", "repo": repo, "sha": sha} if rel in ("", ".") else
                   {"source": "git-subdir", "url": f"https://github.com/{repo}.git", "path": rel, "sha": sha})
         entry = {k: v for k, v in upstream.items() if k not in ("source", "name")}

@@ -319,11 +319,11 @@ Source: https://github.com/multica-ai/andrej-karpathy-skills
 
 </details>
 
-<details><summary><b>obra/superpowers</b>: 1 plugin (pinned <code>b36e082</code>)</summary>
+<details><summary><b>obra/superpowers</b>: 1 plugin (pinned <code>5bf4e78</code>)</summary>
 
 | Install | Description |
 |---|---|
-| `superpowers@moaa` | Core skills library for Claude Code: TDD, debugging, collaboration patterns, and proven techniques |
+| `superpowers@moaa` | Superpowers teaches Claude brainstorming, subagent driven development with built in code review, systematic d… |
 
 Source: https://github.com/obra/superpowers
 

@@ -2,7 +2,6 @@
   "name": "moaa",
   "version": "0.4.0",
   "marketplaces": {
-    "superpowers-dev": "https://github.com/obra/superpowers.git",
     "ecc": "https://github.com/affaan-m/ECC.git",
     "karpathy-skills": "https://github.com/multica-ai/andrej-karpathy-skills.git",
     "mattpocock": "https://github.com/mattpocock/skills.git",
@@ -14,7 +13,8 @@
     "agentic-awesome-skills": "https://github.com/sickn33/agentic-awesome-skills.git",
     "ponytail": "https://github.com/dietrichgebert/ponytail.git",
     "typesafe-ai": "typesafe-ai/skills",
-    "lps-marketplace": "kyryl-shtefiienko/LPS"
+    "lps-marketplace": "kyryl-shtefiienko/LPS",
+    "claude-plugins-official": "https://github.com/anthropics/claude-plugins-official.git"
   },
   "plugins": [
     {
@@ -572,9 +572,9 @@
       "profile": "core"
     },
     {
-      "id": "superpowers@superpowers-dev",
+      "id": "superpowers@claude-plugins-official",
       "enabled": true,
-      "tested_version": "6.3.0",
+      "tested_version": "6.4.1",
       "profile": "core"
     },
     {
