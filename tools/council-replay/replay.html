@@ -4,16 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Council Replay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
   :root { color-scheme: dark; }
-  html, body { margin: 0; background: #0b0c19; color: #e9ecff; font: 14px "Segoe UI", system-ui, sans-serif; }
+  html, body { margin: 0; background: #0b0d10; color: #e6e8eb; font: 14px "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; }
   main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
-  canvas { width: 100%; height: auto; display: block; border-radius: 10px; box-shadow: 0 8px 40px #0008; }
-  .bar { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
-  button { background: #1d2150; color: #e9ecff; border: 1px solid #4b52a8; border-radius: 8px; padding: 7px 14px; font: inherit; cursor: pointer; }
-  button:hover { background: #2b2f6b; }
-  input[type=range] { flex: 1; min-width: 160px; accent-color: #b9c0ff; }
-  #status { color: #9aa3ff; font-size: 13px; }
+  canvas { width: 100%; height: auto; display: block; border: 1px solid #23272e; border-radius: 6px; }
+  .bar { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  button { background: #15181d; color: #e6e8eb; border: 1px solid #2c313a; border-radius: 6px; padding: 6px 12px; font: 500 13px inherit; font-family: inherit; cursor: pointer; }
+  button:hover { border-color: #444b57; }
+  input[type=range] { flex: 1; min-width: 160px; accent-color: #8e9cf0; }
+  #status { color: #8b929c; font: 12px "IBM Plex Mono", Consolas, monospace; }
 </style>
 </head>
 <body>
@@ -31,24 +34,25 @@
 // Replays a council run (replay.json from extract.py) on a canvas and exports it as a GIF.
 // URL params: data=<url> (default replay.json), t=<seconds> (static frame), fps=<n>,
 // export=1 (encode on load and POST to /gif), post=1 (POST instead of download).
+// Fonts: IBM Plex from Google Fonts; falls back to system fonts when offline.
 const W = 960, H = 540;
 const P = new URLSearchParams(location.search);
 const cv = document.getElementById("c"), ctx = cv.getContext("2d", { willReadFrequently: true });
-const SANS = '"Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif';
-const MONO = 'Consolas, "SF Mono", Menlo, "DejaVu Sans Mono", monospace';
+const SANS = '"IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif';
+const MONO = '"IBM Plex Mono", Consolas, "SF Mono", Menlo, monospace';
 const C = {
-  text: "#e9ecff", soft: "#cfd4ff", muted: "#9aa3ff", accent: "#b9c0ff",
-  panel: "rgba(255,255,255,0.045)", line: "rgba(160,170,255,0.28)",
-  ok: "#7ee2a8", warn: "#ffb86b", forged: "#ff8fc7",
+  bg: "#0b0d10", surface: "#121519", raised: "#171a1f", border: "#23272e", borderHi: "#3a414c",
+  text: "#e6e8eb", soft: "#b9bec6", muted: "#8b929c", dim: "#5f6670",
+  accent: "#8e9cf0", ok: "#5cb87a", warn: "#d4a24c", forged: "#d98a5f",
 };
-const TIER = { haiku: "#5eead4", sonnet: "#7cc4ff", opus: "#c4a1ff", fable: "#ffcf70" };
-const tierColor = (m) => TIER[(/(haiku|sonnet|opus|fable)/.exec(m || "") || [])[1]] || C.accent;
+const TIER = { haiku: "#4fb3a3", sonnet: "#5b9fd6", opus: "#a28ad9", fable: "#d1a54e" };
+const tierColor = (m) => TIER[(/(haiku|sonnet|opus|fable)/.exec(m || "") || [])[1]] || C.muted;
 const clamp = (x) => Math.max(0, Math.min(1, x));
 const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
 const at = (t, t0, d = 0.5) => ease((t - t0) / d);
 const short = (type) => type.replace(/^specialist-council:/, "");
 
-let D = null, T = null, BG = null, PA = 1; // PA: alpha of the panel being drawn
+let D = null, T = null, PA = 1; // PA: alpha of the panel being drawn
 
 // ---------- timeline ----------
 function build(d) {
@@ -110,35 +114,41 @@ function typed(lines, frac) { // reveal wrapped lines character by character
   let left = Math.floor(lines.join("").length * clamp(frac));
   return lines.map((l) => { const s = l.slice(0, Math.max(0, left)); left -= l.length; return s; });
 }
-function panel(x, y, w, h, alpha, glow = 0, border = C.line) {
+// Flat surface with a hairline border; `active` adds a 2px accent rule on the left edge.
+function panel(x, y, w, h, alpha, active = 0, edge = C.accent) {
   if (alpha <= 0) return false;
   PA = alpha;
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.translate(0, (1 - alpha) * 10);
-  ctx.beginPath(); ctx.roundRect(x, y, w, h, 12);
-  ctx.fillStyle = C.panel; ctx.fill();
-  ctx.lineWidth = 1; ctx.strokeStyle = border; ctx.stroke();
-  if (glow > 0) {
-    ctx.globalAlpha = alpha * glow; ctx.lineWidth = 1.5; ctx.strokeStyle = C.accent; ctx.stroke();
+  ctx.translate(0, (1 - alpha) * 6);
+  ctx.beginPath(); ctx.roundRect(x + 0.5, y + 0.5, w - 1, h - 1, 6);
+  ctx.fillStyle = C.surface; ctx.fill();
+  ctx.lineWidth = 1; ctx.strokeStyle = active > 0 ? C.borderHi : C.border; ctx.stroke();
+  if (active > 0) {
+    ctx.globalAlpha = alpha * active;
+    ctx.fillStyle = edge; ctx.fillRect(x, y + 10, 2, h - 20);
     ctx.globalAlpha = alpha;
   }
   return true; // caller must ctx.restore()
 }
 function label(text, x, y, color = C.muted) {
-  font(10.5, 600); ctx.fillStyle = color;
-  ctx.letterSpacing = "1.6px"; ctx.fillText(text.toUpperCase(), x, y); ctx.letterSpacing = "0px";
+  font(10.5, 500, true); ctx.fillStyle = color;
+  ctx.letterSpacing = "0.8px"; ctx.fillText(text.toUpperCase(), x, y); ctx.letterSpacing = "0px";
 }
-function chip(text, x, y, color, alignRight = false, scale = 1) {
-  font(12, 600);
-  const w = ctx.measureText(text).width + 26, h = 22, left = alignRight ? x - w : x;
-  ctx.save();
-  ctx.translate(left + w / 2, y + h / 2); ctx.scale(scale, scale); ctx.translate(-(left + w / 2), -(y + h / 2));
-  ctx.beginPath(); ctx.roundRect(left, y, w, h, 11);
-  ctx.fillStyle = color + "26"; ctx.fill(); ctx.strokeStyle = color + "99"; ctx.stroke();
-  ctx.beginPath(); ctx.arc(left + 11, y + h / 2, 3.5, 0, 7); ctx.fillStyle = color; ctx.fill();
-  ctx.fillStyle = C.text; ctx.fillText(text, left + 19, y + 15.5);
-  ctx.restore();
+// Model tag: small colour square plus monospace text, no fill.
+function tag(text, x, y, color, alignRight = false) {
+  font(12, 400, true);
+  const w = ctx.measureText(text).width + 14, left = alignRight ? x - w : x;
+  ctx.fillStyle = color; ctx.fillRect(left, y - 8, 7, 7);
+  ctx.fillStyle = C.soft; ctx.fillText(text, left + 14, y);
+  return w;
+}
+function badge(text, x, y, color, alignRight = false) {
+  font(10.5, 500, true); ctx.letterSpacing = "0.6px";
+  const w = ctx.measureText(text.toUpperCase()).width + 12, left = alignRight ? x - w : x;
+  ctx.beginPath(); ctx.roundRect(left + 0.5, y - 12.5, w, 17, 3);
+  ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = color; ctx.fillText(text.toUpperCase(), left + 6, y); ctx.letterSpacing = "0px";
   return w;
 }
 function bezier(p0, p1, p2, p3, f) {
@@ -146,23 +156,12 @@ function bezier(p0, p1, p2, p3, f) {
   return [u*u*u*p0[0] + 3*u*u*f*p1[0] + 3*u*f*f*p2[0] + f*f*f*p3[0],
           u*u*u*p0[1] + 3*u*u*f*p1[1] + 3*u*f*f*p2[1] + f*f*f*p3[1]];
 }
-function background() {
-  const c = document.createElement("canvas"); c.width = W; c.height = H;
-  const g = c.getContext("2d");
-  let r = g.createRadialGradient(W * 0.85, H * 0.12, 0, W * 0.85, H * 0.12, W * 0.95);
-  r.addColorStop(0, "#2b2f6b"); r.addColorStop(0.55, "#14162e"); r.addColorStop(1, "#0b0c19");
-  g.fillStyle = r; g.fillRect(0, 0, W, H);
-  r = g.createRadialGradient(0, H, 0, 0, H, W * 0.5);
-  r.addColorStop(0, "rgba(60,66,150,0.25)"); r.addColorStop(1, "rgba(60,66,150,0)");
-  g.fillStyle = r; g.fillRect(0, 0, W, H);
-  return c;
-}
 
 // ---------- scene ----------
 const LX = 20, LW = 316, RX = 372, RW = 568;
 
 function draw(t) {
-  ctx.drawImage(BG, 0, 0);
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
   ctx.textBaseline = "alphabetic";
   header(t);
   task(t);
@@ -174,27 +173,28 @@ function draw(t) {
 }
 
 function header(t) {
-  font(21, 800);
-  const g = ctx.createLinearGradient(LX, 0, LX + 70, 0);
-  g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#8fa0ff");
-  ctx.fillStyle = g; ctx.fillText("MOAA", LX, 34);
-  font(14, 600); ctx.fillStyle = C.soft; ctx.fillText("Specialist Council", LX + 76, 33);
-  font(13); ctx.fillStyle = C.muted; ctx.fillText("· replay of a real run", LX + 202, 33);
-  font(12); ctx.textAlign = "right"; ctx.fillStyle = C.muted;
-  ctx.fillText("github.com/ahmadhammoud56/MOAA", W - 20, 33);
-  font(15, 600, true); ctx.fillStyle = C.text;
-  ctx.fillText(`t+${clock(t).toFixed(1)}s`, W - 238, 33);
+  font(15, 600); ctx.fillStyle = C.text; ctx.fillText("MOAA", LX, 33);
+  const x = LX + ctx.measureText("MOAA").width + 12;
+  ctx.fillStyle = C.border; ctx.fillRect(x, 20, 1, 17);
+  font(14, 500); ctx.fillStyle = C.soft; ctx.fillText("Specialist Council", x + 12, 33);
+  const x2 = x + 12 + ctx.measureText("Specialist Council").width + 10;
+  font(13); ctx.fillStyle = C.muted; ctx.fillText("Replay of a recorded run", x2, 33);
+  ctx.textAlign = "right";
+  font(12, 400, true); ctx.fillStyle = C.dim; ctx.fillText("github.com/ahmadhammoud56/MOAA", W - 20, 33);
+  font(13, 500, true); ctx.fillStyle = C.text;
+  ctx.fillText(`t+${clock(t).toFixed(1)}s`, W - 262, 33);
   ctx.textAlign = "left";
+  ctx.fillStyle = C.border; ctx.fillRect(0, 48, W, 1);
 }
 
 function task(t) {
-  const x = LX, y = 60, w = LW, h = 150;
+  const x = LX, y = 64, w = LW, h = 146;
   if (!panel(x, y, w, h, at(t, 0, 0.6), t < T.R0 ? 1 : 0)) return;
   label("Task", x + 14, y + 22);
-  font(12, 600, true); ctx.fillStyle = C.accent; ctx.textAlign = "right";
+  font(12, 400, true); ctx.fillStyle = C.dim; ctx.textAlign = "right";
   ctx.fillText("/specialist-council", x + w - 14, y + 22); ctx.textAlign = "left";
-  font(14); ctx.fillStyle = C.soft;
-  typed(wrap(D.task, w - 28, 6), (t - 0.3) / 1.6).forEach((l, i) => ctx.fillText(l, x + 14, y + 46 + i * 19));
+  font(13.5); ctx.fillStyle = C.text;
+  typed(wrap(D.task, w - 28, 6), (t - 0.3) / 1.6).forEach((l, i) => ctx.fillText(l, x + 14, y + 45 + i * 18.5));
   ctx.restore();
 }
 
@@ -206,28 +206,29 @@ function resolves(t) {
   D.resolves.forEach((r, i) => {
     const t0 = T.R0 + i * T.RS, ry = y + 34 + i * rowH;
     if (t < t0) return;
-    font(11.5, 400, true); ctx.fillStyle = C.muted;
+    font(11.5, 400, true); ctx.fillStyle = C.dim;
     ctx.fillText("$ council.py resolve --role".slice(0, Math.ceil(27 * clamp((t - t0) / 0.35))), x + 14, ry + 12);
     if (t < t0 + 0.3) return;
     ctx.globalAlpha = PA * at(t, t0 + 0.3, 0.3);
-    font(12.5, 600); ctx.fillStyle = C.text; ctx.fillText(fit(r.role, w - 28), x + 14, ry + 29);
+    font(12, 500); ctx.fillStyle = C.text; ctx.fillText(fit(r.role, w - 28), x + 14, ry + 29);
     ctx.globalAlpha = PA;
     if (t < t0 + 0.65) return;
-    const s = 0.7 + 0.3 * at(t, t0 + 0.65, 0.35);
-    const cw = r.ok ? chip(`${r.model} · ${r.effort}`, x + 14, ry + 36, tierColor(r.model), false, s)
-                    : chip(fit(r.note || "needed approval", 180), x + 14, ry + 36, C.warn, false, s);
-    if (r.tier === "forged") chip("forged", x + 20 + cw, ry + 36, C.forged, false, s);
+    ctx.globalAlpha = PA * at(t, t0 + 0.65, 0.3);
+    if (r.ok) tag(`${r.model} · ${r.effort}`, x + 14, ry + 49, tierColor(r.model));
+    else tag(fit(r.note || "needed approval", 200), x + 14, ry + 49, C.warn);
     if (r.t != null) {
-      font(11.5, 400, true); ctx.fillStyle = C.muted; ctx.textAlign = "right";
-      ctx.fillText(`t+${r.t.toFixed(1)}s`, x + w - 14, ry + 52); ctx.textAlign = "left";
+      font(11.5, 400, true); ctx.fillStyle = C.dim; ctx.textAlign = "right";
+      ctx.fillText(`t+${r.t.toFixed(1)}s`, x + w - 14, ry + 49); ctx.textAlign = "left";
     }
+    ctx.globalAlpha = PA;
   });
   if (t >= T.rEnd) {
     const ok = D.resolves.every((r) => r.ok);
     ctx.globalAlpha = PA * at(t, T.rEnd, 0.4);
-    font(12.5, 600); ctx.fillStyle = ok ? C.ok : C.warn;
-    ctx.fillText(ok ? "✓ ran with no permission prompt" : `⚠ ${D.resolves.filter((r) => !r.ok).length} call(s) needed approval`,
-                 x + 14, y + h - 14);
+    ctx.fillStyle = C.border; ctx.fillRect(x + 14, y + h - 34, w - 28, 1);
+    font(12.5, 500); ctx.fillStyle = ok ? C.ok : C.warn;
+    ctx.fillText(ok ? "✓  No permission prompt" : `!  ${D.resolves.filter((r) => !r.ok).length} call(s) needed approval`,
+                 x + 14, y + h - 13);
     ctx.globalAlpha = PA;
   }
   ctx.restore();
@@ -238,14 +239,14 @@ function mode(t) {
   const { x, y, w, h } = MODE;
   if (!panel(x, y, w, h, at(t, T.M0), t >= T.M0 && t < T.W0 ? 1 : 0)) return;
   label("Mode", x + 14, y + 22);
-  font(11.5, 400, true); ctx.fillStyle = C.muted; ctx.textAlign = "right";
+  font(11.5, 400, true); ctx.fillStyle = C.dim; ctx.textAlign = "right";
   ctx.fillText(`coordinator ${D.coordinator || ""}`, x + w - 14, y + 22); ctx.textAlign = "left";
-  font(15, 700); ctx.fillStyle = C.text;
+  font(15, 500); ctx.fillStyle = C.text;
   wrap(D.mode, w - 28, 2).forEach((l, i) => ctx.fillText(l, x + 14, y + 46 + i * 20));
   if (t >= T.F0) {
     ctx.globalAlpha = PA * at(t, T.F0, 0.4);
-    font(12.5); ctx.fillStyle = C.accent;
-    ctx.fillText(`dispatching ${D.agents.length} agent${D.agents.length === 1 ? "" : "s"} in parallel →`, x + 14, y + h - 12);
+    font(12.5); ctx.fillStyle = C.muted;
+    ctx.fillText(`Dispatching ${D.agents.length} agent${D.agents.length === 1 ? "" : "s"} in parallel`, x + 14, y + h - 13);
     ctx.globalAlpha = PA;
   }
   ctx.restore();
@@ -253,7 +254,7 @@ function mode(t) {
 
 function cardBox(i) {
   const n = D.agents.length, ch = Math.min(136, (282 - 10 * (n - 1)) / n);
-  return { x: RX, y: 60 + i * (ch + 10), w: RW, h: ch };
+  return { x: RX, y: 64 + i * (ch + 10), w: RW, h: ch };
 }
 
 function agents(t) {
@@ -267,54 +268,56 @@ function agents(t) {
       const f = at(t, tl.appear, 0.6);
       ctx.beginPath(); ctx.moveTo(...p0);
       for (let s = 1; s <= 30; s++) ctx.lineTo(...bezier(p0, p1, p2, p3, f * s / 30));
-      ctx.strokeStyle = done ? C.ok + "aa" : color + "aa"; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.strokeStyle = done ? C.ok : C.borderHi; ctx.lineWidth = 1; ctx.stroke();
       const pulses = t < tl.appear + 0.6 ? [f] : (t >= tl.a0 && !done ? [((t - tl.a0) * 0.9) % 1] : []);
       for (const q of pulses) {
         const [px, py] = bezier(p0, p1, p2, p3, q);
-        ctx.beginPath(); ctx.arc(px, py, 3.5, 0, 7); ctx.fillStyle = color; ctx.fill();
+        ctx.fillStyle = color; ctx.fillRect(px - 2, py - 2, 4, 4);
       }
     }
     const appear = tl.appear + 0.3;
-    if (!panel(b.x, b.y, b.w, b.h, at(t, appear), !done && t >= tl.a0 ? 0.6 : 0, done ? C.ok + "88" : C.line)) return;
+    if (!panel(b.x, b.y, b.w, b.h, at(t, appear), !done && t >= tl.a0 ? 1 : done ? 1 : 0, done ? C.ok : color)) return;
     const forged = a.type.includes("council-forged-");
-    label(forged ? "Forged member · arena-validated" : "Council role", b.x + 14, b.y + 22, forged ? C.forged : C.muted);
-    chip(`${a.model || "?"} · ${a.effort || "?"}`, b.x + b.w - 14, b.y + 9, color, true);
-    font(14.5, 700); ctx.fillStyle = C.text; ctx.fillText(fit(short(a.type), b.w - 28), b.x + 14, b.y + 44);
-    let ry = b.y + 64;
+    if (forged) {
+      const bw = badge("forged member", b.x + 14, b.y + 23, C.forged);
+      font(11.5); ctx.fillStyle = C.dim; ctx.fillText("arena-validated, promoted into the council", b.x + 22 + bw, b.y + 23);
+    } else label("Council role", b.x + 14, b.y + 22);
+    tag(`${a.model || "?"} · ${a.effort || "?"}`, b.x + b.w - 14, b.y + 23, color, true);
+    font(14.5, 600); ctx.fillStyle = C.text; ctx.fillText(fit(short(a.type), b.w - 28), b.x + 14, b.y + 46);
+    let ry = b.y + 66;
     if (b.h >= 100) {
-      font(12.5); ctx.fillStyle = C.muted; ctx.fillText(fit(`method: ${a.method}`, b.w - 28), b.x + 14, ry); ry += 16;
+      font(12.5); ctx.fillStyle = C.muted; ctx.fillText(fit(`Method: ${a.method}`, b.w - 28), b.x + 14, ry); ry += 15;
     }
     // progress bar
-    const bw = b.w - 28 - 64;
-    ctx.beginPath(); ctx.roundRect(b.x + 14, ry, bw, 6, 3); ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.fill();
-    if (p > 0) {
-      ctx.beginPath(); ctx.roundRect(b.x + 14, ry, Math.max(6, bw * p), 6, 3);
-      ctx.fillStyle = done ? C.ok : color; ctx.fill();
-    }
-    font(12, 600, true); ctx.fillStyle = done ? C.ok : C.soft; ctx.textAlign = "right";
+    const bw = b.w - 28 - 70;
+    ctx.fillStyle = C.raised; ctx.fillRect(b.x + 14, ry, bw, 3);
+    ctx.fillStyle = C.border; ctx.fillRect(b.x + 14, ry, bw, 1);
+    if (p > 0) { ctx.fillStyle = done ? C.ok : color; ctx.fillRect(b.x + 14, ry, Math.max(2, bw * p), 3); }
+    font(12, 400, true); ctx.fillStyle = done ? C.ok : C.soft; ctx.textAlign = "right";
     const real = Math.max(0, (a.end ?? 0) - (a.start ?? 0));
-    ctx.fillText(t < tl.a0 ? "queued" : `${(real * p).toFixed(1)} s`, b.x + b.w - 14, ry + 7); ctx.textAlign = "left";
-    ry += 24;
+    ctx.fillText(t < tl.a0 ? "queued" : done ? `done ${real.toFixed(1)}s` : `${(real * p).toFixed(1)}s`, b.x + b.w - 14, ry + 5);
+    ctx.textAlign = "left";
+    ry += 25;
     // checks tick in as the run progresses
     if (b.h >= 120 && a.checks.length) {
       let cx = b.x + 14;
-      font(11.5, 600);
+      font(12);
       a.checks.forEach((c, j) => {
         const tj = tl.a0 + (tl.a1 - tl.a0) * (j + 1) / (a.checks.length + 1);
         if (t < tj) return;
-        const w = ctx.measureText("✓ " + c).width + 14;
+        const w = ctx.measureText(c).width + 16;
         if (cx + w > b.x + b.w - 14) return;
         ctx.globalAlpha = PA * at(t, tj, 0.25);
-        ctx.beginPath(); ctx.roundRect(cx, ry - 13, w, 19, 9.5); ctx.fillStyle = "rgba(126,226,168,0.12)"; ctx.fill();
-        ctx.fillStyle = C.ok; ctx.fillText("✓ " + c, cx + 7, ry + 1);
-        ctx.globalAlpha = PA; cx += w + 6;
+        ctx.fillStyle = C.ok; ctx.fillText("✓", cx, ry);
+        ctx.fillStyle = C.soft; ctx.fillText(c, cx + 14, ry);
+        ctx.globalAlpha = PA; cx += w + 14;
       });
       ry += 22;
     }
     if (done) {
       ctx.globalAlpha = PA * at(t, tl.a1, 0.4);
-      font(13, 600); ctx.fillStyle = C.text;
-      ctx.fillText(fit(a.result || "done", b.w - 28), b.x + 14, Math.min(ry + 2, b.y + b.h - 12));
+      font(13, 500); ctx.fillStyle = C.text;
+      ctx.fillText(fit(a.result || "done", b.w - 28), b.x + 14, Math.min(ry + 1, b.y + b.h - 12));
       ctx.globalAlpha = PA;
     }
     ctx.restore();
@@ -322,8 +325,8 @@ function agents(t) {
 }
 
 function verify(t) {
-  const last = D.agents.length ? cardBox(D.agents.length - 1) : { y: 50, h: 0 };
-  const x = RX, y = last.y + last.h + 12, w = RW, h = 86;
+  const last = D.agents.length ? cardBox(D.agents.length - 1) : { y: 54, h: 0 };
+  const x = RX, y = last.y + last.h + 10, w = RW, h = 86;
   if (!D.verification || !panel(x, y, w, h, at(t, T.V0), t >= T.V0 && t < T.A0 ? 1 : 0)) return;
   label("Cross-check · coordinator as judge", x + 14, y + 22);
   font(13.5); ctx.fillStyle = C.soft;
@@ -333,22 +336,14 @@ function verify(t) {
 
 function answer(t) {
   const x = RX, y = 452, w = RW, h = 68, text = D.answer || D.headline;
-  const a = at(t, T.A0, 0.6);
-  if (!text || a <= 0) return;
-  ctx.save();
-  ctx.shadowColor = "rgba(150,160,255,0.55)"; ctx.shadowBlur = 18 * a;
-  panel(x, y, w, h, a, 1, C.accent);
-  ctx.shadowBlur = 0;
-  label("COUNCIL_RESULT", x + 14, y + 22, C.accent);
-  font(22, 800);
-  const g = ctx.createLinearGradient(x, 0, x + 360, 0);
-  g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#b9c0ff");
-  ctx.fillStyle = g; ctx.fillText(fit(text, w - 190), x + 14, y + 52);
-  font(12); ctx.fillStyle = C.muted; ctx.textAlign = "right";
-  ctx.fillText(`real run ${T.real.toFixed(1)} s`, x + w - 14, y + 30);
+  if (!text || !panel(x, y, w, h, at(t, T.A0, 0.6), 1, C.ok)) return;
+  label("Council result", x + 14, y + 22, C.ok);
+  font(21, 600); ctx.fillStyle = C.text; ctx.fillText(fit(text, w - 200), x + 14, y + 51);
+  font(11.5, 400, true); ctx.fillStyle = C.muted; ctx.textAlign = "right";
+  ctx.fillText(`real run ${T.real.toFixed(1)}s`, x + w - 14, y + 30);
   ctx.fillText(`${D.agents.length} agents · ${D.resolves.length} resolves`, x + w - 14, y + 48);
   ctx.textAlign = "left";
-  ctx.restore(); ctx.restore();
+  ctx.restore();
 }
 
 // ---------- GIF encoder (global median-cut palette, frame differencing, LZW) ----------
@@ -509,8 +504,11 @@ async function run(auto) {
     status.textContent = "No replay data. Run record.py, or open with ?data=<replay.json url>.";
     return;
   }
-  await document.fonts.ready;
-  T = build(D); BG = background();
+  // canvas text only uses a webfont once it is loaded; give up after 4 s and use the fallbacks
+  const faces = ["400 13px", "500 13px", "600 13px"].map((f) => `${f} "IBM Plex Sans"`)
+    .concat(["400 13px", "500 13px"].map((f) => `${f} "IBM Plex Mono"`));
+  await Promise.race([Promise.all(faces.map((f) => document.fonts.load(f))), new Promise((r) => setTimeout(r, 4000))]);
+  T = build(D);
   if (P.has("t")) draw(Math.min(T.END, Number(P.get("t"))));
   else if (P.get("export") === "1") run(true);
   else play();
