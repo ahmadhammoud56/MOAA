@@ -1,5 +1,7 @@
 # MOAA: Mother of All Agents
 
+[![CI](https://github.com/ahmadhammoud56/MOAA/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmadhammoud56/MOAA/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/ahmadhammoud56/MOAA)](https://github.com/ahmadhammoud56/MOAA/releases) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A complete Claude Code setup: 94 plugins from 14 marketplaces, the Specialist Council (60 role agents), the Agent Arena (which forges new council members from proven agents), 10 standalone skills, and the `rea` and `ansys` MCP servers. One command installs all of it.
 
 Created by **[Ahmad Hammoud](https://github.com/ahmadhammoud56)**. The Specialist Council and the Agent Arena are original work; everything else is credited in [NOTICE](NOTICE) and [THIRD_PARTY.md](THIRD_PARTY.md).
