@@ -73,6 +73,21 @@ The same task in an interactive session with Specialist Council 1.3.1: both work
 
 Start with core. Rerunning with `--full` later adds the rest without disturbing anything already installed.
 
+### Guided builds
+
+The `local-build` skill walks you through a build guide one step at a time. It fills each step with your real project, runs a step only after you confirm it, and has a fresh sub-agent verify the step before moving on. Everything runs locally, with no account and no network access. The builds are plain Markdown files in [`skills/local-build/builds/`](skills/local-build/builds/):
+
+| Build | What you get |
+|---|---|
+| `self-improving-system` | A loop that reviews your recent sessions on a schedule, applies small fixes itself, and asks you before any big change. It has three local collectors, an orchestrator, and an improve step that turns findings into CLAUDE.md rules, skills and fixes. A scheduled task runs it, and one command stops it. |
+| `token-efficient-system` | More work before you hit your usage limit, by cutting what Claude Code loads and re-reads every session. |
+
+```
+/local-build self-improving-system
+```
+
+To add a build, drop a new `builds/<slug>.md` file in the same format.
+
 ## Security, in short
 
 MOAA installs third-party plugins, and some of them run hooks, meaning commands that fire on prompts, tool calls or session start, with your user permissions. Every third-party plugin is pinned to a tested commit, but pinning is not an audit.

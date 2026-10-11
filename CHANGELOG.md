@@ -2,6 +2,11 @@
 
 All notable changes to MOAA. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- README: a "Guided builds" section for the `local-build` skill and its `self-improving-system` and `token-efficient-system` builds. Both were already shipped and installed, but not documented.
+
 ## [0.4.3] - 2026-10-11
 
 ### Added
