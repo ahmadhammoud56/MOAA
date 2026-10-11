@@ -83,3 +83,13 @@ class ModelPresetTests(unittest.TestCase):
                 self.assertIn(fm.get("model"), ids)
                 self.assertIn(fm.get("effort"), levels)
         council.check(models_doc.COUNCIL / "agents", profile, user_agents=install.KIT / "missing", forged_dir=install.KIT / "missing")
+
+
+class ReadmePluginListTests(unittest.TestCase):
+    def test_readme_plugin_list_matches_marketplace(self):
+        sys.path.insert(0, str(install.KIT / "scripts"))
+        import sync_catalog
+        market = install.read_json(install.KIT / ".claude-plugin" / "marketplace.json", None)
+        readme = (install.KIT / "README.md").read_text(encoding="utf-8")
+        self.assertIn(sync_catalog.plugin_table(market), readme)
+        self.assertEqual(readme.count("@moaa` |"), len(market["plugins"]))
