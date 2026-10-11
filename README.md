@@ -50,16 +50,18 @@ To get the vendored plugins without the full setup, add the repo as a marketplac
 /plugin install agent-arena-mode@moaa
 ```
 
-The same marketplace also offers `flightdeck@moaa`, `plot-deck@moaa` and `prismantis@moaa`.
+Other plugins in this marketplace: `specialist-council@moaa` (the council), `flightdeck@moaa`, `plot-deck@moaa` and `prismantis@moaa`. Install `specialist-council@moaa` and `agent-arena-mode@moaa` together to get the full council → arena → forging loop.
 
-The Specialist Council (60 agents plus a skill), the standalone skills, the MCP servers and the settings come only with the full installer above. Forging arena agents into council members needs the council installed.
+To let `council.py` run without permission prompts, add these allow rules to your settings (the full installer adds them for you): `Bash(python *specialist-council*council.py *)` and `PowerShell(python *specialist-council*council.py *)`.
+
+The standalone skills, the MCP servers, the upstream plugin set and the settings come only with the full installer above.
 
 ## What the installer does
 
 1. Adds each needed marketplace: the upstream GitHub ones, plus this repo as the `moaa` marketplace for the vendored plugins.
 2. Installs every plugin in `config/kit.json` at user scope. prismantis is installed disabled; enable it with `claude plugin enable prismantis@moaa`.
 3. Copies the standalone skills to `~/.claude/skills`. A skill that already exists there and wasn't installed by the kit is left untouched.
-4. Installs the Specialist Council with `specialist-council/council.py install`. This adds 60 `council-*` agents and the skill.
+4. Installs the Specialist Council as the `specialist-council@moaa` plugin (60 `specialist-council:council-*` agents plus the skill). An older standalone council install is migrated: forged members move to `~/.claude/specialist-council/forged/`, and the duplicate skill and agents are backed up and removed.
 5. Merges settings into `~/.claude/settings.json`, after writing a timestamped backup. The merge never overwrites anything:
    - Permission lists are unioned.
    - `env` keys and the defaults (model, theme, and so on) are added only when they're absent.
@@ -78,7 +80,7 @@ All four work at any time and on their own. Nothing needs to be started first.
 
 | What | How | What happens |
 |---|---|---|
-| **Council** | Ask for a council or a specialist team, or run `/specialist-council`. | Picks 2 to 3 of the 60 role agents (plus any active forged members), resolves each one's model and effort with `council.py resolve`, runs them, then integrates and verifies the result. |
+| **Council** | Ask for a council or a specialist team, or run `/specialist-council:specialist-council`. | Picks 2 to 3 of the 60 role agents (plus any active forged members), resolves each one's model and effort with `council.py resolve`, runs them, then integrates and verifies the result. |
 | **Arena** | `/agent-arena-mode:<mode> [--agents N] [--reuse IDS] -- TASK`, where mode is judge, tournament, swarm, league, evolution, synthesis, redteam or cascade. | Workers compete on a frozen task and rubric, and the `agent-arena-judge` scores them. |
 | **Saving** | Automatic. Every judged arena result is written to the library. Add `--no-library` to opt out. | Stored in `~/.claude/plugins/data/agent-arena-mode-moaa/library.sqlite3`. Browse with `/agent-arena-mode:library list`; reuse with `library use ID -- TASK`, or `--reuse ID` in any mode. |
 | **Forging** | `/agent-arena-mode:library promote ID`. It shows the evidence first (`promote --check`). | Writes `council-forged-<slug>` with its validated model and effort, a knowledge base, and a registry entry. The council can use it from the next session. |
@@ -86,7 +88,7 @@ All four work at any time and on their own. Nothing needs to be started first.
 Forging rules:
 - **Eligibility:** the agent must be validated in 2 or more independent runs, with every validated score at least 85, a score spread of at most 10, and nothing in its lineage invalidated.
 - **Earning a second run:** reuse a saved agent in a new arena run with `--reuse ID`.
-- **Suspension:** a later failed validation suspends the member automatically and unregisters its agent card. `python ~/.claude/skills/specialist-council/council.py check` validates the 60 roles plus every forged member.
+- **Suspension:** a later failed validation suspends the member automatically and unregisters its agent card. `python <council plugin dir>/council.py check` validates the 60 roles plus every forged member.
 - **Command line:** you can run the library by hand without Claude Code: `python <plugin dir>/scripts/library.py list|show|promote|council`. It finds the installed library on its own, so `--database` is optional.
 - **Not shipped:** no forged members come with this kit. Every machine forges its own.
 
@@ -94,7 +96,7 @@ Forging rules:
 
 ```bash
 python -m unittest discover -s tests                         # installer
-(cd specialist-council && python -m unittest discover -s tests)
+(cd plugins/specialist-council && python -m unittest discover -s tests)
 (cd plugins/agent-arena-mode && python -m unittest discover -s tests)
 ```
 

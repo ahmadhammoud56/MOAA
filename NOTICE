@@ -2,7 +2,7 @@ MOAA: Mother of All Agents
 Copyright (c) 2026 Ahmad Hammoud (https://github.com/ahmadhammoud56)
 
 Original work by Ahmad Hammoud, MIT licensed (see LICENSE):
-  - specialist-council/          Specialist Council (60 role agents, council.py)
+  - plugins/specialist-council/  Specialist Council plugin (60 role agents, skill, council.py)
   - plugins/agent-arena-mode/    Agent Arena, best-agent library and council forging
   - skills/agent-teams/, skills/local-build/, skills/path-safety/, agents/code-improver.md
   - scripts/, config/, tests/, install.sh, install.ps1

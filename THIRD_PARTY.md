@@ -6,7 +6,7 @@ MOAA's own code (the Specialist Council, the Agent Arena, the installer) is MIT 
 
 | Path | Upstream | Licence | Status |
 |---|---|---|---|
-| `specialist-council` | own work | MIT | ok |
+| `plugins/specialist-council` | own work | MIT | ok |
 | `plugins/agent-arena-mode` | own work | MIT | ok |
 | `plugins/flightdeck` | [scasella/claude-flightdeck](https://github.com/scasella/claude-flightdeck) | MIT | ok; local changes in `MODIFICATIONS.md` |
 | `plugins/prismantis` | [NahumLitvin/prismantis](https://github.com/NahumLitvin/prismantis) | MIT | ok; local PNG-export changes in `MODIFICATIONS.md` |

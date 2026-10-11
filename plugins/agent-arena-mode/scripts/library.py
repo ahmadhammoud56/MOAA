@@ -287,17 +287,29 @@ def export_entry(database, agent_id, out):
 VALIDATED = ("validated", "target-met")
 
 
+def _council_profile(home):
+    """profile.json of the installed Specialist Council: plugin cache (newest) first, then a pre-plugin standalone skill."""
+    home = Path(home).expanduser()
+    found = sorted((home / "plugins" / "cache").glob("*/specialist-council/*/profile.json"),
+                   key=lambda p: p.stat().st_mtime, reverse=True)
+    legacy = home / "skills" / "specialist-council" / "profile.json"
+    return found[0] if found else legacy
+
+
 def _model_ids(home):
     """Council profile.json is the source of truth for tier -> model ID when installed; MODEL_IDS is the fallback."""
-    path = Path(home).expanduser() / "skills" / "specialist-council" / "profile.json"
     try:
-        return {**MODEL_IDS, **json.loads(path.read_text(encoding="utf-8"))["models"]}
+        return {**MODEL_IDS, **json.loads(_council_profile(home).read_text(encoding="utf-8"))["models"]}
     except (OSError, ValueError, KeyError):
         return MODEL_IDS
 
 
 def _registry_path(home):
-    return Path(home).expanduser() / "skills" / "specialist-council" / "forged" / "registry.json"
+    """Forged-member registry: <home>/specialist-council/forged/ (plugin layout), or the pre-plugin skill folder if only that exists."""
+    home = Path(home).expanduser()
+    current = home / "specialist-council" / "forged" / "registry.json"
+    legacy = home / "skills" / "specialist-council" / "forged" / "registry.json"
+    return legacy if legacy.is_file() and not current.is_file() else current
 
 
 def _registry_status(home, slug, status):

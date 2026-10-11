@@ -18,8 +18,7 @@ sys.path.insert(0, str(SCRIPTS))
 import arena
 import library
 
-COUNCIL = next((p / "specialist-council" for p in Path(__file__).resolve().parents[2:4]  # sibling or kit repo root
-                if (p / "specialist-council" / "council.py").is_file()), Path("missing"))
+COUNCIL = Path(__file__).resolve().parents[2] / "specialist-council"  # sibling plugin in the MOAA marketplace
 
 
 class LibraryTests(unittest.TestCase):
@@ -152,19 +151,19 @@ class LibraryTests(unittest.TestCase):
         self.assertIn('model: "claude-sonnet-5-5"', card)
         self.assertIn("effort:", card)
         self.assertTrue((Path(result["knowledge_base"]) / "answer.md").is_file())
-        registry = json.loads((home / "skills/specialist-council/forged/registry.json").read_text())
+        registry = json.loads((home / "specialist-council/forged/registry.json").read_text())
         self.assertEqual(registry[result["slug"]]["status"], "active")
         self.assertEqual(library.promote(self.database, first, home)["slug"], result["slug"])  # idempotent
         with closing(sqlite3.connect(self.database)) as db:
             self.assertEqual(db.execute("SELECT status FROM council_members").fetchall(), [("active",)])
         self.assess("b", 3, final=True, eligible=False, judge="late-validator")  # later failure suspends member
         library.sync_run(self.run, self.state)
-        registry = json.loads((home / "skills/specialist-council/forged/registry.json").read_text())
+        registry = json.loads((home / "specialist-council/forged/registry.json").read_text())
         self.assertEqual(registry[result["slug"]]["status"], "active")  # b invalidated, but a itself still valid
         self.run, self.state = first_run
         self.assess("a", 2, final=True, eligible=False, judge="third-validator")
         library.sync_run(self.run, self.state)
-        registry = json.loads((home / "skills/specialist-council/forged/registry.json").read_text())
+        registry = json.loads((home / "specialist-council/forged/registry.json").read_text())
         self.assertEqual(registry[result["slug"]]["status"], "suspended")
         self.assertFalse(Path(result["agent_file"]).exists())  # suspended member is no longer a registered agent
         self.assertTrue((Path(result["knowledge_base"]) / "agent.suspended.md").is_file())
@@ -176,13 +175,11 @@ class LibraryTests(unittest.TestCase):
         spec.loader.exec_module(council)
         self.assertEqual(library.MODEL_IDS, council.load_profile(COUNCIL / "profile.json")["models"])  # one model table
         home = self.root / "claude-home"
-        profile = council.load_profile(COUNCIL / "profile.json")
-        shutil.copytree(COUNCIL, self.root / "council-src", ignore=shutil.ignore_patterns("tests", "__pycache__"))
-        src = self.root / "council-src"
-        spec = importlib.util.spec_from_file_location("council_copy", src / "council.py")
-        copy = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(copy)  # install from a scratch copy so the real source is never rewritten
-        copy.install(home, profile)
+        plugin = home / "plugins" / "cache" / "moaa" / "specialist-council" / "1.3.0"  # as `claude plugin install` lays it out
+        shutil.copytree(COUNCIL, plugin, ignore=shutil.ignore_patterns("tests", "__pycache__"))
+        env = dict(os.environ, CLAUDE_CONFIG_DIR=str(home))
+        council_check = lambda: subprocess.run([sys.executable, str(plugin / "council.py"), "check"],
+                                               capture_output=True, text=True, env=env)
         self.candidate("a")
         self.assess("a", 9)
         self.assess("a", 9, final=True, judge="validator")
@@ -197,18 +194,19 @@ class LibraryTests(unittest.TestCase):
         self.assess("b", 9.5, final=True, judge="validator")
         library.sync_run(self.run, self.state)
         result = library.promote(self.database, first, home)
-        skill = home / "skills" / "specialist-council"
-        check = subprocess.run([sys.executable, str(skill / "council.py"), "check", "--agents", str(home / "agents")],
-                               capture_output=True, text=True)
+        self.assertTrue(Path(result["knowledge_base"]).is_relative_to(home.resolve() / "specialist-council" / "forged"))
+        check = council_check()
         self.assertEqual(check.returncode, 0, check.stderr)
         self.assertEqual(json.loads(check.stdout)["forged"], {"active": 1, "total": 1})
+        resolved = subprocess.run([sys.executable, str(plugin / "council.py"), "resolve", "--role", "forged-" + result["slug"]],
+                                  capture_output=True, text=True, env=env)
+        self.assertEqual(json.loads(resolved.stdout)["model"], result["model"])
         library.promote(self.database, first, home)  # re-promotion refreshes the knowledge base in place
         self.assertTrue((Path(result["knowledge_base"]) / "answer.md").is_file())
         self.run, self.state = first_run
         self.assess("a", 2, final=True, eligible=False, judge="third-validator")
         library.sync_run(self.run, self.state)
-        check = subprocess.run([sys.executable, str(skill / "council.py"), "check", "--agents", str(home / "agents")],
-                               capture_output=True, text=True)
+        check = council_check()
         self.assertEqual(check.returncode, 0, check.stderr)
         self.assertEqual(json.loads(check.stdout)["forged"], {"active": 0, "total": 1})
 

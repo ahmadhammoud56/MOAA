@@ -2,7 +2,7 @@
 
 Generated from `profile.json` by `council.py render`. Do not edit by hand.
 
-Each registered `council-<role>` agent carries this model and effort in its frontmatter. A personality shifts effort only (never the model), clamped to `xhigh` unless the role preset is already higher. Apply the resolved effort through the Agent tool's per-call `effort` field when the host exposes it; otherwise the frontmatter value applies and the shift is reported as requested only. An explicit user model or effort request overrides this table.
+Each `specialist-council:council-<role>` plugin agent carries this model and effort in its frontmatter. A personality shifts effort only (never the model), clamped to `xhigh` unless the role preset is already higher. Apply the resolved effort through the Agent tool's per-call `effort` field when the host exposes it; otherwise the frontmatter value applies and the shift is reported as requested only. An explicit user model or effort request overrides this table.
 
 ## Tier policy
 

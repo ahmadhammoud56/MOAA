@@ -54,7 +54,7 @@ Actions:
   validated score >= 85, spread <= 10, and no invalidation in its lineage. Then run `library.py promote --id ID`
   (add `--council-home PATH` only if the user's council lives elsewhere). It writes
   `~/.claude/agents/council-forged-<slug>.md` with the validated model and effort, a knowledge base under
-  `~/.claude/skills/specialist-council/forged/<slug>/`, the council registry, and a `council_members` row.
+  `~/.claude/specialist-council/forged/<slug>/`, the council registry, and a `council_members` row.
   Report that the new agent loads in new sessions. Do not lower the thresholds unless the user asks, and
   label any such member probationary. A later failed validation automatically suspends the member and unregisters its agent card.
 - `council`: list forged council members and their status.

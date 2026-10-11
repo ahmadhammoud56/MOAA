@@ -1,6 +1,6 @@
 {
   "name": "moaa",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "marketplaces": {
     "superpowers-dev": "https://github.com/obra/superpowers.git",
     "ecc": "https://github.com/affaan-m/ECC.git",
@@ -25,7 +25,7 @@
     {
       "id": "agent-arena-mode@moaa",
       "enabled": true,
-      "tested_version": "0.4.3"
+      "tested_version": "0.4.4"
     },
     {
       "id": "agentic-awesome-skills@agentic-awesome-skills",
@@ -475,6 +475,11 @@
       "tested_version": "0.5.1"
     },
     {
+      "id": "specialist-council@moaa",
+      "enabled": true,
+      "tested_version": "1.3.0"
+    },
+    {
       "id": "superpowers@superpowers-dev",
       "enabled": true,
       "tested_version": "6.3.0"
@@ -545,7 +550,7 @@
   },
   "own_work": [
     "plugins/agent-arena-mode",
-    "specialist-council",
+    "plugins/specialist-council",
     "skills/agent-teams",
     "skills/local-build",
     "skills/path-safety",

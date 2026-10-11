@@ -1,12 +1,38 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "moaa",
-  "owner": { "name": "Ahmad Hammoud", "url": "https://github.com/ahmadhammoud56" },
-  "metadata": { "description": "Vendored plugins for MOAA: Mother of All Agents (agent arena and UI mods)." },
+  "owner": {
+    "name": "Ahmad Hammoud",
+    "url": "https://github.com/ahmadhammoud56"
+  },
+  "metadata": {
+    "description": "Vendored plugins for MOAA: Mother of All Agents (agent arena and UI mods)."
+  },
   "plugins": [
-    { "name": "agent-arena-mode", "source": "./plugins/agent-arena-mode", "description": "Eight multi-agent arena modes with a persistent best-agent library that forges Specialist Council members." },
-    { "name": "flightdeck", "source": "./plugins/flightdeck", "description": "Live agent dashboard for Claude Code." },
-    { "name": "plot-deck", "source": "./plugins/plot-deck", "description": "Side panel listing plot images; Enter copies and opens one." },
-    { "name": "prismantis", "source": "./plugins/prismantis", "description": "Colorful, themeable rendering for Claude Code replies." }
+    {
+      "name": "specialist-council",
+      "source": "./plugins/specialist-council",
+      "description": "Specialist Council: 60 role agents with per-role model/effort and arena-forged members; assembles teams and delivers one verified result."
+    },
+    {
+      "name": "agent-arena-mode",
+      "source": "./plugins/agent-arena-mode",
+      "description": "Eight multi-agent arena modes with a persistent best-agent library that forges Specialist Council members."
+    },
+    {
+      "name": "flightdeck",
+      "source": "./plugins/flightdeck",
+      "description": "Live agent dashboard for Claude Code."
+    },
+    {
+      "name": "plot-deck",
+      "source": "./plugins/plot-deck",
+      "description": "Side panel listing plot images; Enter copies and opens one."
+    },
+    {
+      "name": "prismantis",
+      "source": "./plugins/prismantis",
+      "description": "Colorful, themeable rendering for Claude Code replies."
+    }
   ]
 }

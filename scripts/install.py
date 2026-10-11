@@ -54,17 +54,9 @@ class Runner:
 
 
 def council_permissions(home):
-    """council.py allow rules in every spelling the shells produce, so council runs never prompt."""
-    script = home / "skills" / "specialist-council" / "council.py"
-    rules = [f"Bash({py} ~/.claude/skills/specialist-council/council.py *)" for py in ("python", "python3", "py")]
-    rules.append("PowerShell(python ~/.claude/skills/specialist-council/council.py *)")
-    posix = script.as_posix()
-    rules.append(f'Bash(python "{posix}" *)')
-    if WINDOWS:
-        native = str(script)
-        rules += [f'Bash(python "{native}" *)', f'PowerShell(python "{native}" *)']
-        if len(posix) > 1 and posix[1] == ":":  # Git Bash spelling /c/Users/...
-            rules.append(f'Bash(python "/{posix[0].lower()}{posix[2:]}" *)')
+    """Allow rules for the council plugin's council.py (its cache path carries a version, hence the wildcards)."""
+    rules = [f"Bash({py} *specialist-council*council.py *)" for py in ("python", "python3", "py")]
+    rules.append("PowerShell(python *specialist-council*council.py *)")
     return rules
 
 
@@ -179,6 +171,8 @@ def install(args):
     failed = []
     for p in plugins:
         if p["id"] in before:
+            if p["id"].endswith("@" + kit["name"]):  # vendored plugins: pick up new versions from this repo
+                r.run(["claude", "plugin", "update", p["id"], "--scope", "user"])
             continue
         log(f"installing {p['id']}")
         result = r.run(["claude", "plugin", "install", p["id"], "--scope", "user"])
@@ -204,10 +198,13 @@ def install(args):
         if name not in record["skills"]:
             record["skills"].append(name)
 
-    log("specialist council (60 agents; forged members are created later by the arena)")
-    r.run([sys.executable, str(KIT / "specialist-council" / "council.py"), "install", "--home", str(home)], check=True)
-    if "specialist-council" not in record["skills"]:
-        record["skills"].append("specialist-council")
+    council = KIT / "plugins" / "specialist-council" / "council.py"
+    log("specialist council: plugin specialist-council@moaa; moving any pre-plugin standalone install")
+    if not args.dry_run:
+        migrated = r.run([sys.executable, str(council), "migrate", "--home", str(home)], check=True)
+        log("  " + " ".join(migrated.stdout.split()))
+    if "specialist-council" in record["skills"]:  # now a plugin, no longer a kit-copied skill
+        record["skills"].remove("specialist-council")
     for name in kit["agents"]:
         target = home / "agents" / name
         if target.exists() and name not in record["agents"]:
@@ -236,8 +233,7 @@ def install(args):
     write_json(home / MANIFEST, record, args.dry_run)
     if not args.dry_run:
         (home / LEGACY_MANIFEST).unlink(missing_ok=True)
-    check = r.run([sys.executable, str(home / "skills" / "specialist-council" / "council.py"), "check",
-                   "--agents", str(home / "agents")])
+    check = r.run([sys.executable, str(council), "check"])
     log("council check: " + ("ok" if check.returncode == 0 else check.stderr.strip()))
     if failed:
         log("plugins that failed to install (rerun to retry): " + ", ".join(failed))
@@ -308,8 +304,7 @@ def uninstall(args):
             shutil.rmtree(child) if child.is_dir() else child.unlink()
         if not any(target.iterdir()):
             target.rmdir()
-    council_agents = KIT / "specialist-council" / "agents"
-    for path in list(council_agents.glob("council-*.md")) + [Path(a) for a in record.get("agents", [])]:
+    for path in [Path(a) for a in record.get("agents", [])]:  # council agents leave with the plugin
         target = home / "agents" / path.name
         if target.is_file() and not args.dry_run:
             target.unlink()

@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
 """Specialist Council model/effort profile tool. Standard library only.
 
+Ships as the `specialist-council` Claude Code plugin (agents/, skills/specialist-council/, this file, profile.json).
+Arena-forged members live outside the plugin, in ~/.claude/specialist-council/forged/ (registry + knowledge bases)
+and ~/.claude/agents/council-forged-<slug>.md, so plugin updates never touch them.
+
 Commands:
-  check    --agents DIR             verify every council agent matches profile.json
-  apply    --agents DIR             write model/effort frontmatter from profile.json
-  resolve  --role ID [--style S1,S2]  print model/effort for one (role, personality) pair
-  render   --out FILE               write the generated model-profile reference
-  install  --home ~/.claude         apply + render, then copy skill and agents (keeps forged members)
+  check    [--agents DIR]             verify the 60 role agents match profile.json, plus every forged member
+  apply    [--agents DIR]             write model/effort frontmatter from profile.json
+  resolve  --role ID [--style S1,S2]  print model/effort for a role or a forged member (forged-<slug>)
+  render   --out FILE                 write the generated model-profile reference
+  migrate  [--home ~/.claude]         move a pre-plugin standalone install (skill, 60 user agents, forged/) to the plugin layout
 """
 import argparse
 import json
 from pathlib import Path
 import re
+import os
 import shutil
 import sys
+import time
 
 ROOT = Path(__file__).resolve().parent
 TIERS = ("haiku", "sonnet", "opus", "fable")
-SKILL = ROOT / "skill" if (ROOT / "skill").is_dir() else ROOT  # source package vs installed skill folder
+SKILL = ROOT / "skills" / "specialist-council"
 FRONT = re.compile(r"\A---\n(.*?)\n---\n", re.S)
 
 
@@ -74,9 +80,20 @@ def resolve(profile, role_id, styles=()):
             "model": profile["models"][role["tier"]], "effort": effort, "base_effort": role["effort"]}
 
 
-def forged_member(role_id, skill_dir=SKILL):
+def claude_home():
+    return Path(os.environ.get("CLAUDE_CONFIG_DIR") or Path.home() / ".claude").expanduser()
+
+
+def forged_home(home=None):
+    """Where arena-forged members are registered: $COUNCIL_FORGED_DIR or <claude home>/specialist-council/forged."""
+    if os.environ.get("COUNCIL_FORGED_DIR") and home is None:
+        return Path(os.environ["COUNCIL_FORGED_DIR"]).expanduser()
+    return Path(home or claude_home()) / "specialist-council" / "forged"
+
+
+def forged_member(role_id, forged_dir=None):
     """Registry entry for a forged role given as `slug`, `forged-<slug>` or `council-forged-<slug>`, else None."""
-    registry = Path(skill_dir) / "forged" / "registry.json"
+    registry = Path(forged_dir or forged_home()) / "registry.json"
     if not role_id or not registry.is_file():
         return None
     slug = re.sub(r"^(council-)?forged-", "", role_id)
@@ -125,7 +142,7 @@ def apply(agents_dir, profile):
     return changed
 
 
-def check(agents_dir, profile, skill_dir=SKILL):
+def check(agents_dir, profile, skill_dir=SKILL, user_agents=None, forged_dir=None):
     files = agent_files(agents_dir)
     validate(profile, files, personality_ids(skill_dir))
     wrong = []
@@ -136,12 +153,13 @@ def check(agents_dir, profile, skill_dir=SKILL):
                 (profile["models"][role["tier"]], role["effort"]):
             wrong.append(rid)
     require(not wrong, "Agents not matching profile: " + ", ".join(wrong))
-    return {"agents": len(files), "forged": check_forged(agents_dir, profile, skill_dir), "ok": True}
+    forged = check_forged(user_agents or claude_home() / "agents", profile, forged_dir)
+    return {"agents": len(files), "forged": forged, "ok": True}
 
 
-def check_forged(agents_dir, profile, skill_dir=SKILL):
+def check_forged(agents_dir, profile, forged_dir=None):
     """Arena-forged members: only active registry entries may have a registered agent card, and it must match."""
-    forged = Path(skill_dir) / "forged"
+    forged = Path(forged_dir or forged_home())
     registry_path = forged / "registry.json"
     cards = {p.stem[len("council-forged-"):]: p for p in Path(agents_dir).glob("council-forged-*.md")}
     registry = json.loads(registry_path.read_text(encoding="utf-8")) if registry_path.is_file() else {}
@@ -177,7 +195,7 @@ def check_forged(agents_dir, profile, skill_dir=SKILL):
 def render(profile):
     out = ["# Model and effort profile", "",
            "Generated from `profile.json` by `council.py render`. Do not edit by hand.", "",
-           "Each registered `council-<role>` agent carries this model and effort in its frontmatter. "
+           "Each `specialist-council:council-<role>` plugin agent carries this model and effort in its frontmatter. "
            "A personality shifts effort only (never the model), clamped to "
            f"`{profile['effort_ceiling']}` unless the role preset is already higher. "
            "Apply the resolved effort through the Agent tool's per-call `effort` field when the host exposes it; "
@@ -204,41 +222,53 @@ def render(profile):
     return "\n".join(out) + "\n"
 
 
-def install(home, profile):
+def migrate(home, profile):
+    """Move a pre-plugin standalone install to the plugin layout. Forged members are kept; old files are backed up."""
     home = Path(home).expanduser().resolve()
-    apply(ROOT / "agents", profile)
-    (ROOT / "skill" / "references" / "model-profile.md").write_text(render(profile), encoding="utf-8", newline="\n")
-    check(ROOT / "agents", profile)
-    skill_target = home / "skills" / "specialist-council"
-    forged = skill_target / "forged"
-    keep = None
-    if forged.is_dir():  # forged members come from the arena; never discard them on reinstall
-        keep = home / "skills" / ".specialist-council-forged.keep"
-        shutil.rmtree(keep, ignore_errors=True)
-        shutil.copytree(forged, keep)
-    if skill_target.exists():
-        shutil.rmtree(skill_target)
-    shutil.copytree(ROOT / "skill", skill_target)
-    shutil.copy2(ROOT / "profile.json", skill_target / "profile.json")
-    shutil.copy2(ROOT / "council.py", skill_target / "council.py")
-    if keep:
-        shutil.copytree(keep, forged)
-        shutil.rmtree(keep)
-    (home / "agents").mkdir(parents=True, exist_ok=True)
-    for path in agent_files(ROOT / "agents").values():
-        shutil.copy2(path, home / "agents" / path.name)
-    return check(home / "agents", profile, skill_target)
+    legacy = home / "skills" / "specialist-council"
+    target = forged_home(home)
+    moved = {"forged": False, "agents": 0, "skill": False}
+    backup = home / "specialist-council" / f"pre-plugin-backup-{time.strftime('%Y%m%d-%H%M%S')}"
+    if (legacy / "forged").is_dir() and not (target / "registry.json").is_file():
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(legacy / "forged", target, dirs_exist_ok=True)
+        moved["forged"] = True
+    if (legacy / "SKILL.md").is_file():  # the standalone skill would duplicate the plugin's skill
+        backup.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(legacy), str(backup / "skill"))
+        moved["skill"] = True
+    elif legacy.is_dir() and moved["forged"]:
+        shutil.rmtree(legacy)
+    for rid in profile["roles"]:  # user-level copies of the 60 role agents would duplicate the plugin agents
+        card = home / "agents" / f"council-{rid}.md"
+        if card.is_file():
+            (backup / "agents").mkdir(parents=True, exist_ok=True)
+            shutil.move(str(card), str(backup / "agents" / card.name))
+            moved["agents"] += 1
+    if moved["forged"]:  # knowledge-base paths recorded in the registry point at the old folder
+        registry = target / "registry.json"
+        data = json.loads(registry.read_text(encoding="utf-8"))
+        for slug, member in data.items():
+            member["knowledge_base"] = (target / slug).as_posix()
+            card = home / "agents" / f"council-forged-{slug}.md"
+            if card.is_file():
+                card.write_text(card.read_text(encoding="utf-8").replace((legacy / "forged" / slug).as_posix(),
+                                (target / slug).as_posix()), encoding="utf-8", newline=chr(10))
+        registry.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    moved["backup"] = str(backup) if backup.exists() else None
+    moved["forged_home"] = str(target)
+    return moved
 
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("command", choices=("check", "apply", "resolve", "render", "install"))
+    p.add_argument("command", choices=("check", "apply", "resolve", "render", "migrate"))
     p.add_argument("--agents", default=str(ROOT / "agents"))
     p.add_argument("--profile", default=str(ROOT / "profile.json"))
     p.add_argument("--role")
     p.add_argument("--style", default="")
     p.add_argument("--out")
-    p.add_argument("--home", default="~/.claude")
+    p.add_argument("--home", default=str(claude_home()))
     a = p.parse_args(argv)
     try:
         profile = load_profile(a.profile)
@@ -257,7 +287,7 @@ def main(argv=None):
                 Path(a.out).write_text(text, encoding="utf-8", newline="\n")
             result = {"written": a.out} if a.out else text
         else:
-            result = install(a.home, profile)
+            result = migrate(a.home, profile)
         print(result if isinstance(result, str) else json.dumps(result, indent=2))
         return 0
     except (CouncilError, KeyError, OSError, ValueError) as exc:

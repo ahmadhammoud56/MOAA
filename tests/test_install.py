@@ -29,8 +29,8 @@ class MergeTests(unittest.TestCase):
 
     def test_council_permissions_cover_home_spelling(self):
         rules = install.council_permissions(Path("/home/u/.claude"))
-        self.assertIn("Bash(python ~/.claude/skills/specialist-council/council.py *)", rules)
-        self.assertIn('Bash(python "/home/u/.claude/skills/specialist-council/council.py" *)', rules)
+        self.assertIn("Bash(python *specialist-council*council.py *)", rules)
+        self.assertIn("PowerShell(python *specialist-council*council.py *)", rules)
 
     def test_kit_config_is_consistent(self):
         kit = install.read_json(install.KIT / "config" / "kit.json", None)
@@ -43,7 +43,8 @@ class MergeTests(unittest.TestCase):
             install.KIT / ".claude-plugin" / "marketplace.json", None)["plugins"]}
         vendored = {p["id"].split("@")[0] for p in kit["plugins"] if p["id"].endswith("@" + kit["name"])}
         self.assertEqual(listed, vendored)
-        self.assertFalse((install.KIT / "specialist-council" / "skill" / "forged").exists())  # no forged members shipped
+        self.assertFalse(list(install.KIT.rglob("forged/registry.json")))  # no forged members shipped
+        self.assertFalse((install.KIT / "specialist-council").exists())  # council lives only in plugins/
 
 
 if __name__ == "__main__":
