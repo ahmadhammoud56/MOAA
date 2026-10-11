@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Council Replay</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; background: #0b0c19; color: #e9ecff; font: 14px "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+  canvas { width: 100%; height: auto; display: block; border-radius: 10px; box-shadow: 0 8px 40px #0008; }
+  .bar { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  button { background: #1d2150; color: #e9ecff; border: 1px solid #4b52a8; border-radius: 8px; padding: 7px 14px; font: inherit; cursor: pointer; }
+  button:hover { background: #2b2f6b; }
+  input[type=range] { flex: 1; min-width: 160px; accent-color: #b9c0ff; }
+  #status { color: #9aa3ff; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="c" width="960" height="540" aria-label="Animated replay of a Specialist Council run"></canvas>
+  <div class="bar">
+    <button id="play">Replay</button>
+    <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Scrub timeline">
+    <button id="export">Export GIF</button>
+    <span id="status"></span>
+  </div>
+</main>
+<script>
+"use strict";
+// Replays a council run (replay.json from extract.py) on a canvas and exports it as a GIF.
+// URL params: data=<url> (default replay.json), t=<seconds> (static frame), fps=<n>,
+// export=1 (encode on load and POST to /gif), post=1 (POST instead of download).
+const W = 960, H = 540;
+const P = new URLSearchParams(location.search);
+const cv = document.getElementById("c"), ctx = cv.getContext("2d", { willReadFrequently: true });
+const SANS = '"Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif';
+const MONO = 'Consolas, "SF Mono", Menlo, "DejaVu Sans Mono", monospace';
+const C = {
+  text: "#e9ecff", soft: "#cfd4ff", muted: "#9aa3ff", accent: "#b9c0ff",
+  panel: "rgba(255,255,255,0.045)", line: "rgba(160,170,255,0.28)",
+  ok: "#7ee2a8", warn: "#ffb86b", forged: "#ff8fc7",
+};
+const TIER = { haiku: "#5eead4", sonnet: "#7cc4ff", opus: "#c4a1ff", fable: "#ffcf70" };
+const tierColor = (m) => TIER[(/(haiku|sonnet|opus|fable)/.exec(m || "") || [])[1]] || C.accent;
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const at = (t, t0, d = 0.5) => ease((t - t0) / d);
+const short = (type) => type.replace(/^specialist-council:/, "");
+
+let D = null, T = null, BG = null, PA = 1; // PA: alpha of the panel being drawn
+
+// ---------- timeline ----------
+function build(d) {
+  const n = d.resolves.length, R0 = 2.4, RS = 1.3, rEnd = R0 + n * RS + 0.3;
+  const M0 = rEnd + 0.2, F0 = M0 + 0.7, na = d.agents.length;
+  const W0 = F0 + 0.6 + 0.25 * Math.max(0, na - 1), SPAN = na ? 7.5 : 0;
+  const starts = d.agents.map((a) => a.start ?? 0);
+  const ends = d.agents.map((a, i) => a.end ?? starts[i] + 1);
+  const s0 = na ? Math.min(...starts) : 0, s1 = na ? Math.max(...ends) : 0;
+  const k = SPAN / Math.max(0.1, s1 - s0);
+  const agents = d.agents.map((a, i) => {
+    const a0 = W0 + (starts[i] - s0) * k;
+    return { a0, a1: Math.max(a0 + 1.2, W0 + (ends[i] - s0) * k), appear: F0 + 0.25 * i };
+  });
+  const V0 = W0 + SPAN + 0.6, A0 = V0 + 2.6, END = A0 + 4.5;
+  const real = d.duration ?? s1;
+  const raw = [[0, 0], [R0, Math.max(0, (d.resolves[0]?.t ?? 1) - 0.5)], [rEnd, d.resolves[n - 1]?.t ?? 0],
+               [W0, s0], [W0 + SPAN, s1], [A0, real], [END, real]];
+  const keys = []; let hi = 0;
+  for (const [x, y] of raw) { hi = Math.max(hi, y || 0); keys.push([x, hi]); }
+  return { R0, RS, rEnd, M0, F0, W0, SPAN, agents, V0, A0, END, keys, real };
+}
+
+function clock(t) {
+  const k = T.keys;
+  for (let i = 1; i < k.length; i++) {
+    if (t <= k[i][0]) {
+      const f = (t - k[i - 1][0]) / Math.max(1e-6, k[i][0] - k[i - 1][0]);
+      return k[i - 1][1] + clamp(f) * (k[i][1] - k[i - 1][1]);
+    }
+  }
+  return k[k.length - 1][1];
+}
+
+// ---------- drawing helpers ----------
+function font(size, weight = 400, mono = false) { ctx.font = `${weight} ${size}px ${mono ? MONO : SANS}`; }
+function fit(text, maxW) {
+  if (ctx.measureText(text).width <= maxW) return text;
+  let s = text;
+  while (s.length > 1 && ctx.measureText(s + "…").width > maxW) s = s.slice(0, -1);
+  return s.trimEnd() + "…";
+}
+function wrap(text, maxW, maxLines) {
+  const words = text.split(/\s+/), lines = [];
+  let cur = "";
+  for (const w of words) {
+    const next = cur ? cur + " " + w : w;
+    if (ctx.measureText(next).width > maxW && cur) { lines.push(cur); cur = w; } else cur = next;
+  }
+  if (cur) lines.push(cur);
+  if (lines.length > maxLines) {
+    const kept = lines.slice(0, maxLines);
+    kept[maxLines - 1] = fit(kept[maxLines - 1] + " " + lines[maxLines], maxW - 4);
+    return kept;
+  }
+  return lines;
+}
+function typed(lines, frac) { // reveal wrapped lines character by character
+  let left = Math.floor(lines.join("").length * clamp(frac));
+  return lines.map((l) => { const s = l.slice(0, Math.max(0, left)); left -= l.length; return s; });
+}
+function panel(x, y, w, h, alpha, glow = 0, border = C.line) {
+  if (alpha <= 0) return false;
+  PA = alpha;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(0, (1 - alpha) * 10);
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 12);
+  ctx.fillStyle = C.panel; ctx.fill();
+  ctx.lineWidth = 1; ctx.strokeStyle = border; ctx.stroke();
+  if (glow > 0) {
+    ctx.globalAlpha = alpha * glow; ctx.lineWidth = 1.5; ctx.strokeStyle = C.accent; ctx.stroke();
+    ctx.globalAlpha = alpha;
+  }
+  return true; // caller must ctx.restore()
+}
+function label(text, x, y, color = C.muted) {
+  font(10.5, 600); ctx.fillStyle = color;
+  ctx.letterSpacing = "1.6px"; ctx.fillText(text.toUpperCase(), x, y); ctx.letterSpacing = "0px";
+}
+function chip(text, x, y, color, alignRight = false, scale = 1) {
+  font(12, 600);
+  const w = ctx.measureText(text).width + 26, h = 22, left = alignRight ? x - w : x;
+  ctx.save();
+  ctx.translate(left + w / 2, y + h / 2); ctx.scale(scale, scale); ctx.translate(-(left + w / 2), -(y + h / 2));
+  ctx.beginPath(); ctx.roundRect(left, y, w, h, 11);
+  ctx.fillStyle = color + "26"; ctx.fill(); ctx.strokeStyle = color + "99"; ctx.stroke();
+  ctx.beginPath(); ctx.arc(left + 11, y + h / 2, 3.5, 0, 7); ctx.fillStyle = color; ctx.fill();
+  ctx.fillStyle = C.text; ctx.fillText(text, left + 19, y + 15.5);
+  ctx.restore();
+  return w;
+}
+function bezier(p0, p1, p2, p3, f) {
+  const u = 1 - f;
+  return [u*u*u*p0[0] + 3*u*u*f*p1[0] + 3*u*f*f*p2[0] + f*f*f*p3[0],
+          u*u*u*p0[1] + 3*u*u*f*p1[1] + 3*u*f*f*p2[1] + f*f*f*p3[1]];
+}
+function background() {
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  let r = g.createRadialGradient(W * 0.85, H * 0.12, 0, W * 0.85, H * 0.12, W * 0.95);
+  r.addColorStop(0, "#2b2f6b"); r.addColorStop(0.55, "#14162e"); r.addColorStop(1, "#0b0c19");
+  g.fillStyle = r; g.fillRect(0, 0, W, H);
+  r = g.createRadialGradient(0, H, 0, 0, H, W * 0.5);
+  r.addColorStop(0, "rgba(60,66,150,0.25)"); r.addColorStop(1, "rgba(60,66,150,0)");
+  g.fillStyle = r; g.fillRect(0, 0, W, H);
+  return c;
+}
+
+// ---------- scene ----------
+const LX = 20, LW = 316, RX = 372, RW = 568;
+
+function draw(t) {
+  ctx.drawImage(BG, 0, 0);
+  ctx.textBaseline = "alphabetic";
+  header(t);
+  task(t);
+  resolves(t);
+  mode(t);
+  agents(t);
+  verify(t);
+  answer(t);
+}
+
+function header(t) {
+  font(21, 800);
+  const g = ctx.createLinearGradient(LX, 0, LX + 70, 0);
+  g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#8fa0ff");
+  ctx.fillStyle = g; ctx.fillText("MOAA", LX, 34);
+  font(14, 600); ctx.fillStyle = C.soft; ctx.fillText("Specialist Council", LX + 76, 33);
+  font(13); ctx.fillStyle = C.muted; ctx.fillText("· replay of a real run", LX + 202, 33);
+  font(12); ctx.textAlign = "right"; ctx.fillStyle = C.muted;
+  ctx.fillText("github.com/ahmadhammoud56/MOAA", W - 20, 33);
+  font(15, 600, true); ctx.fillStyle = C.text;
+  ctx.fillText(`t+${clock(t).toFixed(1)}s`, W - 238, 33);
+  ctx.textAlign = "left";
+}
+
+function task(t) {
+  const x = LX, y = 60, w = LW, h = 150;
+  if (!panel(x, y, w, h, at(t, 0, 0.6), t < T.R0 ? 1 : 0)) return;
+  label("Task", x + 14, y + 22);
+  font(12, 600, true); ctx.fillStyle = C.accent; ctx.textAlign = "right";
+  ctx.fillText("/specialist-council", x + w - 14, y + 22); ctx.textAlign = "left";
+  font(14); ctx.fillStyle = C.soft;
+  typed(wrap(D.task, w - 28, 6), (t - 0.3) / 1.6).forEach((l, i) => ctx.fillText(l, x + 14, y + 46 + i * 19));
+  ctx.restore();
+}
+
+function resolves(t) {
+  const n = D.resolves.length, x = LX, y = 222, w = LW, h = 194;
+  if (!n || !panel(x, y, w, h, at(t, T.R0 - 0.3), t >= T.R0 - 0.3 && t < T.rEnd ? 1 : 0)) return;
+  label("council.py resolve", x + 14, y + 22);
+  const rowH = Math.min(62, (h - 64) / n);
+  D.resolves.forEach((r, i) => {
+    const t0 = T.R0 + i * T.RS, ry = y + 34 + i * rowH;
+    if (t < t0) return;
+    font(11.5, 400, true); ctx.fillStyle = C.muted;
+    ctx.fillText("$ council.py resolve --role".slice(0, Math.ceil(27 * clamp((t - t0) / 0.35))), x + 14, ry + 12);
+    if (t < t0 + 0.3) return;
+    ctx.globalAlpha = PA * at(t, t0 + 0.3, 0.3);
+    font(12.5, 600); ctx.fillStyle = C.text; ctx.fillText(fit(r.role, w - 28), x + 14, ry + 29);
+    ctx.globalAlpha = PA;
+    if (t < t0 + 0.65) return;
+    const s = 0.7 + 0.3 * at(t, t0 + 0.65, 0.35);
+    const cw = r.ok ? chip(`${r.model} · ${r.effort}`, x + 14, ry + 36, tierColor(r.model), false, s)
+                    : chip(fit(r.note || "needed approval", 180), x + 14, ry + 36, C.warn, false, s);
+    if (r.tier === "forged") chip("forged", x + 20 + cw, ry + 36, C.forged, false, s);
+    if (r.t != null) {
+      font(11.5, 400, true); ctx.fillStyle = C.muted; ctx.textAlign = "right";
+      ctx.fillText(`t+${r.t.toFixed(1)}s`, x + w - 14, ry + 52); ctx.textAlign = "left";
+    }
+  });
+  if (t >= T.rEnd) {
+    const ok = D.resolves.every((r) => r.ok);
+    ctx.globalAlpha = PA * at(t, T.rEnd, 0.4);
+    font(12.5, 600); ctx.fillStyle = ok ? C.ok : C.warn;
+    ctx.fillText(ok ? "✓ ran with no permission prompt" : `⚠ ${D.resolves.filter((r) => !r.ok).length} call(s) needed approval`,
+                 x + 14, y + h - 14);
+    ctx.globalAlpha = PA;
+  }
+  ctx.restore();
+}
+
+const MODE = { x: LX, y: 428, w: LW, h: 92 };
+function mode(t) {
+  const { x, y, w, h } = MODE;
+  if (!panel(x, y, w, h, at(t, T.M0), t >= T.M0 && t < T.W0 ? 1 : 0)) return;
+  label("Mode", x + 14, y + 22);
+  font(11.5, 400, true); ctx.fillStyle = C.muted; ctx.textAlign = "right";
+  ctx.fillText(`coordinator ${D.coordinator || ""}`, x + w - 14, y + 22); ctx.textAlign = "left";
+  font(15, 700); ctx.fillStyle = C.text;
+  wrap(D.mode, w - 28, 2).forEach((l, i) => ctx.fillText(l, x + 14, y + 46 + i * 20));
+  if (t >= T.F0) {
+    ctx.globalAlpha = PA * at(t, T.F0, 0.4);
+    font(12.5); ctx.fillStyle = C.accent;
+    ctx.fillText(`dispatching ${D.agents.length} agent${D.agents.length === 1 ? "" : "s"} in parallel →`, x + 14, y + h - 12);
+    ctx.globalAlpha = PA;
+  }
+  ctx.restore();
+}
+
+function cardBox(i) {
+  const n = D.agents.length, ch = Math.min(136, (282 - 10 * (n - 1)) / n);
+  return { x: RX, y: 60 + i * (ch + 10), w: RW, h: ch };
+}
+
+function agents(t) {
+  D.agents.forEach((a, i) => {
+    const tl = T.agents[i], b = cardBox(i), color = tierColor(a.model);
+    const p = clamp((t - tl.a0) / (tl.a1 - tl.a0)), done = t >= tl.a1;
+    // connector from the mode panel to the card
+    if (t >= tl.appear) {
+      const p0 = [MODE.x + MODE.w, MODE.y + MODE.h / 2], p3 = [b.x, b.y + b.h / 2];
+      const p1 = [p0[0] + 24, p0[1]], p2 = [p3[0] - 24, p3[1]];
+      const f = at(t, tl.appear, 0.6);
+      ctx.beginPath(); ctx.moveTo(...p0);
+      for (let s = 1; s <= 30; s++) ctx.lineTo(...bezier(p0, p1, p2, p3, f * s / 30));
+      ctx.strokeStyle = done ? C.ok + "aa" : color + "aa"; ctx.lineWidth = 1.5; ctx.stroke();
+      const pulses = t < tl.appear + 0.6 ? [f] : (t >= tl.a0 && !done ? [((t - tl.a0) * 0.9) % 1] : []);
+      for (const q of pulses) {
+        const [px, py] = bezier(p0, p1, p2, p3, q);
+        ctx.beginPath(); ctx.arc(px, py, 3.5, 0, 7); ctx.fillStyle = color; ctx.fill();
+      }
+    }
+    const appear = tl.appear + 0.3;
+    if (!panel(b.x, b.y, b.w, b.h, at(t, appear), !done && t >= tl.a0 ? 0.6 : 0, done ? C.ok + "88" : C.line)) return;
+    const forged = a.type.includes("council-forged-");
+    label(forged ? "Forged member · arena-validated" : "Council role", b.x + 14, b.y + 22, forged ? C.forged : C.muted);
+    chip(`${a.model || "?"} · ${a.effort || "?"}`, b.x + b.w - 14, b.y + 9, color, true);
+    font(14.5, 700); ctx.fillStyle = C.text; ctx.fillText(fit(short(a.type), b.w - 28), b.x + 14, b.y + 44);
+    let ry = b.y + 64;
+    if (b.h >= 100) {
+      font(12.5); ctx.fillStyle = C.muted; ctx.fillText(fit(`method: ${a.method}`, b.w - 28), b.x + 14, ry); ry += 16;
+    }
+    // progress bar
+    const bw = b.w - 28 - 64;
+    ctx.beginPath(); ctx.roundRect(b.x + 14, ry, bw, 6, 3); ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.fill();
+    if (p > 0) {
+      ctx.beginPath(); ctx.roundRect(b.x + 14, ry, Math.max(6, bw * p), 6, 3);
+      ctx.fillStyle = done ? C.ok : color; ctx.fill();
+    }
+    font(12, 600, true); ctx.fillStyle = done ? C.ok : C.soft; ctx.textAlign = "right";
+    const real = Math.max(0, (a.end ?? 0) - (a.start ?? 0));
+    ctx.fillText(t < tl.a0 ? "queued" : `${(real * p).toFixed(1)} s`, b.x + b.w - 14, ry + 7); ctx.textAlign = "left";
+    ry += 24;
+    // checks tick in as the run progresses
+    if (b.h >= 120 && a.checks.length) {
+      let cx = b.x + 14;
+      font(11.5, 600);
+      a.checks.forEach((c, j) => {
+        const tj = tl.a0 + (tl.a1 - tl.a0) * (j + 1) / (a.checks.length + 1);
+        if (t < tj) return;
+        const w = ctx.measureText("✓ " + c).width + 14;
+        if (cx + w > b.x + b.w - 14) return;
+        ctx.globalAlpha = PA * at(t, tj, 0.25);
+        ctx.beginPath(); ctx.roundRect(cx, ry - 13, w, 19, 9.5); ctx.fillStyle = "rgba(126,226,168,0.12)"; ctx.fill();
+        ctx.fillStyle = C.ok; ctx.fillText("✓ " + c, cx + 7, ry + 1);
+        ctx.globalAlpha = PA; cx += w + 6;
+      });
+      ry += 22;
+    }
+    if (done) {
+      ctx.globalAlpha = PA * at(t, tl.a1, 0.4);
+      font(13, 600); ctx.fillStyle = C.text;
+      ctx.fillText(fit(a.result || "done", b.w - 28), b.x + 14, Math.min(ry + 2, b.y + b.h - 12));
+      ctx.globalAlpha = PA;
+    }
+    ctx.restore();
+  });
+}
+
+function verify(t) {
+  const last = D.agents.length ? cardBox(D.agents.length - 1) : { y: 50, h: 0 };
+  const x = RX, y = last.y + last.h + 12, w = RW, h = 86;
+  if (!D.verification || !panel(x, y, w, h, at(t, T.V0), t >= T.V0 && t < T.A0 ? 1 : 0)) return;
+  label("Cross-check · coordinator as judge", x + 14, y + 22);
+  font(13.5); ctx.fillStyle = C.soft;
+  typed(wrap(D.verification, w - 28, 3), (t - T.V0 - 0.2) / 1.6).forEach((l, i) => ctx.fillText(l, x + 14, y + 44 + i * 18));
+  ctx.restore();
+}
+
+function answer(t) {
+  const x = RX, y = 452, w = RW, h = 68, text = D.answer || D.headline;
+  const a = at(t, T.A0, 0.6);
+  if (!text || a <= 0) return;
+  ctx.save();
+  ctx.shadowColor = "rgba(150,160,255,0.55)"; ctx.shadowBlur = 18 * a;
+  panel(x, y, w, h, a, 1, C.accent);
+  ctx.shadowBlur = 0;
+  label("COUNCIL_RESULT", x + 14, y + 22, C.accent);
+  font(22, 800);
+  const g = ctx.createLinearGradient(x, 0, x + 360, 0);
+  g.addColorStop(0, "#ffffff"); g.addColorStop(1, "#b9c0ff");
+  ctx.fillStyle = g; ctx.fillText(fit(text, w - 190), x + 14, y + 52);
+  font(12); ctx.fillStyle = C.muted; ctx.textAlign = "right";
+  ctx.fillText(`real run ${T.real.toFixed(1)} s`, x + w - 14, y + 30);
+  ctx.fillText(`${D.agents.length} agents · ${D.resolves.length} resolves`, x + w - 14, y + 48);
+  ctx.textAlign = "left";
+  ctx.restore(); ctx.restore();
+}
+
+// ---------- GIF encoder (global median-cut palette, frame differencing, LZW) ----------
+function medianCut(hist, n) {
+  const box = (bins) => {
+    let cnt = 0; const lo = [63, 63, 63], hi = [0, 0, 0];
+    for (const b of bins) {
+      cnt += hist[b];
+      const c = [b >> 12, (b >> 6) & 63, b & 63];
+      for (let k = 0; k < 3; k++) { lo[k] = Math.min(lo[k], c[k]); hi[k] = Math.max(hi[k], c[k]); }
+    }
+    const r = [hi[0] - lo[0], hi[1] - lo[1], hi[2] - lo[2]], axis = r.indexOf(Math.max(...r));
+    return { bins, cnt, range: r[axis], axis };
+  };
+  const bins = []; for (let i = 0; i < hist.length; i++) if (hist[i]) bins.push(i);
+  const boxes = [box(bins)];
+  while (boxes.length < n) {
+    let bi = -1, best = -1;
+    boxes.forEach((b, i) => { const s = b.range * Math.sqrt(b.cnt); if (b.bins.length > 1 && s > best) { best = s; bi = i; } });
+    if (bi < 0) break;
+    const b = boxes[bi], sh = [12, 6, 0][b.axis];
+    b.bins.sort((p, q) => ((p >> sh) & 63) - ((q >> sh) & 63));
+    let acc = 0, cut = 1;
+    for (let j = 0; j < b.bins.length - 1; j++) { acc += hist[b.bins[j]]; cut = j + 1; if (acc >= b.cnt / 2) break; }
+    boxes.splice(bi, 1, box(b.bins.slice(0, cut)), box(b.bins.slice(cut)));
+  }
+  return boxes.map((b) => {
+    let r = 0, g = 0, bl = 0;
+    for (const x of b.bins) { const c = hist[x]; r += (x >> 12) * c; g += ((x >> 6) & 63) * c; bl += (x & 63) * c; }
+    return [r, g, bl].map((v) => Math.round((v / b.cnt) * 255 / 63));
+  });
+}
+
+function lzw(px) { // GIF LZW, min code size 8; mirrors omggif's code-size timing
+  const out = []; let cur = 0, bits = 0, size = 9, next = 258, dict = new Map();
+  const emit = (c) => { cur |= c << bits; bits += size; while (bits >= 8) { out.push(cur & 255); cur >>>= 8; bits -= 8; } };
+  emit(256);
+  let prefix = px[0];
+  for (let i = 1; i < px.length; i++) {
+    const k = px[i], key = prefix * 256 + k, v = dict.get(key);
+    if (v !== undefined) { prefix = v; continue; }
+    emit(prefix);
+    if (next === 4096) { emit(256); dict = new Map(); next = 258; size = 9; }
+    else { if (next >= 1 << size) size++; dict.set(key, next++); }
+    prefix = k;
+  }
+  emit(prefix); emit(257);
+  if (bits > 0) out.push(cur & 255);
+  return out;
+}
+
+async function exportGif(fps, onProgress) {
+  const frames = Math.ceil(T.END * fps) + 1;
+  const hist = new Uint32Array(1 << 18);
+  for (let s = 0; s <= 30; s++) { // sample the timeline for the shared palette
+    draw((T.END * s) / 30);
+    const px = ctx.getImageData(0, 0, W, H).data;
+    for (let i = 0; i < px.length; i += 4) hist[((px[i] >> 2) << 12) | ((px[i + 1] >> 2) << 6) | (px[i + 2] >> 2)]++;
+  }
+  const pal = medianCut(hist, 255);
+  while (pal.length < 256) pal.push([0, 0, 0]);
+  const TRANS = 255, map = new Int16Array(1 << 18).fill(-1);
+  const nearest = (key) => {
+    const r = (key >> 12) << 2, g = ((key >> 6) & 63) << 2, b = (key & 63) << 2;
+    let best = 0, bd = Infinity;
+    for (let i = 0; i < 255; i++) {
+      const dr = pal[i][0] - r, dg = pal[i][1] - g, db = pal[i][2] - b, d = 2 * dr * dr + 4 * dg * dg + 3 * db * db;
+      if (d < bd) { bd = d; best = i; }
+    }
+    return (map[key] = best);
+  };
+  const bytes = [];
+  const push16 = (v) => bytes.push(v & 255, (v >> 8) & 255);
+  bytes.push(..."GIF89a".split("").map((c) => c.charCodeAt(0)));
+  push16(W); push16(H); bytes.push(0xf7, 0, 0);
+  for (const c of pal) bytes.push(...c);
+  bytes.push(0x21, 0xff, 0x0b, ..."NETSCAPE2.0".split("").map((c) => c.charCodeAt(0)), 3, 1, 0, 0, 0);
+
+  let prev = null, pending = null;
+  const flush = () => {
+    if (!pending) return;
+    const { rect: [x0, y0, x1, y1], data, delay } = pending;
+    bytes.push(0x21, 0xf9, 4, (1 << 2) | 1); push16(delay); bytes.push(TRANS, 0);
+    bytes.push(0x2c); push16(x0); push16(y0); push16(x1 - x0); push16(y1 - y0); bytes.push(0, 8);
+    const code = lzw(data);
+    for (let i = 0; i < code.length; i += 255) { const blk = code.slice(i, i + 255); bytes.push(blk.length, ...blk); }
+    bytes.push(0);
+    pending = null;
+  };
+  for (let f = 0; f < frames; f++) {
+    const t = Math.min(T.END, f / fps), delay = Math.round((100 * (f + 1)) / fps) - Math.round((100 * f) / fps);
+    draw(t);
+    const px = ctx.getImageData(0, 0, W, H).data, idx = new Uint8Array(W * H);
+    for (let i = 0, j = 0; j < idx.length; i += 4, j++) {
+      const key = ((px[i] >> 2) << 12) | ((px[i + 1] >> 2) << 6) | (px[i + 2] >> 2);
+      idx[j] = map[key] >= 0 ? map[key] : nearest(key);
+    }
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    if (!prev) { x0 = 0; y0 = 0; x1 = W - 1; y1 = H - 1; }
+    else for (let y = 0; y < H; y++) for (let x = 0, o = y * W; x < W; x++, o++) {
+      if (idx[o] !== prev[o]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    if (x1 < 0) { pending.delay += delay; } // identical frame: extend the previous one
+    else {
+      flush();
+      const w = x1 - x0 + 1, h = y1 - y0 + 1, data = new Uint8Array(w * h);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const o = (y + y0) * W + x + x0;
+        data[y * w + x] = prev && idx[o] === prev[o] ? TRANS : idx[o];
+      }
+      pending = { rect: [x0, y0, x0 + w, y0 + h], data, delay };
+      prev = idx;
+    }
+    if (f % 10 === 0) { onProgress(f / frames); await new Promise((r) => setTimeout(r)); }
+  }
+  flush();
+  bytes.push(0x3b);
+  return new Blob([new Uint8Array(bytes)], { type: "image/gif" });
+}
+
+// ---------- page ----------
+const status = document.getElementById("status"), scrub = document.getElementById("scrub");
+let start = 0, playing = false, busy = false;
+function loop(now) {
+  if (!playing) return;
+  const t = (now - start) / 1000;
+  if (t > T.END + 1) start = now;
+  draw(Math.min(t, T.END));
+  scrub.value = Math.round((1000 * Math.min(t, T.END)) / T.END);
+  requestAnimationFrame(loop);
+}
+function play() { playing = true; start = performance.now(); requestAnimationFrame(loop); }
+document.getElementById("play").onclick = () => { if (!busy) play(); };
+scrub.oninput = () => { playing = false; draw((scrub.value / 1000) * T.END); };
+document.getElementById("export").onclick = () => run(false);
+
+async function run(auto) {
+  if (busy) return;
+  busy = true; playing = false;
+  const fps = Number(P.get("fps")) || 15, t0 = performance.now();
+  const blob = await exportGif(fps, (f) => (status.textContent = `encoding ${Math.round(f * 100)}%`));
+  const info = `${(blob.size / 1048576).toFixed(2)} MB, ${((performance.now() - t0) / 1000).toFixed(1)} s`;
+  if (auto || P.has("post")) {
+    const r = await fetch("/gif", { method: "POST", body: blob });
+    status.textContent = r.ok ? `sent GIF (${info})` : `upload failed: ${r.status}`;
+  } else {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "council-run.gif"; a.click();
+    status.textContent = `saved council-run.gif (${info})`;
+  }
+  document.title = "done"; busy = false;
+}
+
+(async () => {
+  try {
+    D = window.REPLAY || await (await fetch(P.get("data") || "replay.json")).json();
+  } catch (e) {
+    status.textContent = "No replay data. Run record.py, or open with ?data=<replay.json url>.";
+    return;
+  }
+  await document.fonts.ready;
+  T = build(D); BG = background();
+  if (P.has("t")) draw(Math.min(T.END, Number(P.get("t"))));
+  else if (P.get("export") === "1") run(true);
+  else play();
+})();
+</script>
+</body>
+</html>
