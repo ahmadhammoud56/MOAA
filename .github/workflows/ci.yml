@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Checks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Installer tests
+        run: python -m unittest discover -s tests -v
+      - name: Specialist Council tests
+        working-directory: plugins/specialist-council
+        run: python -m unittest discover -s tests
+      - name: Agent Arena tests
+        working-directory: plugins/agent-arena-mode
+        run: python -m unittest discover -s tests
+      - name: Public-release scan (secrets, personal paths, licences)
+        run: python scripts/scan.py --public
+      - name: MODELS.md matches the plugins
+        run: python scripts/models_doc.py --check
+      - name: Validate marketplace and plugins
+        shell: bash
+        run: |
+          claude plugin validate .
+          for p in plugins/*/; do claude plugin validate "$p"; done
+
+  install:
+    name: Clean install (${{ matrix.os }})
+    needs: checks
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    env:
+      CLAUDE_CONFIG_DIR: ${{ github.workspace }}/../claude-home
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Install MOAA into an empty Claude home
+        run: ./install.sh --skip-ansys
+      - name: Verify plugins, settings and council
+        run: |
+          python - <<'PY'
+          import json, os, sys
+          home = os.environ["CLAUDE_CONFIG_DIR"]
+          installed = json.load(open(f"{home}/plugins/installed_plugins.json"))["plugins"]
+          settings = json.load(open(f"{home}/settings.json"))
+          kit = json.load(open("config/kit.json"))
+          expected = sum(1 for p in kit["plugins"] if not p.get("optional"))
+          print(f"installed {len(installed)} of {expected} plugins")
+          assert len(installed) == expected, sorted(installed)
+          assert all(k.endswith("@moaa") for k in installed), "everything comes from the pinned moaa catalog"
+          assert settings["enabledPlugins"]["prismantis@moaa"] is False
+          assert any("council.py" in r for r in settings["permissions"]["allow"])
+          PY
+          python plugins/specialist-council/council.py check
+          claude mcp list
+      - name: Rerun is a no-op
+        run: ./install.sh --skip-ansys
+      - name: Uninstall leaves nothing behind
+        run: |
+          ./install.sh --uninstall
+          python - <<'PY'
+          import json, os
+          home = os.environ["CLAUDE_CONFIG_DIR"]
+          left = json.load(open(f"{home}/plugins/installed_plugins.json")).get("plugins", {})
+          assert not left, sorted(left)
+          print("clean")
+          PY
