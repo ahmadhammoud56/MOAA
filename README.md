@@ -1,4 +1,4 @@
-# MOAC: Mother of All Claudes
+# MOAA: Mother of All Agents
 
 A complete Claude Code setup: 94 plugins from 14 marketplaces, the Specialist Council (60 role agents), the Agent Arena (which forges new council members from proven agents), 10 standalone skills, and the `rea` and `ansys` MCP servers. One command installs all of it.
 
@@ -14,7 +14,7 @@ This repository is private. Clone it with SSH.
 ## Install
 
 ```bash
-git clone git@github.com:ahmadhammoud56/MOAC.git claude-kit
+git clone git@github.com:ahmadhammoud56/MOAA.git claude-kit
 cd claude-kit
 ./install.sh            # macOS / Linux / Git Bash
 ```
