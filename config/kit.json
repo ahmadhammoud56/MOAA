@@ -545,10 +545,13 @@
   },
   "own_work": [
     "plugins/agent-arena-mode",
-    "specialist-council"
+    "specialist-council",
+    "skills/agent-teams",
+    "skills/local-build",
+    "skills/path-safety",
+    "agents/code-improver.md"
   ],
-  "public_blockers": {
-    "plugins/plot-deck": "LPS has no licence; get permission or switch to reference install",
-    "skills/paper2agent/paper2agent-paper/references": "full paper text; confirm paper licence or drop"
+  "redistribution_permission": {
+    "plugins/plot-deck": "approved by author Kyryl Shtefiienko; see plugins/plot-deck/PERMISSION.md"
   }
 }

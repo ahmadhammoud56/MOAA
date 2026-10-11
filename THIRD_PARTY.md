@@ -13,18 +13,14 @@ MOAA's own code (the Specialist Council, the Agent Arena, the installer) is MIT 
 | `skills/networkx`, `skills/pyzotero`, `skills/scientific-brainstorming`, `skills/uncertainty-and-units` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) | MIT | ok |
 | `skills/headroom` | [headroomlabs-ai/headroom](https://github.com/headroomlabs-ai/headroom) | Apache-2.0 (+ NOTICE) | ok |
 | `skills/reverse-engineer-anything` | [morluto/rea](https://github.com/morluto/rea) | MIT | ok |
-| `skills/paper2agent` | [jmiao24/Paper2Agent](https://github.com/jmiao24/Paper2Agent) | MIT (code) | **check** (see blocker 3) |
+| `skills/paper2agent` | [jmiao24/Paper2Agent](https://github.com/jmiao24/Paper2Agent) | MIT (code). The bundled paper and supplement text was licence-checked by the maintainer. | ok |
 | `vendor/ansys-mcp-server.patch` | [vorobjewsen30-max/ansys-mcp-server](https://github.com/vorobjewsen30-max/ansys-mcp-server) @ `36b18a9` | MIT, declared in its `pyproject.toml` (the repo has no LICENSE file) | ok; only a patch is shipped, and upstream is cloned at install time |
-| `plugins/plot-deck` | copied from [kyryl-shtefiienko/LPS](https://github.com/kyryl-shtefiienko/LPS) `mods/` | **none** | **blocker 1** |
-| `skills/agent-teams`, `skills/local-build`, `skills/path-safety`, `agents/code-improver.md` | not recorded | **unconfirmed** | **blocker 2** |
+| `plugins/plot-deck` | [kyryl-shtefiienko/LPS](https://github.com/kyryl-shtefiienko/LPS) `mods/`, by Kyryl Shtefiienko | none upstream; redistributed **with the author's permission** (see `PERMISSION.md`) | ok |
+| `skills/agent-teams`, `skills/local-build`, `skills/path-safety`, `agents/code-improver.md` | own work (Ahmad Hammoud) | MIT (root LICENSE) | ok |
 
-## Blockers before making the repo public
+## Release check
 
-1. **plot-deck.** LPS has no licence, so by default all rights are reserved. Either get permission from kyryl-shtefiienko (or ask them to add a licence), or remove `plugins/plot-deck` and switch it to a reference install from the LPS marketplace.
-2. **Unconfirmed origin.** If Ahmad wrote `agent-teams`, `local-build`, `path-safety` and `code-improver`, add each to `own_work` in `config/kit.json` and they fall under the root MIT licence. Otherwise find the source and add its licence, or remove them.
-3. **Paper text.** `skills/paper2agent/paper2agent-paper/references/` contains the full text of the Paper2Agent paper and its supplement. The MIT licence covers the code, not necessarily the paper. Confirm the paper's licence (for example a CC BY preprint) or drop those reference files.
-
-`python scripts/scan.py --public` fails until every vendored directory either has a LICENSE or is declared own work.
+No open blockers. `python scripts/scan.py --public` passes when every vendored item has a LICENSE, is declared own work, or has recorded redistribution permission.
 
 ## Referenced (installed from upstream, never copied)
 

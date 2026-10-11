@@ -50,7 +50,8 @@ def licence_gaps(root=KIT):
     units += sorted((root / "agents").glob("*.md"))
     for unit in units:
         rel = unit.relative_to(root).as_posix()
-        if rel in own or (unit.is_dir() and (unit / "LICENSE").is_file()):
+        permitted = rel in kit.get("redistribution_permission", {}) and (unit / "PERMISSION.md").is_file()
+        if rel in own or permitted or (unit.is_dir() and (unit / "LICENSE").is_file()):
             continue
         gaps.append(f"{rel}: no LICENSE and not declared own_work")
     return gaps

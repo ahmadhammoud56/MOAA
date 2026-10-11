@@ -41,6 +41,19 @@ The installer respects `CLAUDE_CONFIG_DIR`, so you can trial it in a throwaway c
 CLAUDE_CONFIG_DIR=/tmp/kit-test ./install.sh --skip-ansys
 ```
 
+## Use it as a plugin marketplace only
+
+To get the vendored plugins without the full setup, add the repo as a marketplace inside Claude Code:
+
+```
+/plugin marketplace add ahmadhammoud56/MOAA
+/plugin install agent-arena-mode@moaa
+```
+
+The same marketplace also offers `flightdeck@moaa`, `plot-deck@moaa` and `prismantis@moaa`.
+
+The Specialist Council (60 agents plus a skill), the standalone skills, the MCP servers and the settings come only with the full installer above. Forging arena agents into council members needs the council installed.
+
 ## What the installer does
 
 1. Adds each needed marketplace: the upstream GitHub ones, plus this repo as the `moaa` marketplace for the vendored plugins.
