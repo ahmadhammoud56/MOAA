@@ -16,6 +16,8 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 - council-replay reads worker results that newer Claude Code versions return through the `SubagentHandback` tool instead of a final text block.
 - It also finds the `council.py resolve` JSON when the command was chained after other output, stops a worker's headline at a table, and accepts `**1. Label**` check headings.
 - An agent dispatched without an effort shows its model only, instead of `?`.
+- Specialist Council 1.3.2: the skill tells the coordinator to resolve every role, not only forged members. It no longer needs to read `registry.json` itself, because `resolve` already refuses suspended members, and it must not chain `resolve` with `cat`, which triggered a permission prompt. It also says where `runtime.md` lives. An interactive run had done all three wrong.
+- plot-deck 0.2.1 credits its author in `plugin.json`, which clears the last `claude plugin validate` warning.
 
 ## [0.4.2] - 2026-10-11
 
