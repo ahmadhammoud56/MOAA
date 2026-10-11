@@ -54,9 +54,10 @@ class Runner:
 
 
 def council_permissions(home):
-    """Allow rules for the council plugin's council.py (its cache path carries a version, hence the wildcards)."""
-    rules = [f"Bash({py} *specialist-council*council.py *)" for py in ("python", "python3", "py")]
-    rules.append("PowerShell(python *specialist-council*council.py *)")
+    """Allow rules for the council plugin's council.py. Its cache path carries a version, hence the wildcards; no space
+    after `council.py` because the quoted path ends in `council.py"`."""
+    rules = [f"Bash({py} *specialist-council*council.py*)" for py in ("python", "python3", "py")]
+    rules.append("PowerShell(python *specialist-council*council.py*)")
     return rules
 
 

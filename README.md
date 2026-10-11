@@ -52,7 +52,7 @@ To get the vendored plugins without the full setup, add the repo as a marketplac
 
 Other plugins in this marketplace: `specialist-council@moaa` (the council), `flightdeck@moaa`, `plot-deck@moaa` and `prismantis@moaa`. Install `specialist-council@moaa` and `agent-arena-mode@moaa` together to get the full council → arena → forging loop.
 
-To let `council.py` run without permission prompts, add these allow rules to your settings (the full installer adds them for you): `Bash(python *specialist-council*council.py *)` and `PowerShell(python *specialist-council*council.py *)`.
+To let `council.py` run without permission prompts, add these allow rules to your settings (the full installer adds them for you): `Bash(python *specialist-council*council.py*)` and `PowerShell(python *specialist-council*council.py*)`.
 
 The standalone skills, the MCP servers, the upstream plugin set and the settings come only with the full installer above.
 

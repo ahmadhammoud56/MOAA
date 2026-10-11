@@ -29,8 +29,8 @@ class MergeTests(unittest.TestCase):
 
     def test_council_permissions_cover_home_spelling(self):
         rules = install.council_permissions(Path("/home/u/.claude"))
-        self.assertIn("Bash(python *specialist-council*council.py *)", rules)
-        self.assertIn("PowerShell(python *specialist-council*council.py *)", rules)
+        self.assertIn("Bash(python *specialist-council*council.py*)", rules)
+        self.assertIn("PowerShell(python *specialist-council*council.py*)", rules)
 
     def test_kit_config_is_consistent(self):
         kit = install.read_json(install.KIT / "config" / "kit.json", None)
