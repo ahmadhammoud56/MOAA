@@ -1,6 +1,6 @@
 {
   "name": "agent-arena-mode",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Eight multi-agent arena modes (judge, tournament, swarm, league, evolution, synthesis, redteam, cascade) with a persistent SQLite library of reusable best agents.",
   "author": {"name": "Ahmad Hammoud", "email": "ahmad.hammoud56@tamu.edu"},
   "license": "MIT",

@@ -1,6 +1,7 @@
 import importlib.util
 from contextlib import closing
 import json
+import os
 from pathlib import Path
 import shutil
 import sqlite3
@@ -11,6 +12,8 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
+os.environ.pop("CLAUDE_PLUGIN_DATA", None)  # never touch a real library from tests
+os.environ["CLAUDE_CONFIG_DIR"] = tempfile.mkdtemp(prefix="arena-test-home-")
 sys.path.insert(0, str(SCRIPTS))
 import arena
 import library
@@ -208,6 +211,21 @@ class LibraryTests(unittest.TestCase):
                                capture_output=True, text=True)
         self.assertEqual(check.returncode, 0, check.stderr)
         self.assertEqual(json.loads(check.stdout)["forged"], {"active": 0, "total": 1})
+
+    def test_hand_run_cli_finds_installed_library(self):
+        home = Path(os.environ["CLAUDE_CONFIG_DIR"])
+        self.assertIsNone(library.installed_database())
+        older = home / "plugins" / "data" / "agent-arena-mode-old" / "library.sqlite3"
+        newer = home / "plugins" / "data" / "agent-arena-mode-claude-kit" / "library.sqlite3"
+        for path in (older, newer):
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b"")
+        os.utime(older, (1, 1))
+        try:
+            self.assertEqual(library.default_database(), str(newer.resolve()))  # most recently used wins
+            self.assertNotEqual(library.default_database(self.run), str(newer.resolve()))  # runs keep their own
+        finally:
+            shutil.rmtree(home / "plugins")
 
     def test_promote_rejects_inconsistent_scores(self):
         self.candidate("a")

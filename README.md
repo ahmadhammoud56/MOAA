@@ -1,4 +1,4 @@
-# claude-kit
+# MOAC: Mother of All Claudes
 
 A complete Claude Code setup: 94 plugins from 14 marketplaces, the Specialist Council (60 role agents), the Agent Arena (which forges new council members from proven agents), 10 standalone skills, and the `rea` and `ansys` MCP servers. One command installs all of it.
 
@@ -14,7 +14,7 @@ This repository is private. Clone it with SSH.
 ## Install
 
 ```bash
-git clone git@github.com:ahmadhammoud56/claude-kit.git
+git clone git@github.com:ahmadhammoud56/MOAC.git claude-kit
 cd claude-kit
 ./install.sh            # macOS / Linux / Git Bash
 ```
@@ -59,19 +59,23 @@ CLAUDE_CONFIG_DIR=/tmp/kit-test ./install.sh --skip-ansys
 
 Rerunning is safe: anything already present is skipped.
 
-## Council and arena
+## Using it: council, arena, saving, forging
 
-- The **Specialist Council** (`specialist-council/`) picks 2 to 3 role agents per task. Each role's model and effort come from `profile.json`; `council.py resolve` prints them.
-- The **Agent Arena** (`plugins/agent-arena-mode/`) runs tournaments and other modes. It scores entries with a judge and keeps a library of winners in SQLite.
-- **Forging:** an arena agent becomes a council member after it is validated in 2 or more runs with every score at least 85 and a spread of at most 10. Run:
+All four work at any time and on their own. Nothing needs to be started first.
 
-  ```bash
-  python <arena plugin>/scripts/library.py promote --id <agent id>
-  ```
+| What | How | What happens |
+|---|---|---|
+| **Council** | Ask for a council or a specialist team, or run `/specialist-council`. | Picks 2 to 3 of the 60 role agents (plus any active forged members), resolves each one's model and effort with `council.py resolve`, runs them, then integrates and verifies the result. |
+| **Arena** | `/agent-arena-mode:<mode> [--agents N] [--reuse IDS] -- TASK`, where mode is judge, tournament, swarm, league, evolution, synthesis, redteam or cascade. | Workers compete on a frozen task and rubric, and the `agent-arena-judge` scores them. |
+| **Saving** | Automatic. Every judged arena result is written to the library. Add `--no-library` to opt out. | Stored in `~/.claude/plugins/data/agent-arena-mode-claude-kit/library.sqlite3`. Browse with `/agent-arena-mode:library list`; reuse with `library use ID -- TASK`, or `--reuse ID` in any mode. |
+| **Forging** | `/agent-arena-mode:library promote ID`. It shows the evidence first (`promote --check`). | Writes `council-forged-<slug>` with its validated model and effort, a knowledge base, and a registry entry. The council can use it from the next session. |
 
-  This writes `council-forged-<slug>` and a knowledge base under `~/.claude/skills/specialist-council/forged/`.
-- **Suspension:** if a later validation fails, the member is suspended and its agent card is unregistered. `council.py check` checks forged members too.
-- No forged members ship with this kit. Every machine forges its own.
+Forging rules:
+- **Eligibility:** the agent must be validated in 2 or more independent runs, with every validated score at least 85, a score spread of at most 10, and nothing in its lineage invalidated.
+- **Earning a second run:** reuse a saved agent in a new arena run with `--reuse ID`.
+- **Suspension:** a later failed validation suspends the member automatically and unregisters its agent card. `python ~/.claude/skills/specialist-council/council.py check` validates the 60 roles plus every forged member.
+- **Command line:** you can run the library by hand without Claude Code: `python <plugin dir>/scripts/library.py list|show|promote|council`. It finds the installed library on its own, so `--database` is optional.
+- **Not shipped:** no forged members come with this kit. Every machine forges its own.
 
 ## Tests
 
@@ -85,6 +89,6 @@ python -m unittest discover -s tests                         # installer
 
 ## Updating the kit from a working machine
 
-Edit the vendored copies here, bump the plugin version in `plugins/<name>/.claude-plugin/plugin.json`, then rerun the installer. It runs `claude plugin marketplace update claude-kit` before installing. Plugin versions that were tested together are recorded as `tested_version` in `config/kit.json`.
+This repo is the canonical source: on the maintainer machine it lives at `~/code/claude-kit`, and the live install's `claude-kit` marketplace points at it. Edit here, bump the plugin version in `plugins/<name>/.claude-plugin/plugin.json`, then rerun the installer. It runs `claude plugin marketplace update claude-kit` before installing. Plugin versions that were tested together are recorded as `tested_version` in `config/kit.json`.
 
 See [THIRD_PARTY.md](THIRD_PARTY.md) for the source and licence of everything vendored or referenced.

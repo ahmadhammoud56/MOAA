@@ -25,7 +25,7 @@
     {
       "id": "agent-arena-mode@claude-kit",
       "enabled": true,
-      "tested_version": "0.4.2"
+      "tested_version": "0.4.3"
     },
     {
       "id": "agentic-awesome-skills@agentic-awesome-skills",

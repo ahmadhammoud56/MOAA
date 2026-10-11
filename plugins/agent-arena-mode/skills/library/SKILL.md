@@ -1,7 +1,7 @@
 ---
 name: library
 description: Find, inspect, load, and reuse the best saved agent-arena profiles and results from the persistent database. Use when the user asks for saved arena agents, the agent library, or /agent-arena-mode:library.
-argument-hint: "list|show|load|use|history|sync [args]"
+argument-hint: "list|show|load|use|history|promote|council|sync [args]"
 ---
 
 # Agent Arena library
@@ -56,7 +56,7 @@ Actions:
   `~/.claude/agents/council-forged-<slug>.md` with the validated model and effort, a knowledge base under
   `~/.claude/skills/specialist-council/forged/<slug>/`, the council registry, and a `council_members` row.
   Report that the new agent loads in new sessions. Do not lower the thresholds unless the user asks, and
-  label any such member probationary. A later failed validation automatically suspends the member.
+  label any such member probationary. A later failed validation automatically suspends the member and unregisters its agent card.
 - `council`: list forged council members and their status.
 - `sync --run PATH`: retry a pending database synchronization for an existing run.
 

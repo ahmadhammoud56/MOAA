@@ -10,6 +10,7 @@ import tempfile
 import unittest
 
 os.environ.pop("CLAUDE_PLUGIN_DATA", None)  # never touch a real library from tests
+os.environ["CLAUDE_CONFIG_DIR"] = tempfile.mkdtemp(prefix="arena-test-home-")
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 import arena  # noqa: E402

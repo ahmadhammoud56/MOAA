@@ -31,8 +31,20 @@ def default_database(run_dir=None):
     configured = os.environ.get("CLAUDE_PLUGIN_DATA")
     if configured and "${" not in configured:
         return str((Path(configured) / "library.sqlite3").resolve())
+    if not run_dir:  # run by hand outside Claude Code: use the installed plugin's library when there is one
+        installed = installed_database()
+        if installed:
+            return installed
     base = Path(run_dir).resolve().parent if run_dir else Path.cwd() / ".agent-arena"
     return str((base / "library.sqlite3").resolve())
+
+
+def installed_database():
+    """Most recently used library of an installed agent-arena-mode plugin (any marketplace), or None."""
+    home = Path(os.environ.get("CLAUDE_CONFIG_DIR") or Path.home() / ".claude").expanduser()
+    found = sorted((home / "plugins" / "data").glob("agent-arena-mode-*/library.sqlite3"),
+                   key=lambda p: p.stat().st_mtime, reverse=True)
+    return str(found[0].resolve()) if found else None
 
 
 def connect(path):
