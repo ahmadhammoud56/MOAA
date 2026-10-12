@@ -4,6 +4,8 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-10-12
+
 ### Added
 - **War Room 0.3.0:** start a run from the app.
   - **New run** on Home: pick the project folder with the system folder dialog (or type it), describe the job, then **Draft with Claude** (one headless Sonnet call with no tools, no session file and no plugins, about 5–10k tokens, asked first) or **Write by hand** (no tokens). The draft opens in an editor for workers, roles, models, effort, briefs and seed tasks. **Create plan** resolves it like `warroom.py plan` and opens Preview & launch, so war mode, the acknowledgement and the confirm code still gate every launch. The planner refuses a folder Claude Code does not trust before spending anything, and a plan from the app can set no plugins, permissions or worker kinds.
@@ -124,6 +126,7 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 ### Added
 - First one-command installer: plugins, council, arena, skills, MCP servers and settings merge, with uninstall.
 
+[0.5.2]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/ahmadhammoud56/MOAA/compare/v0.4.3...v0.5.0
 [0.4.0]: https://github.com/ahmadhammoud56/MOAA/compare/v0.3.0...v0.4.0
