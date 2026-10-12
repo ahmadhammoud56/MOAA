@@ -4,6 +4,8 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-12
+
 ### Added
 - **War Room 0.2.0:** a bigger app, and a way to see it without spending tokens.
   - **Demo mode** (`warroom.py demo`, or Start demo on Home): a simulated six-worker run that drives the real bus for two to three minutes, with claims, a failed review, an arbitration, merges and a usage meter. No Claude session is started.
@@ -116,5 +118,7 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 ### Added
 - First one-command installer: plugins, council, arena, skills, MCP servers and settings merge, with uninstall.
 
+[0.5.1]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/ahmadhammoud56/MOAA/compare/v0.4.3...v0.5.0
 [0.4.0]: https://github.com/ahmadhammoud56/MOAA/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ahmadhammoud56/MOAA/releases/tag/v0.3.0
