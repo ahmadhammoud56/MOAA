@@ -300,7 +300,7 @@ textarea:focus { outline: none; border-color: var(--accent); }
         <label class="fl" for="nr-prompt">The job</label>
         <textarea id="nr-prompt" rows="4" maxlength="8000" placeholder="What should the team build or fix, and what does done look like?"></textarea>
         <div class="nr-act"><button class="primary" type="button" id="nr-draft">Draft with Claude</button><button type="button" id="nr-hand">Write by hand</button>
-          <span class="pmsg" id="nr-msg">Drafting is one Sonnet call with no tools: roughly 10–30k tokens of your plan. Nothing launches until you preview and confirm.</span></div>
+          <span class="pmsg" id="nr-msg">Drafting is one Sonnet call with no tools: roughly 5–10k tokens of your plan. Nothing launches until you preview and confirm.</span></div>
         <div id="nr-ed"></div>
       </div>
     </section>
@@ -548,7 +548,7 @@ $("nr-browse").onclick = async () => {
   $("nr-browse").disabled = false;
 };
 $("nr-draft").onclick = async () => {
-  if (!confirm("Draft a plan with Claude? This runs one Sonnet call (no tools, roughly 10–30k tokens of your plan). Nothing is launched.")) return;
+  if (!confirm("Draft a plan with Claude? This runs one Sonnet call (no tools, roughly 5–10k tokens of your plan). Nothing is launched.")) return;
   try { await api("/api/planner", {prompt: $("nr-prompt").value, project: $("nr-proj").value.trim()}); watchPlanner(); }
   catch (e) { nrmsg(esc(e.message), "err"); }
 };

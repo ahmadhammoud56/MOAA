@@ -33,7 +33,7 @@ To see the app without spending any tokens, run `python warroom.py demo` (or pre
 **Home**
 
 - **New run.** Pick the project folder with **Browse…** (the system folder dialog) or type its path; it must be a folder Claude Code already trusts. Then describe the job and either:
-  - **Draft with Claude:** one headless Sonnet call with no tools, no session file and no plugins drafts the plan (about 10–30k tokens of your plan; the app asks first and shows the progress and any error), or
+  - **Draft with Claude:** one headless Sonnet call with no tools, no session file and no plugins drafts the plan (about 5–10k tokens of your plan; the app asks first and shows the progress and any error), or
   - **Write by hand:** an empty form with a planner, a builder and a reviewer, at no token cost.
 
   Both open the plan editor: name, goal, workers (council role, model, effort, brief) and seed tasks (assignee, review on or off). The budget comes from Settings. **Create plan** resolves roles and plugins exactly like `warroom.py plan` and opens **Preview & launch**; nothing starts until you arm war mode, acknowledge and launch. The draft survives a reload.
