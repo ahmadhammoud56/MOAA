@@ -35,6 +35,11 @@
       "description": "Colorful, themeable rendering for Claude Code replies."
     },
     {
+      "name": "war-room",
+      "source": "./plugins/war-room",
+      "description": "War Room: a team of real, parallel Claude Code workers with council roles, review gates, a merge queue, usage-limit failsafes and a live local app."
+    },
+    {
       "name": "academy-guide",
       "source": {
         "source": "github",

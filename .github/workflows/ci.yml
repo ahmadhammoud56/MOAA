@@ -36,6 +36,13 @@ jobs:
       - name: Agent Arena tests
         working-directory: plugins/agent-arena-mode
         run: python -m unittest discover -s tests
+      - name: War Room tests
+        working-directory: plugins/war-room
+        run: |
+          git config --global user.name ci
+          git config --global user.email ci@localhost
+          python -m unittest discover -s tests
+          python tests/test_bus.py
       - name: Public-release scan (secrets, personal paths, licences)
         run: python scripts/scan.py --public
       - name: MODELS.md matches the plugins

@@ -61,6 +61,20 @@ def council_permissions(home):
     after `council.py` because the quoted path ends in `council.py"`."""
     rules = [f"Bash({py} *specialist-council*council.py*)" for py in ("python", "python3", "py")]
     rules.append("PowerShell(python *specialist-council*council.py*)")
+    return rules + war_room_permissions()
+
+
+# War Room subcommands that only read, message, or stop. toggle, launch, integrate, finish, shutdown and approve are
+# left out on purpose: they stay behind a permission prompt so arming and launching remain the user's own decision.
+WAR_ROOM_SAFE = ("plan", "status", "post", "send", "wake", "app", "list", "measure", "tile", "merge",
+                 "pause", "unpause", "stop", "resume")
+
+
+def war_room_permissions():
+    rules = []
+    for sub in WAR_ROOM_SAFE:
+        rules += [f"Bash({py} *war-room*warroom.py* {sub}*)" for py in ("python", "python3", "py")]
+        rules.append(f"PowerShell(python *war-room*warroom.py* {sub}*)")
     return rules
 
 

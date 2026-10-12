@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>War Room</title>
+<style>
+@font-face { font-family: "Plex Sans"; src: url(/fonts/IBMPlexSans-Variable.woff2) format("woff2"); font-weight: 100 700; }
+@font-face { font-family: "Plex Mono"; src: url(/fonts/IBMPlexMono-Regular.woff2) format("woff2"); font-weight: 400; }
+@font-face { font-family: "Plex Mono"; src: url(/fonts/IBMPlexMono-Medium.woff2) format("woff2"); font-weight: 500; }
+:root {
+  --bg: #0b0d10; --panel: #121519; --raise: #171b20; --sunk: #0e1013; --line: #232830; --line-strong: #343b45;
+  --text: #d7dce2; --dim: #8a939e; --faint: #5c6570; --accent: #c8a24a; --accent-soft: rgba(200,162,74,.14);
+  --danger: #c4544a; --ok: #6f9e7a; --info: #5f86b0;
+  --haiku: #6f9e7a; --sonnet: #5f86b0; --opus: #b08a4f; --fable: #8c78b0;
+  --sans: "Plex Sans", "Segoe UI", system-ui, sans-serif; --mono: "Plex Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font: 13px/1.5 var(--sans); }
+::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: var(--line-strong); }
+.mono { font-family: var(--mono); }
+
+header { display: flex; align-items: center; gap: 24px; height: 52px; padding: 0 20px; background: var(--panel);
+  border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; overflow: hidden; }
+header::after { content: ""; position: absolute; left: 0; bottom: 0; height: 1px; width: 120px; background: var(--accent);
+  opacity: .6; animation: sweep 7s linear infinite; }
+@keyframes sweep { from { transform: translateX(-120px); } to { transform: translateX(100vw); } }
+.brand { font: 500 12px var(--mono); letter-spacing: .22em; display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+.brand .mark { width: 14px; height: 14px; border: 1px solid var(--accent); position: relative; }
+.brand .mark::after { content: ""; position: absolute; inset: 3px; background: var(--accent); animation: blink 2s steps(1) infinite; }
+.hdr { font: 11px var(--mono); color: var(--dim); display: flex; gap: 18px; margin-left: auto; white-space: nowrap; }
+.hdr b { color: var(--text); font-weight: 500; }
+@keyframes blink { 50% { opacity: .25; } }
+
+main { display: grid; grid-template-columns: 430px minmax(0, 1fr); gap: 0; min-height: calc(100vh - 52px); }
+.col { border-right: 1px solid var(--line); }
+.col:last-child { border-right: 0; }
+.panel { border-bottom: 1px solid var(--line); animation: rise .5s cubic-bezier(.2,.7,.2,1) both; }
+.panel:nth-child(2) { animation-delay: .08s; } .panel:nth-child(3) { animation-delay: .16s; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+h2 { margin: 0; padding: 0 18px; height: 36px; display: flex; align-items: center; justify-content: space-between;
+  font: 500 11px var(--mono); letter-spacing: .14em; color: var(--dim); text-transform: uppercase;
+  border-bottom: 1px solid var(--line); background: var(--panel); }
+h2 span { color: var(--faint); letter-spacing: .04em; text-transform: none; }
+.pad { padding: 18px; }
+
+/* ---------- war mode switch ---------- */
+.housing { position: relative; border: 1px solid var(--line-strong); background: var(--sunk); padding: 22px 20px 18px; }
+.housing i.screw { position: absolute; width: 6px; height: 6px; border: 1px solid var(--line-strong); background: var(--raise); }
+.housing i.screw::after { content: ""; position: absolute; left: 1px; right: 1px; top: 2px; height: 1px; background: var(--faint); }
+.s1 { top: 7px; left: 7px; } .s2 { top: 7px; right: 7px; } .s3 { bottom: 7px; left: 7px; } .s4 { bottom: 7px; right: 7px; }
+.wm-title { display: flex; justify-content: space-between; align-items: center; font: 500 11px var(--mono); letter-spacing: .2em; color: var(--dim); }
+.led { width: 9px; height: 9px; background: var(--faint); display: inline-block; }
+.led.on { background: var(--accent); animation: blink 1.2s steps(2, jump-none) infinite; }
+.switch { position: relative; height: 74px; margin: 16px 0 12px; border: 1px solid var(--line-strong); background: var(--bg);
+  cursor: pointer; user-select: none; display: grid; grid-template-columns: 1fr 1fr; outline: none; }
+.switch:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+.switch .lbl { display: flex; align-items: center; justify-content: center; font: 500 13px var(--mono); letter-spacing: .3em; color: var(--faint);
+  position: relative; z-index: 1; transition: color .3s; }
+.switch .knob { position: absolute; top: 5px; bottom: 5px; left: 5px; width: calc(50% - 5px); background: var(--raise);
+  border: 1px solid var(--line-strong); transition: transform .45s cubic-bezier(.65,0,.2,1), background .3s, border-color .3s; }
+.switch .knob::before, .switch .knob::after { content: ""; position: absolute; top: 18px; bottom: 18px; width: 1px; background: var(--line-strong); }
+.switch .knob::before { left: 46%; } .switch .knob::after { left: 54%; }
+.switch.armed { background: repeating-linear-gradient(-45deg, #1d1a12 0 10px, #15130e 10px 20px); background-size: 28px 28px; animation: hazard 2.4s linear infinite; }
+@keyframes hazard { to { background-position: 28px 0; } }
+.switch.armed .knob { transform: translateX(100%); background: #2a2414; border-color: var(--accent); }
+.switch.armed .lbl.armed, .switch:not(.armed) .lbl.safe { color: var(--text); }
+.readout { font: 11px var(--mono); color: var(--dim); display: flex; justify-content: space-between; }
+.readout b { font-weight: 500; color: var(--text); }
+.readout.armed b { color: var(--accent); }
+
+/* ---------- settings ---------- */
+fieldset { border: 0; border-top: 1px solid var(--line); margin: 0; padding: 14px 18px 4px; }
+fieldset:first-child { border-top: 0; }
+legend { font: 500 10px var(--mono); letter-spacing: .14em; color: var(--faint); text-transform: uppercase; padding: 0; margin-bottom: 8px; float: left; width: 100%; }
+.row { display: grid; grid-template-columns: 1fr 112px; gap: 10px; align-items: center; padding: 6px 0; clear: both; }
+.row label { color: var(--text); font-size: 12.5px; }
+.row small { display: block; color: var(--faint); font-size: 11px; line-height: 1.35; }
+input[type=number] { width: 100%; font: 12px var(--mono); color: var(--text); background: var(--sunk); border: 1px solid var(--line-strong);
+  border-radius: 2px; padding: 6px 8px; text-align: right; }
+input[type=number]:focus { outline: none; border-color: var(--accent); }
+.tog { justify-self: end; width: 46px; height: 22px; border: 1px solid var(--line-strong); background: var(--sunk); position: relative; cursor: pointer; }
+.tog::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; background: var(--faint); transition: transform .25s, background .25s; }
+.tog.on { border-color: var(--ok); } .tog.on::after { transform: translateX(24px); background: var(--ok); }
+.tog:focus-visible { outline: 2px solid var(--accent); }
+.gauge { position: relative; height: 8px; background: var(--sunk); border: 1px solid var(--line); margin: 6px 0 2px; clear: both; }
+.gauge i { position: absolute; top: 0; bottom: 0; }
+.gauge .pause { background: rgba(200,162,74,.25); border-left: 1px solid var(--accent); transition: left .3s, width .3s; }
+.gauge .stop { background: rgba(196,84,74,.3); border-left: 1px solid var(--danger); right: 0; transition: left .3s; }
+.gauge .now { width: 2px; background: var(--text); transition: left .6s; }
+.gauge-l { display: flex; justify-content: space-between; font: 10px var(--mono); color: var(--faint); }
+.actions { display: flex; gap: 8px; align-items: center; padding: 14px 18px 18px; }
+.actions .msg { font: 11px var(--mono); color: var(--faint); margin-left: auto; }
+.actions .msg.err { color: var(--danger); } .actions .msg.ok { color: var(--ok); }
+
+button { font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text); white-space: nowrap;
+  background: var(--raise); border: 1px solid var(--line-strong); border-radius: 2px; padding: 7px 12px; cursor: pointer;
+  transition: border-color .15s, background .15s, transform .08s, opacity .2s; }
+button:hover:not(:disabled) { border-color: var(--dim); } button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button.primary { border-color: var(--accent); background: #2a2414; color: #f0e2bc; }
+button.danger { color: #f0d6d3; border-color: var(--danger); background: #2a1715; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- runs ---------- */
+.runs { padding: 14px 18px 30px; display: grid; gap: 10px; }
+.run { border: 1px solid var(--line); background: var(--panel); border-left: 2px solid var(--line-strong); animation: rise .45s cubic-bezier(.2,.7,.2,1) both; }
+.run.live { border-left-color: var(--accent); } .run.planned { border-left-color: var(--info); }
+.run.finished { border-left-color: var(--ok); } .run.stopped { border-left-color: var(--danger); }
+.run .top { display: flex; align-items: center; gap: 10px; padding: 10px 14px 0; }
+.run .name { font: 500 13px var(--mono); }
+.tag { font: 500 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; border: 1px solid var(--line-strong); padding: 1px 6px; color: var(--dim); }
+.run.live .tag { color: var(--accent); border-color: var(--accent); } .run.planned .tag { color: #a9c3de; border-color: var(--info); }
+.run.finished .tag { color: #b9d8c0; border-color: var(--ok); } .run.stopped .tag { color: #f0d6d3; border-color: var(--danger); }
+.run .when { margin-left: auto; font: 11px var(--mono); color: var(--faint); }
+.run .goal { padding: 6px 14px 0; color: var(--dim); font-size: 12.5px; }
+.roster { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px 0; }
+.chip { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--sunk); padding: 3px 8px 3px 0; font: 11px var(--mono); color: var(--dim); }
+.chip i { width: 3px; align-self: stretch; }
+.chip b { color: var(--text); font-weight: 500; }
+.progress { margin: 10px 14px 0; height: 3px; background: var(--sunk); position: relative; }
+.progress i { position: absolute; inset: 0 auto 0 0; background: var(--ok); transition: width .8s cubic-bezier(.2,.7,.2,1); }
+.run .foot { display: flex; align-items: center; gap: 8px; padding: 10px 14px 12px; }
+.run .foot .meta { font: 11px var(--mono); color: var(--faint); margin-right: auto; }
+.empty { border: 1px dashed var(--line-strong); padding: 28px; color: var(--faint); text-align: center; font-size: 12.5px; }
+.empty code { font-family: var(--mono); color: var(--dim); }
+
+/* ---------- modal ---------- */
+.scrim { position: fixed; inset: 0; background: rgba(5,6,8,.72); display: none; align-items: center; justify-content: center; z-index: 20; }
+.scrim.show { display: flex; animation: fade .2s ease-out; }
+@keyframes fade { from { opacity: 0; } }
+.modal { width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 60px); overflow: auto; background: var(--panel);
+  border: 1px solid var(--line-strong); border-top: 2px solid var(--accent); animation: pop .28s cubic-bezier(.2,.7,.2,1); }
+.modal.danger { border-top-color: var(--danger); }
+@keyframes pop { from { transform: translateY(10px) scale(.985); opacity: 0; } }
+.modal h3 { margin: 0; padding: 14px 18px; font: 500 12px var(--mono); letter-spacing: .18em; border-bottom: 1px solid var(--line); }
+.modal .body { padding: 16px 18px; }
+.modal pre { white-space: pre-wrap; font: 11.5px/1.6 var(--mono); color: var(--dim); margin: 0 0 12px; }
+.modal table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
+.modal th { text-align: left; font: 500 10px var(--mono); letter-spacing: .1em; color: var(--faint); text-transform: uppercase; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.modal td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.modal td.m { font-family: var(--mono); font-size: 11.5px; }
+.ack { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line-strong); background: var(--sunk); cursor: pointer; }
+.ack input { margin-top: 3px; accent-color: #c8a24a; }
+.modal .foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px 16px; border-top: 1px solid var(--line); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 12px; }
+.stats div { background: var(--sunk); padding: 8px 10px; font: 11px var(--mono); color: var(--faint); }
+.stats b { display: block; color: var(--text); font-size: 14px; font-weight: 500; margin-top: 2px; }
+.seq { font: 12px/1.9 var(--mono); color: var(--dim); }
+.seq div { opacity: 0; animation: rise .3s forwards; }
+.seq div b { color: var(--accent); font-weight: 500; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .seq div { opacity: 1; } }
+@media (max-width: 980px) { main { grid-template-columns: 1fr; } .col { border-right: 0; } }
+@media (max-width: 700px) { header { height: auto; flex-wrap: wrap; padding: 10px 16px; overflow: visible; } .hdr { flex-wrap: wrap; white-space: normal; margin-left: 0; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><i class="mark"></i>WAR ROOM <span style="color:var(--faint);letter-spacing:.06em">control</span></div>
+  <div class="hdr"><span>HUB <b style="color:var(--ok)" id="hub">online</b></span><span>PLAN <b id="meter">--</b></span><span>COST MODEL <b id="calib">--</b></span><span id="clock"></span></div>
+</header>
+<main>
+  <div class="col">
+    <section class="panel">
+      <h2>War mode <span id="wm-state">--</span></h2>
+      <div class="pad">
+        <div class="housing">
+          <i class="screw s1"></i><i class="screw s2"></i><i class="screw s3"></i><i class="screw s4"></i>
+          <div class="wm-title"><span>MASTER SWITCH</span><i class="led" id="wm-led"></i></div>
+          <div class="switch" id="switch" role="switch" aria-checked="false" aria-label="War mode" tabindex="0">
+            <span class="lbl safe">SAFE</span><span class="lbl armed">ARMED</span><i class="knob"></i>
+          </div>
+          <div class="readout" id="readout"><span>launches <b>blocked</b></span><span id="live-count"></span></div>
+        </div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Settings <span>defaults for every new plan</span></h2>
+      <form id="settings" onsubmit="return false">
+        <fieldset><legend>Team</legend>
+          <div class="row"><label for="max_workers">Max workers<small>Parallel Claude instances per run (hard cap 8)</small></label><input type="number" id="max_workers" min="1" max="8" step="1"></div>
+        </fieldset>
+        <fieldset><legend>Usage guard</legend>
+          <div class="row"><label for="pause_at">Pause claims at<small>% of the 5-hour window: workers finish, checkpoint, park</small></label><input type="number" id="pause_at" min="10" max="99"></div>
+          <div class="row"><label for="stop_at">Stop all at<small>% of the window: stop, keep conversations, resume after reset</small></label><input type="number" id="stop_at" min="11" max="100"></div>
+          <div class="gauge" aria-hidden="true"><i class="pause" id="g-pause"></i><i class="stop" id="g-stop"></i><i class="now" id="g-now"></i></div>
+          <div class="gauge-l"><span>0%</span><span id="g-now-l">now --</span><span>100%</span></div>
+          <div class="row"><label for="max_hours">Max run length<small>Hours before the conductor stops a run</small></label><input type="number" id="max_hours" min="0.25" max="72" step="0.25"></div>
+        </fieldset>
+        <fieldset><legend>Review gates</legend>
+          <div class="row"><label id="l-gates">Gates<small>Work is reviewed by another worker on a different model before it counts</small></label><i class="tog" id="gates" role="switch" tabindex="0" aria-labelledby="l-gates"></i></div>
+          <div class="row"><label for="gate_score">Pass score<small>Minimum review score (Agent Arena standard: 85)</small></label><input type="number" id="gate_score" min="50" max="100"></div>
+          <div class="row"><label for="max_fails">Failed reviews before arbitration<small>Then an arbiter worker decides, then you</small></label><input type="number" id="max_fails" min="1" max="5"></div>
+        </fieldset>
+        <fieldset><legend>Workers</legend>
+          <div class="row"><label for="wait_seconds">Keep-alive wait<small>Seconds an idle worker stays parked (no tokens) before going idle</small></label><input type="number" id="wait_seconds" min="60" max="7200" step="30"></div>
+        </fieldset>
+        <fieldset><legend>Completion</legend>
+          <div class="row"><label id="l-af">Auto finish<small>When all work is merged: stop workers, record cost, clean sessions and worktrees</small></label><i class="tog" id="auto_finish" role="switch" tabindex="0" aria-labelledby="l-af"></i></div>
+          <div class="row"><label id="l-ai">Auto integrate<small>Also merge the run's branch into your current branch (clean tree only, never pushed)</small></label><i class="tog" id="auto_integrate" role="switch" tabindex="0" aria-labelledby="l-ai"></i></div>
+        </fieldset>
+        <div class="actions"><button class="primary" id="save" type="button" disabled>Save settings</button><button id="reset" type="button">Defaults</button><span class="msg" id="smsg"></span></div>
+      </form>
+    </section>
+  </div>
+  <div class="col">
+    <section class="panel">
+      <h2>Runs <span id="rcount"></span></h2>
+      <div class="runs" id="runs"></div>
+    </section>
+  </div>
+</main>
+
+<div class="scrim" id="scrim"><div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt"></div></div>
+
+<script>
+const TOKEN = "__TOKEN__";
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[c]);
+const tier = m => /haiku/.test(m) ? "haiku" : /sonnet/.test(m) ? "sonnet" : /fable/.test(m) ? "fable" : "opus";
+const ago = t => { const s = Date.now() / 1000 - t; return s < 60 ? "just now" : s < 3600 ? `${Math.floor(s / 60)} min ago` : s < 86400 ? `${Math.floor(s / 3600)} h ago` : `${Math.floor(s / 86400)} d ago`; };
+const NUMS = ["max_workers", "pause_at", "stop_at", "max_hours", "gate_score", "max_fails", "wait_seconds"];
+const TOGS = ["gates", "auto_finish", "auto_integrate"];
+let home = null, dirty = false, seen = new Set();
+
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : {method: "POST", headers: {"X-War-Room-Token": TOKEN, "Content-Type": "application/json"}, body: JSON.stringify(body)});
+  const out = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(out.error || r.status);
+  return out;
+}
+
+/* ---------- modal helpers ---------- */
+let lastFocus = null;
+function modal(html, danger = false) {
+  lastFocus = document.activeElement;
+  $("modal").className = "modal" + (danger ? " danger" : ""); $("modal").innerHTML = html.replace("<h3>", '<h3 id="mt">');
+  $("scrim").classList.add("show");
+  for (const el of document.querySelectorAll("header, main")) el.inert = true;  /* keeps Tab inside the dialog */
+  ($("modal").querySelector("input, button") || $("modal")).focus();
+}
+function closeModal() {
+  $("scrim").classList.remove("show");
+  for (const el of document.querySelectorAll("header, main")) el.inert = false;
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+}
+const fail = e => alert(`War Room: ${e.message}`);
+$("scrim").addEventListener("click", e => { if (e.target === $("scrim")) closeModal(); });
+addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+/* ---------- war mode ---------- */
+function renderSwitch() {
+  const on = home.war_mode, live = home.runs.filter(r => r.status === "live").length;
+  $("switch").classList.toggle("armed", on); $("switch").setAttribute("aria-checked", on);
+  $("wm-led").classList.toggle("on", on);
+  $("wm-state").textContent = on ? "armed" : "safe";
+  $("readout").className = "readout" + (on ? " armed" : "");
+  $("readout").firstElementChild.innerHTML = `launches <b>${on ? "allowed" : "blocked"}</b>`;
+  $("live-count").textContent = live ? `${live} run${live > 1 ? "s" : ""} live` : "no live runs";
+}
+function toggleWar() {
+  if (home.war_mode) {
+    const live = home.runs.filter(r => r.status === "live").length;
+    if (live && !confirm(`Disarm war mode? ${live} live run(s) keep running; only new launches are blocked.`)) return;
+    return api("/api/toggle", {on: false}).then(refresh).catch(fail);
+  }
+  modal(`<h3>ARM WAR MODE</h3><div class="body">
+    <pre>${esc(home.warning)}</pre>
+    <div class="stats"><div>Plan meter<b>${esc(home.meter)}</b></div><div>Max workers<b>${home.settings.max_workers}</b></div><div>Guard<b>${home.settings.pause_at}% / ${home.settings.stop_at}%</b></div></div>
+    <label class="ack"><input type="checkbox" id="ack"> <span>I understand that every War Room worker draws on my plan's limits, runs unattended within its allow-list, and that I approve each launch separately.</span></label>
+  </div><div class="foot"><button type="button" onclick="closeModal()">Cancel</button><button class="primary" id="arm" type="button" disabled>Arm war mode</button></div>`, true);
+  $("ack").onchange = e => $("arm").disabled = !e.target.checked;
+  $("arm").onclick = () => api("/api/toggle", {on: true}).then(() => { closeModal(); refresh(); }).catch(fail);
+}
+$("switch").onclick = toggleWar;
+$("switch").onkeydown = e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggleWar(); } };
+
+/* ---------- settings ---------- */
+function fillSettings(st) {
+  for (const k of NUMS) $(k).value = st[k];
+  for (const k of TOGS) { $(k).classList.toggle("on", !!st[k]); $(k).setAttribute("aria-checked", !!st[k]); }
+  dirty = false; $("save").disabled = true; gauge();
+}
+function collect() {
+  const out = {};
+  for (const k of NUMS) out[k] = +$(k).value;
+  for (const k of TOGS) out[k] = $(k).classList.contains("on");
+  return out;
+}
+function markDirty() { dirty = true; $("save").disabled = false; $("smsg").className = "msg"; $("smsg").textContent = "unsaved changes"; gauge(); }
+for (const k of NUMS) $(k).addEventListener("input", markDirty);
+for (const k of TOGS) { const t = $(k); t.onclick = () => { t.classList.toggle("on"); t.setAttribute("aria-checked", t.classList.contains("on")); markDirty(); };
+  t.onkeydown = e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); t.click(); } }; }
+function gauge() {
+  const p = +$("pause_at").value || 0, s = +$("stop_at").value || 0;
+  $("g-pause").style.left = `${p}%`; $("g-pause").style.width = `${Math.max(0, s - p)}%`; $("g-stop").style.left = `${s}%`;
+  const m = /5-hour ([\d.]+)%/.exec(home?.meter || ""), now = m ? +m[1] : null;
+  $("g-now").style.left = `${now ?? 0}%`; $("g-now").style.display = now == null ? "none" : "block";
+  $("g-now-l").textContent = now == null ? "now --" : `now ${now}%`;
+}
+$("save").onclick = async () => {
+  try { const out = await api("/api/settings", {settings: collect()}); home.settings = out.settings; fillSettings(out.settings);
+    $("smsg").className = "msg ok"; $("smsg").textContent = "saved"; }
+  catch (e) { $("smsg").className = "msg err"; $("smsg").textContent = e.message; }
+};
+$("reset").onclick = async () => { if (!confirm("Restore the built-in defaults?")) return;
+  let out; try { out = await api("/api/settings", {reset: true}); } catch (e) { return fail(e); }
+  home.settings = out.settings; fillSettings(out.settings);
+  $("smsg").className = "msg ok"; $("smsg").textContent = "defaults restored"; };
+
+/* ---------- runs ---------- */
+function roster(r) { return (r.workers || []).map(w => `<span class="chip"><i style="background:var(--${tier(w.model)})"></i><b>${esc(w.name)}</b>${esc(w.role)}</span>`).join(""); }
+function runCard(r) {
+  const pct = r.tasks ? Math.round(100 * (r.finished_tasks || 0) / r.tasks) : 0;
+  const when = r.status === "planned" ? "awaiting launch" : r.started ? `started ${ago(r.started)}` : "";
+  const est = r.estimate || [0, 0];
+  const meta = r.status === "planned" ? `${(r.workers || []).length} workers · ${r.tasks || 0} seed task(s) · est ${(est[0] / 1e6).toFixed(1)}–${(est[1] / 1e6).toFixed(1)}M tokens`
+    : `${r.finished_tasks}/${r.tasks} tasks finished${r.integrated ? " · integrated" : ""}`;
+  const acts = r.status === "planned"
+    ? `<button type="button" data-discard="${esc(r.run)}">Discard</button><button class="primary" type="button" data-launch="${esc(r.run)}">Preview &amp; launch</button>`
+    : `${r.status === "live" ? `<button class="danger" type="button" data-stop="${esc(r.run)}">Stop all</button>` : ""}<button class="primary" type="button" data-open="${esc(r.run)}">Open</button>`;
+  const fresh = !seen.has(r.run); seen.add(r.run);
+  return `<article class="run ${esc(r.status)}" style="${fresh ? "" : "animation:none"}"><div class="top"><span class="name">${esc(r.run)}</span><span class="tag">${esc(r.status)}</span><span class="when">${when}</span></div>
+    <div class="goal">${esc(r.goal)}</div><div class="roster">${roster(r)}</div>
+    ${r.status === "planned" ? "" : `<div class="progress"><i style="width:${pct}%"></i></div>`}
+    <div class="foot"><span class="meta">${meta}</span>${acts}</div></article>`;
+}
+function renderRuns() {
+  const runs = home.runs;
+  $("rcount").textContent = runs.length ? `${runs.filter(r => r.status === "live").length} live · ${runs.length} total` : "";
+  const safe = r => { try { return runCard(r); } catch (e) { return `<article class="run"><div class="top"><span class="name">${esc(r.run)}</span><span class="tag">unreadable</span></div></article>`; } };
+  const html = runs.length ? runs.map(safe).join("") :
+    `<div class="empty">No runs yet. Ask Claude for a War Room (<code>/war-room</code>); its plan appears here for preview and launch.</div>`;
+  if ($("runs")._h !== html) { $("runs").innerHTML = html; $("runs")._h = html; }
+}
+$("runs").addEventListener("click", async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const u = s => encodeURIComponent(s);
+  try {
+    if (b.dataset.open) location.href = `/run/${u(b.dataset.open)}`;
+    if (b.dataset.stop && confirm("Stop every worker in this run? Conversations are kept.")) { await api(`/api/run/${u(b.dataset.stop)}/stop`, {}); refresh(); }
+    if (b.dataset.discard && confirm("Discard this planned run?")) { await api(`/api/run/${u(b.dataset.discard)}/discard`, {}); refresh(); }
+  } catch (err) { fail(err); }
+  if (b.dataset.launch) launchModal(home.runs.find(r => r.run === b.dataset.launch));
+});
+function launchModal(r) {
+  const b = r.budget, armed = home.war_mode;
+  modal(`<h3>LAUNCH ${esc(r.run.toUpperCase())}</h3><div class="body">
+    <div style="color:var(--dim);margin-bottom:12px">${esc(r.goal)}</div>
+    <table><thead><tr><th>Worker</th><th>Council role</th><th>Kind</th><th>Model</th><th>Effort</th><th>Plugins / MCP</th></tr></thead><tbody>
+    ${r.workers.map(w => `<tr><td class="m">${esc(w.name)}</td><td>${esc(w.role)}</td><td class="m">${esc(w.kind)}${w.write ? " · writes" : ""}</td>
+      <td class="m"><span class="led" style="background:var(--${tier(w.model)});width:8px;height:8px"></span> ${esc(w.model.replace("claude-", ""))}</td>
+      <td class="m">${esc(w.effort)}</td><td class="m">${esc([...(w.plugins || []), ...(w.mcp || []).map(m => "mcp:" + m)].join(", "))}</td></tr>`).join("")}</tbody></table>
+    <div class="stats"><div>Estimated tokens<b>${((r.estimate || [0, 0])[0] / 1e6).toFixed(1)}–${((r.estimate || [0, 0])[1] / 1e6).toFixed(1)}M</b></div>
+      <div>Usage guard<b>${b.pause_at}% / ${b.stop_at}%</b></div><div>Review gates<b>${b.gates ? `on · ${b.gate_score}` : "off"}</b></div></div>
+    <pre>${esc(home.warning)}</pre>
+    ${armed ? `<label class="ack"><input type="checkbox" id="ack"> <span>I have read the roster and the warning. Launch ${r.workers.length} Claude Code workers now.</span></label>`
+            : `<div class="ack" style="border-color:var(--danger);cursor:default">War mode is SAFE. Arm the master switch first.</div>`}
+  </div><div class="foot"><button type="button" onclick="closeModal()">Cancel</button><button class="primary" id="go" type="button" disabled>Launch</button></div>`);
+  if (!armed) return;
+  $("ack").onchange = e => $("go").disabled = !e.target.checked;
+  $("go").onclick = async () => {
+    $("go").disabled = true;
+    try { await api(`/api/run/${encodeURIComponent(r.run)}/launch`, {confirm: r.confirm}); }
+    catch (e) { alert(`Launch refused: ${e.message}`); $("go").disabled = false; return; }
+    $("modal").querySelector(".body").innerHTML = `<div class="seq">${["WAR MODE ARMED · LAUNCH AUTHORISED", "WRITING WORKER PROFILES AND PERMISSIONS",
+      "CURATING PLUGINS PER ROLE", "OPENING THE BUS", ...r.workers.map(w => `SPAWNING <b>${esc(w.name)}</b> · ${esc(w.role)} · ${esc(w.model.replace("claude-", ""))}`), "HANDING OVER TO THE RUN VIEW"]
+      .map((t, i) => `<div style="animation-delay:${i * .32}s">▸ ${t}</div>`).join("")}</div>`;
+    $("modal").querySelector(".foot").innerHTML = "";
+    setTimeout(() => location.href = `/run/${encodeURIComponent(r.run)}`, 600 + (r.workers.length + 5) * 320);
+  };
+}
+
+async function refresh() {
+  try {
+    home = await api("/api/home");
+    $("hub").textContent = "online"; $("hub").style.color = "var(--ok)";
+    $("meter").textContent = home.meter;
+    const c = home.calibration || {};
+    $("calib").textContent = c.runs ? `${Math.round(c.per_worker_task / 1000)}k tok / worker-task · ${c.runs} run${c.runs > 1 ? "s" : ""}` : "uncalibrated";
+    renderSwitch(); renderRuns();
+    if (!dirty) fillSettings(home.settings); else gauge();
+  } catch (e) { $("hub").textContent = "offline"; $("hub").style.color = "var(--danger)"; }
+}
+setInterval(() => $("clock").textContent = new Date().toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"}), 1000);
+refresh(); setInterval(refresh, 2500);
+</script>
+</body>
+</html>

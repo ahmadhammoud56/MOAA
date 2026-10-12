@@ -27,6 +27,13 @@ class MergeTests(unittest.TestCase):
         restored["permissions"].pop("deny")
         self.assertEqual(restored, current)
 
+    def test_war_room_permissions_keep_launch_behind_a_prompt(self):
+        rules = install.council_permissions(Path("/home/u/.claude"))
+        self.assertIn("Bash(python *war-room*warroom.py* status*)", rules)
+        self.assertIn("PowerShell(python *war-room*warroom.py* stop*)", rules)
+        for gated in ("toggle", "launch", "integrate", "finish", "shutdown", "approve"):
+            self.assertFalse(any(f"warroom.py* {gated}" in r for r in rules), gated)
+
     def test_council_permissions_cover_home_spelling(self):
         rules = install.council_permissions(Path("/home/u/.claude"))
         self.assertIn("Bash(python *specialist-council*council.py*)", rules)

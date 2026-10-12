@@ -2,6 +2,23 @@
 
 All notable changes to MOAA. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [SemVer](https://semver.org/).
 
+## [0.5.0] - 2026-10-12
+
+### Added
+- **War Room 0.1.0** (`war-room@moaa`), a new plugin for giant or multi-workflow jobs.
+  - Runs a team of real, parallel Claude Code workers (`claude --bg`). Each worker has a Specialist Council role, model and effort, loads only the plugins and MCP servers its kind of work needs, and runs unattended on a narrow allow-list in its own git worktree.
+  - Workers coordinate through a local SQLite bus, served as a stdlib MCP server, with tasks, claims, messages, heartbeats and checkpoints.
+  - **Review gates:** finished work is reviewed by a worker on a different model tier and counts only after a pass at score 85 or above. Repeated failures go to an arbiter, then to the user. A writer must submit a full commit hash.
+  - **Merge queue:** approved commits merge into a per-run `war-room/<run>` branch. A conflict goes back to its author; any other git failure is retried.
+  - **Usage-limit failsafe:** claims pause at the pause threshold. At the stop threshold every worker stops with its conversation kept and resumes automatically at the real reset time. Checkpoints are restored on resume.
+  - **Auto finish:** when all work is merged, the run stops its workers, records the measured token cost (which calibrates future estimates), writes a report, and removes every session and fully merged worktree. Unreviewed or uncommitted work is kept and reported. Integration into the user's branch is one click and is never pushed.
+  - **Wake paths:** a bus message (parked worker), a resume with stored launch flags (idle worker), native `SendMessage`, and conductor auto-wake.
+  - **The War Room app** (`warroom.py app`): a local hub on 127.0.0.1, shown in a chromeless Edge or Chrome window.
+    - Home has a war mode master switch with an arming warning, settings for plan defaults, and a runs list with preview and launch.
+    - The run view shows a live Flow view of tasks moving Board → Build → Review → Merge queue → Integrated, a Topology view with messages in flight, worker boot sequences, review gates, the merge queue and report, a timeline and an activity feed.
+  - **Tiling:** on Windows, one console per worker with the app on the primary screen. On macOS and Linux, a tmux session; this was checked live on Linux.
+- The installer pre-approves War Room's routine subcommands. `toggle`, `launch`, `integrate`, `finish`, `shutdown` and `approve` still ask for permission.
+
 ## [0.4.3] - 2026-10-11
 
 ### Added
