@@ -66,9 +66,24 @@ The same task in an interactive session with Specialist Council 1.3.1: both work
 
 For giant or multi-workflow jobs, `war-room` runs a team of real Claude Code workers in parallel. The coordinator picks council roles, models, efforts and a curated plugin set per worker; finished work goes through review gates on a different model tier and merges into a per-run branch. Usage limits pause, stop and resume the team automatically, and a finished run cleans up after itself. Everything is visible live in a local app:
 
-![War Room run view: workers, the Flow view with tasks merged, review gates with pass and fail scores, merge queue and activity](plugins/war-room/docs/media/run-live.png)
+![War Room Tree view: the run as an agent tree with the reviewer rail, bus meters, workers by model tier and a session log](plugins/war-room/docs/media/run-tree.png)
 
-Arm war mode in the app (`python plugins/war-room/warroom.py app`), then ask Claude for a War Room; you review the plan and launch it yourself. See [plugins/war-room/README.md](plugins/war-room/README.md).
+The app (War Room 0.2.0) has:
+- **Run views:**
+  - **Flow:** tasks moving through the review gates
+  - **Tree:** the run as an agent tree, shown above
+  - **Topology:** messages between workers
+  - **Cost:** spend and burn per worker, with a projection to the usage guard
+- **Worker drill-down:** a worker's tool calls, messages, checkpoints and usage charts.
+- **Replay** of finished runs, and a **History** page.
+- **Alerts** for human gates, stops and finished runs.
+- **Settings:** presets, plugins per worker kind, a default model per council role, and a dark, light or system theme.
+
+![War Room Cost view: spend per worker, the 5-hour window with its projection, and the cost model](plugins/war-room/docs/media/run-cost.png)
+
+To try it at no token cost, run `python plugins/war-room/warroom.py demo`. It plays a simulated six-worker run in the app, with no Claude sessions.
+
+To run real work, arm war mode in the app (`python plugins/war-room/warroom.py app`), then ask Claude for a War Room. You review the plan and launch it yourself. See [plugins/war-room/README.md](plugins/war-room/README.md).
 
 ## Profiles
 
