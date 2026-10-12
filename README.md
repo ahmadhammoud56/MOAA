@@ -172,7 +172,7 @@ Every agent's model and effort are stored inside the plugins themselves; see [MO
 
 ### Third-party plugins
 
-<details><summary><b>ruvnet/ruflo</b>: 39 plugins (pinned <code>277c7bc</code>)</summary>
+<details><summary><b>ruvnet/ruflo</b>: 39 plugins (pinned <code>ea0ea3d</code>)</summary>
 
 | Install | Description |
 |---|---|
@@ -183,7 +183,7 @@ Every agent's model and effort are stored inside the plugins themselves; see [MO
 | `ruflo-aidefence@moaa` | AI safety scanning, PII detection, prompt injection defense, and adaptive threat learning |
 | `ruflo-arena@moaa` | Competitive ruliology for ruflo swarms — arenas, tournaments, and adaptive co-evolution of program strategies… |
 | `ruflo-autopilot@moaa` | Autonomous /loop-driven task completion with learning, prediction, and progress tracking |
-| `ruflo-bbs-federation@moaa` | AgentBBS federated business-domain BBS room integration (ADR-164 Phase 1) — register/publish/watch/human-join… |
+| `ruflo-bbs-federation@moaa` | AgentBBS cross-host agent federation (ADR-164). Phase 1: register/publish/watch/human-join room coordination.… |
 | `ruflo-browser@moaa` | Agentic browser automation with Playwright for testing, scraping, and UI interaction |
 | `ruflo-business-pods@moaa` | Business-domain pod templates for the federated business autopilot (ADR-164 Phase 2) — pod templates plus a d… |
 | `ruflo-core@moaa` | Core Ruflo MCP tools, commands, and Claude Code orchestration patterns |
@@ -391,7 +391,7 @@ Source: https://github.com/typesafe-ai/skills
    - Permission lists are unioned.
    - `env` keys and the defaults (model, theme, and so on) are added only when they're absent.
    - `enabledPlugins` entries you already set are kept.
-   - It adds allow rules so `council.py` runs without permission prompts, plus the env setting `ECC_GATEGUARD=off`.
+   - It adds allow rules so `council.py` runs without permission prompts, plus the env settings `ECC_GATEGUARD=off` and `CLAUDE_CODE_OVERLOADED_RETRY_MAX_DELAY_MS=60000` (Claude Code 2.1.296: retry an overloaded API for up to a minute instead of giving up early).
 6. Adds the MCP servers at user scope:
    - `rea` (`npx rea-agents@6.3.0`).
    - `ansys`: cloned at a pinned commit into `~/.claude/kit-tools/ansys-mcp-server`, with `vendor/ansys-mcp-server.patch` applied, inside its own venv.

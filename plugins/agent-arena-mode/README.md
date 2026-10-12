@@ -10,28 +10,28 @@ Requirements: Claude Code (verified on 2.1.268), Python 3.9+ on `PATH` as
 
 ## Install for all projects (user scope)
 
-The plugin ships inside a local marketplace folder (`Agent_arena/`, which holds
-`.claude-plugin/marketplace.json` next to `agent-arena-mode/`).
+The plugin ships in the [MOAA](https://github.com/ahmadhammoud56/MOAA) marketplace
+(`plugins/agent-arena-mode/` in that repo). The MOAA installer adds it for you, or:
 
 ```bash
-claude plugin marketplace add "C:/path/to/Agent_arena"
+claude plugin marketplace add ahmadhammoud56/MOAA
 ```
 
 ```bash
-claude plugin install agent-arena-mode@agent-arena-local --scope user
+claude plugin install agent-arena-mode@moaa --scope user
 ```
 
 User scope makes the skills and judge agent available in every project. Check with
-`claude plugin list`, then `/agents` inside a session. After editing plugin files,
-run `claude plugin update agent-arena-mode@agent-arena-local` (or `/reload-plugins`).
-To try it for one session without installing:
+`claude plugin list`, then `/agents` inside a session. After editing plugin files in a
+clone, run `claude plugin update agent-arena-mode@moaa` (or `/reload-plugins`).
+To try it for one session without installing, from a MOAA clone:
 
 ```bash
-claude --plugin-dir "C:/path/to/Agent_arena/agent-arena-mode"
+claude --plugin-dir plugins/agent-arena-mode
 ```
 
-Keep the marketplace folder if you want future updates; the installed copy itself
-lives in Claude Code's plugin cache.
+The installed copy lives in Claude Code's plugin cache. Scripts are run through
+`${CLAUDE_PLUGIN_ROOT}`, so nothing depends on where the source folder sits.
 
 ## Mode commands
 
@@ -113,10 +113,10 @@ Typical path: win an arena, seed a second arena with `--reuse ID`, then `promote
 
 ### Where data lives, backup, uninstall
 
-- Default: `~/.claude/plugins/data/agent-arena-mode-agent-arena-local/library.sqlite3`
+- Default: `~/.claude/plugins/data/agent-arena-mode-moaa/library.sqlite3`
   (the plugin data directory). Kept across plugin updates.
 - **Uninstall deletes it by default.** Use
-  `claude plugin uninstall agent-arena-mode@agent-arena-local --keep-data`, or
+  `claude plugin uninstall agent-arena-mode@moaa --keep-data`, or
   pass `--database PATH` to keep the library elsewhere (also shares it explicitly).
 - Back up by copying the `.sqlite3` file (plus `-wal`/`-shm` if present) while no
   arena is running, or `sqlite3 library.sqlite3 ".backup backup.sqlite3"`.
