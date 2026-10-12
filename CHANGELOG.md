@@ -18,6 +18,7 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
     - The run view shows a live Flow view of tasks moving Board → Build → Review → Merge queue → Integrated, a Topology view with messages in flight, worker boot sequences, review gates, the merge queue and report, a timeline and an activity feed.
   - **Tiling:** on Windows, one console per worker with the app on the primary screen. On macOS and Linux, a tmux session; this was checked live on Linux.
 - The installer pre-approves War Room's routine subcommands. `toggle`, `launch`, `integrate`, `finish`, `shutdown` and `approve` still ask for permission.
+- README: a "Guided builds" section for the `local-build` skill and its `self-improving-system` and `token-efficient-system` builds. Both were already shipped and installed, but not documented.
 
 ## [0.4.3] - 2026-10-11
 
