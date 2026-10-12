@@ -27,7 +27,7 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ### Changed
 - ruflo's 39 plugins are re-pinned from `277c7bc` to `ea0ea3d`. This includes ruflo's Windows hook-launch fix: hooks now start through `node -e` instead of `cmd /c`, which used to open an interactive `cmd`. superpowers stays at 6.4.1, because Anthropic's official marketplace doesn't list 7.0.0 yet.
-- The installer also sets `CLAUDE_CODE_OVERLOADED_RETRY_MAX_DELAY_MS=60000` (new in Claude Code 2.1.296). Long council, arena and War Room runs now back off for up to a minute when the API is overloaded, instead of failing early. `--uninstall` removes it like the other settings.
+- The installer also sets `CLAUDE_CODE_OVERLOADED_RETRY_MAX_DELAY_MS=60000` (new in Claude Code 2.1.296). Long council and arena runs now back off for up to a minute when the API is overloaded, instead of failing early. War Room workers don't load user settings, so War Room sets its own, longer backoff for them. `--uninstall` removes it like the other settings.
 
 ## [0.5.0] - 2026-10-12
 
