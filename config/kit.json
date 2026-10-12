@@ -592,7 +592,7 @@
     {
       "id": "war-room@moaa",
       "enabled": true,
-      "tested_version": "0.1.0",
+      "tested_version": "0.2.0",
       "profile": "core"
     }
   ],

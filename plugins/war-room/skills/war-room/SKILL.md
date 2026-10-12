@@ -16,7 +16,8 @@ user's confirmation of the preview.
 ## 1. Gate
 
 1. `WR toggle status`. If war mode is off, ask the user to arm it on the War Room app's master switch (`WR app`
-   opens it) or approve `WR toggle on`. Never turn it on silently.
+   opens it) or approve `WR toggle on`. Never turn it on silently. To show the user what a run looks like first,
+   `WR demo` plays a simulated run in the app at no token cost. A finished run can be replayed from the app's History.
 2. Check the job is big enough: several independent streams of work, or work that needs audits between steps. If a few
    subagents would do, say so and stop.
 
@@ -60,7 +61,8 @@ the app (Home → Preview & launch), or approve explicitly and you run the print
 ## 3. Run
 
 - Launch starts the conductor (usage guard, auto-wake, merge queue, auto finish, watchdog) in the background, shows
-  the run in the War Room app (live Flow and Topology views, review gates, merge queue, timeline) and opens one
+  the run in the War Room app (live Flow, Tree, Topology and Cost views, worker drill-down, review gates, merge
+  queue, timeline) and opens one
   attached console per worker (the user can type into any of them). Windows: app on the left of the primary screen,
   consoles gridded on the right. macOS/Linux: a tiled tmux session in a terminal window.
 - Check progress with `WR status <run>`.

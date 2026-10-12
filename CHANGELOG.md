@@ -4,6 +4,23 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added
+- **War Room 0.2.0:** a bigger app, and a way to see it without spending tokens.
+  - **Demo mode** (`warroom.py demo`, or Start demo on Home): a simulated six-worker run that drives the real bus for two to three minutes, with claims, a failed review, an arbitration, merges and a usage meter. No Claude session is started.
+  - **Tree tab** in the run view: the run as a terminal-style agent tree, with a phase stepper, a reviewer rail showing the live gate, the bus with block meters, workers fanned out by tier, the integration branch, a session log and a status line.
+  - **Cost tab:** spend and burn per worker, the 5-hour window with a projection to the pause and stop thresholds, and the measured runs behind the cost model. Usage history comes from a new `meter_log` table.
+  - **Worker drill-down:** click a worker for its recent tool calls, messages, checkpoints, tasks and usage charts, and to raise or open its console.
+  - **History page:** finished and stopped runs with their outcome, review results, measured tokens and report; runs can be deleted there.
+  - **Alerts:** a toast, plus an optional desktop notification and sound, when a human gate opens or a run stops or finishes.
+  - **Settings v2:** named presets, plugin lists per worker kind (kept in `~/.claude/war-room/profiles.json`; permissions stay as shipped) and a default model and effort per council role.
+  - A fleet boot panel in the Flow view, and a narrower right column so the run view fits beside the worker consoles.
+  - **Replay:** a finished run is rebuilt from its full logs and played through the run view, with a scrubber, play and pause, and speeds up to 120x. It opens from History or a run card.
+  - **Light theme:** dark (default), light or system, chosen on Home and applied before the first paint. The Tree tab stays dark.
+  - **Console status:** each worker's console title shows working, waiting, idle, stopped or done. This stands in for OSC 7501, which conhost does not implement. Consoles start with `CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1` so Claude Code's own title does not overwrite it.
+  - Workers back off longer on an overloaded API (529): 5 s base, 5 min maximum.
+  - New README screenshots of every view.
+- The installer pre-approves `warroom.py demo`.
+
 ### Fixed
 - `config/kit.json` records the tested versions actually shipped: specialist-council 1.3.2 and plot-deck 0.2.1 (it still said 1.3.0 and 0.2.0).
 

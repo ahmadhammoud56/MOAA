@@ -18,6 +18,8 @@ to workers through the bus, and restarts idle ones with `claude --resume`. Stand
   python warroom.py tile RUN                   one console per worker, grid on the primary screen
   python warroom.py serve RUN [--port N]       live dashboard on 127.0.0.1
   python warroom.py list                       runs on this machine
+  python warroom.py app [RUN] [--quit]         the War Room app (home, runs, history); --quit stops its hub
+  python warroom.py demo [--speed N]           a simulated run in the app: no Claude sessions, no tokens
 """
 import argparse
 import glob
@@ -39,13 +41,18 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from bus import Bus  # noqa: E402
+from bus import Bus, tier as tier_of  # noqa: E402
 
 HOME = os.path.join(os.path.expanduser("~"), ".claude", "war-room")
 RUNS = os.path.join(HOME, "runs")
 CONFIG = os.path.join(HOME, "config.json")
 CALIBRATION = os.path.join(HOME, "calibration.json")
 HUB = os.path.join(HOME, "hub.json")
+USER_PROFILES = os.path.join(HOME, "profiles.json")  # the app's plugin curation, layered over the shipped profiles.json
+PRESET_RE = re.compile(r"^[\w .-]{1,32}$")
+FALLBACK_MODELS = {"haiku": "claude-haiku-5-5", "sonnet": "claude-sonnet-5-5", "opus": "claude-opus-5-5", "fable": "claude-fable-5-1"}
+EFFORTS = ("low", "medium", "high", "xhigh", "max")
+THEMES = ("dark", "light", "system")
 HARD_DEFAULTS = {"max_workers": 3, "pause_at": 85, "stop_at": 95, "max_hours": 4, "wait_seconds": 570,
                  "gates": True, "gate_score": 85, "max_fails": 2, "auto_finish": True, "auto_integrate": False}
 SETTING_LIMITS = {"max_workers": (1, 8), "pause_at": (10, 99), "stop_at": (11, 100), "max_hours": (0.25, 72),
@@ -98,6 +105,11 @@ def run_dir(run):
 
 def open_bus(run, agent="orchestrator"):
     return Bus(os.path.join(run_dir(run), "bus.sqlite3"), agent)
+
+
+def bus_as(bus, agent):
+    """Another handle on the same bus file that acts as agent (a demo worker writes as itself)."""
+    return Bus(bus.db.execute("PRAGMA database_list").fetchone()["file"], agent)
 
 
 def claude_bin():
@@ -198,6 +210,38 @@ def council_py():
     die("specialist-council not found (install specialist-council@moaa)")
 
 
+def council_models():
+    """Model id per tier from the installed Specialist Council profile (falls back to the ids War Room shipped with)."""
+    try:
+        return (load_json(os.path.join(os.path.dirname(council_py()), "profile.json"), {}) or {}).get("models") or FALLBACK_MODELS
+    except SystemExit:
+        return FALLBACK_MODELS
+
+
+def load_profiles():
+    """profiles.json with the app's per-kind plugin lists on top. Only plugin lists can be overridden from the app; the
+    allow/deny lists, permission mode and roles stay as shipped (a plugin's own hooks and MCP servers come with it)."""
+    profiles = load_json(os.path.join(HERE, "profiles.json"))
+    for kind, spec in ((load_json(USER_PROFILES, {}) or {}).get("kinds") or {}).items():
+        if kind in profiles["kinds"] and isinstance(spec, dict) and isinstance(spec.get("plugins"), list):
+            profiles["kinds"][kind]["plugins"] = [str(p) for p in spec["plugins"]]
+    return profiles
+
+
+def validate_role_models(raw, roles):
+    """{role: {tier, effort}} from the app: known roles, tiers and efforts only."""
+    out, tiers = {}, set(FALLBACK_MODELS)
+    if not isinstance(raw or {}, dict):
+        raise ValueError("role_models must be an object")
+    for role, v in (raw or {}).items():
+        if role not in roles:
+            raise ValueError(f"unknown role {role!r}")
+        if not isinstance(v, dict) or v.get("tier") not in tiers or v.get("effort") not in EFFORTS:
+            raise ValueError(f"{role}: tier must be one of {sorted(tiers)} and effort one of {list(EFFORTS)}")
+        out[role] = {"tier": v["tier"], "effort": v["effort"]}
+    return out
+
+
 def resolve_role(role, styles=None):
     args = [sys.executable, council_py(), "resolve", "--role", role] + (["--style", styles] if styles else [])
     p = subprocess.run(args, capture_output=True, text=True)
@@ -262,7 +306,17 @@ def validate_settings(raw):
     return out
 
 
-def resolve_plan(plan, profiles, plugins_index, mcp_index, defaults=None):
+def known_roles(profiles):
+    """Every Specialist Council role (plus the roles profiles.json maps to a kind)."""
+    roles = {r for spec in profiles["kinds"].values() for r in spec["roles"]}
+    try:
+        roles |= set((load_json(os.path.join(os.path.dirname(council_py()), "profile.json"), {}) or {}).get("roles") or {})
+    except SystemExit:
+        pass
+    return sorted(roles)
+
+
+def resolve_plan(plan, profiles, plugins_index, mcp_index, defaults=None, role_models=None):
     if not plan.get("workers"):
         die("plan has no workers")
     budget = {**HARD_DEFAULTS, **(defaults or {}), **(plan.get("budget") or {})}
@@ -278,6 +332,9 @@ def resolve_plan(plan, profiles, plugins_index, mcp_index, defaults=None):
         if kind not in profiles["kinds"]:
             die(f"unknown kind {kind!r} for worker {name}")
         spec = profiles["kinds"][kind]
+        pinned = (role_models or {}).get(role)  # the app's default model per role, below anything the plan sets
+        if pinned:
+            w = {"model": council_models().get(pinned["tier"], FALLBACK_MODELS[pinned["tier"]]), "effort": pinned["effort"], **w}
         resolved = resolve_role(role, w.get("style")) if not (w.get("model") and w.get("effort")) else {}
         plugin_keys = list(dict.fromkeys(spec["plugins"] + w.get("plugins", [])))
         missing = [k for k in plugin_keys if k not in plugins_index]
@@ -333,8 +390,8 @@ def confirm_code(resolved):
 
 def cmd_plan(a):
     plan = load_json(a.plan) or die(f"cannot read {a.plan}")
-    profiles = load_json(os.path.join(HERE, "profiles.json"))
-    resolved = resolve_plan(plan, profiles, installed_plugins(), user_mcp_servers(), settings())
+    resolved = resolve_plan(plan, load_profiles(), installed_plugins(), user_mcp_servers(), settings(),
+                            (load_json(CONFIG, {}) or {}).get("role_models"))
     if not trusted(resolved["project"]):
         die(f"Claude Code does not trust {resolved['project']} yet. Run `claude` there once, accept the trust prompt, "
             "then plan again.")
@@ -366,7 +423,7 @@ def last_meter():
     best = None
     for run in os.listdir(RUNS) if os.path.isdir(RUNS) else []:
         db = os.path.join(RUNS, run, "bus.sqlite3")
-        if os.path.exists(db):
+        if os.path.exists(db) and not (load_json(os.path.join(RUNS, run, "plan.json"), {}) or {}).get("demo"):
             row = Bus(db, "orchestrator").db.execute(
                 "SELECT ts, five_pct, week_pct FROM meter WHERE five_pct IS NOT NULL ORDER BY ts DESC LIMIT 1").fetchone()
             if row and (best is None or row["ts"] > best["ts"]):
@@ -417,7 +474,9 @@ def worker_files(rdir, w, run):
     py = sys.executable.replace("\\", "/")
     hooks = os.path.join(HERE, "hooks.py").replace("\\", "/")
     env = {"WARROOM_DB": os.path.join(rdir, "bus.sqlite3").replace("\\", "/"), "WARROOM_AGENT": w["name"],
-           "WARROOM_RUN": run, "WARROOM_WAIT": str(w.get("wait_seconds", 570)), "CLAUDE_CODE_STOP_HOOK_BLOCK_CAP": "50"}
+           "WARROOM_RUN": run, "WARROOM_WAIT": str(w.get("wait_seconds", 570)), "CLAUDE_CODE_STOP_HOOK_BLOCK_CAP": "50",
+           # unattended workers ride out API overload (529) with a longer backoff instead of failing a turn
+           "CLAUDE_CODE_OVERLOADED_RETRY_BASE_DELAY_MS": "5000", "CLAUDE_CODE_OVERLOADED_RETRY_MAX_DELAY_MS": "300000"}
 
     def hook(event, timeout=30):
         return [{"hooks": [{"type": "command", "command": f'"{py}" "{hooks}" {event}', "timeout": timeout}]}]
@@ -699,6 +758,10 @@ def resume_all(bus, names=None):
     for w in bus.workers():
         if names and w["name"] not in names:
             continue
+        if bus.control("demo"):
+            bus_as(bus, w["name"]).heartbeat("parked: waiting for inbox")
+            bus.event("resume", f"{w['name']} {w['session_id'][:8]}")
+            continue
         try:
             s = restart(bus, w, RESUME_PROMPT)
             print(f"resumed {w['name']:<14} {s['sessionId'][:8]}")
@@ -718,8 +781,11 @@ def cmd_resume(a):
 def stop_all(bus, reason):
     bus.control("run", "stop")  # releases workers parked in their Stop hook
     bus.event("stop", reason)
+    demo = bool(bus.control("demo"))
     for w in bus.workers():
-        ok = stop_session(w["session_id"])
+        if demo:  # a demo worker is only a row in the bus
+            bus_as(bus, w["name"]).heartbeat("stopped by conductor")
+        ok = demo or stop_session(w["session_id"])
         bus.update_worker(w["name"], state="stopped" if ok else "stop-failed")
         print(f"stopped {w['name']:<14} {'ok' if ok else 'TIMEOUT'}")
 
@@ -856,6 +922,8 @@ def watch_tick(bus, run, schedule, last_wake):
             bus.control("complete_since", clear=True)
     if IS_WIN and not stopped and bus.control("tiles"):
         tile(bus, only_missing=True)  # self-heal: a worker whose console never appeared or was closed gets one
+    if IS_WIN:
+        title_consoles(bus)
     line = f"5h={five}% paused={bus.control('claims') == 'paused'} stopped={bus.control('run') == 'stop'} merged={merged}"
     bus.heartbeat(line)  # the dashboard shows the conductor's pulse from this
     return line
@@ -877,11 +945,11 @@ def cmd_watch(a):
 
 
 # ---------------------------------------------------------------- daemons and the dashboard app window
-def spawn_daemon(run, role):
-    """Run the conductor (watch) or dashboard (serve) in the background, without a console window."""
+def spawn_daemon(run, role, extra=()):
+    """Run the conductor (watch) or the demo driver in the background, without a console window."""
     log = open(os.path.join(run_dir(run), f"{role}.log"), "a", encoding="utf-8")
     kw = {"creationflags": 0x08000000 | 0x00000200} if IS_WIN else {"start_new_session": True}  # NO_WINDOW | NEW_GROUP
-    p = subprocess.Popen([sys.executable, "-u", os.path.join(HERE, "warroom.py"), role, run], stdout=log,
+    p = subprocess.Popen([sys.executable, "-u", os.path.join(HERE, "warroom.py"), role, run, *extra], stdout=log,
                          stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, **kw)
     return p.pid
 
@@ -920,7 +988,8 @@ def open_app(url):
         return None
     profile = os.path.join(HOME, "app-profile")  # separate profile: its own process, no tabs, no sign-in prompts
     return subprocess.Popen([exe, f"--app={url}", f"--user-data-dir={profile}", "--no-first-run",
-                             "--no-default-browser-check", "--disable-features=Translate", "--window-size=1400,900"])
+                             "--no-default-browser-check", "--disable-features=Translate", "--window-size=1400,900",
+                             "--autoplay-policy=no-user-gesture-required"])  # alert sounds before the first click
 
 
 def top_windows(prefix):
@@ -997,8 +1066,8 @@ def tile_tmux(bus, live, spawn):
 
 # ---------------------------------------------------------------- tiling (Windows: one console per worker)
 def spawn_console(cmd):
-    if IS_WIN:
-        return subprocess.Popen(["conhost.exe", *cmd])
+    if IS_WIN:  # Claude Code would animate its own title over the status War Room writes there (title_consoles)
+        return subprocess.Popen(["conhost.exe", *cmd], env={**os.environ, "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "1"})
     print("run in a terminal:", subprocess.list2cmdline(cmd))
 
 
@@ -1074,6 +1143,35 @@ def tile(bus, extra=(), spawn=True, only_missing=False):
     print(f"laid out {len(wins)} consoles{' and the dashboard' if app else ''} on the primary screen ({area[2]}x{area[3]})")
 
 
+def console_status(note, stopped=False, finished=False):
+    """working / waiting / idle / stopped / done, the states a Program Status (OSC 7501) terminal would show."""
+    if finished:
+        return "done"
+    if stopped or note.startswith("stopped"):
+        return "stopped"
+    if note.startswith(("working", "woken")):
+        return "working"
+    if note.startswith("parked"):
+        return "waiting"
+    return "idle" if note.startswith("idle") else "starting"
+
+
+def title_consoles(bus, finished=False):
+    """Put each worker's status in its console's title bar, so the tiled consoles read like a status-aware terminal
+    (conhost does not implement OSC 7501). Best effort: a closed console is skipped."""
+    try:
+        import ctypes
+        user32 = ctypes.windll.user32
+        tiles = (json.loads(bus.control("tiles") or "{}") or {}).get("workers") or {}
+        stopped = bus.control("run") == "stop"
+        for name, t in tiles.items():
+            if t.get("hwnd") and user32.IsWindow(t["hwnd"]):
+                state = console_status(heartbeat(bus, name)[0], stopped, finished)
+                user32.SetWindowTextW(t["hwnd"], f"{name} \u00b7 {state} \u00b7 War Room")
+    except Exception:
+        pass
+
+
 def cmd_tile(a):
     tile(open_bus(a.run), getattr(a, "extra_hwnds", ()))
 
@@ -1087,10 +1185,10 @@ def redact(text):
 def state(run):
     bus = open_bus(run)
     now = time.time()
-    workers = []
+    workers, demo = [], bool(bus.control("demo"))
     for w in bus.workers():
-        s = session_of(w["session_id"], max_age=3) or {}
         note, age = heartbeat(bus, w["name"])
+        s = demo_session(note, bus.control("run") == "stop") if demo else session_of(w["session_id"], max_age=3) or {}
         m = bus.db.execute("SELECT * FROM meter WHERE agent=?", (w["name"],)).fetchone()
         ck = bus.last_checkpoint(w["name"])["checkpoint"]
         task = bus.claimed_by(w["name"])
@@ -1109,9 +1207,10 @@ def state(run):
     meter = bus.db.execute("SELECT max(five_pct) f, max(week_pct) w, max(five_reset) r FROM meter WHERE ts > ?",
                            (now - 900,)).fetchone()
     q = lambda sql, n: [dict(r) for r in bus.db.execute(sql, (n,))]  # noqa: E731
-    return {"run": run, "now": now, "goal": redact(load_json(os.path.join(run_dir(run), "plan.json"), {}).get("goal", "")),
+    return {"run": run, "now": now, "demo": demo, "ui": ui_prefs(), "goal": redact(load_json(os.path.join(run_dir(run), "plan.json"), {}).get("goal", "")),
             "budget": json.loads(bus.control("budget") or "{}"),
-            "control": {k: bus.control(k) for k in ("run", "claims", "resume_at", "started", "finished", "complete_since")},
+            "control": {k: bus.control(k) for k in ("run", "claims", "resume_at", "started", "finished", "finishing",
+                                                         "complete_since")},
             "integrated": json.loads(bus.control("integrated") or "null"),
             "report": open(os.path.join(run_dir(run), "report.md"), encoding="utf-8").read()
             if os.path.exists(os.path.join(run_dir(run), "report.md")) else None,
@@ -1128,6 +1227,121 @@ def state(run):
                 "SELECT id, sender, recipient, body, sent, read FROM messages ORDER BY id DESC LIMIT ?", 80)][::-1],
             "events": [e | {"detail": redact(e["detail"])} for e in q(
                 "SELECT ts, agent, kind, detail FROM events ORDER BY id DESC LIMIT ?", 200)][::-1]}
+
+
+def demo_session(note, stopped):
+    """What `claude agents` would say about a demo worker, read from its heartbeat."""
+    if stopped or note.startswith("stopped"):
+        return {}
+    return {"status": "idle" if note.startswith("idle") else "busy"}
+
+
+def ui_prefs():
+    return {"notify": True, "sound": True, "theme": "dark", **((load_json(CONFIG, {}) or {}).get("ui") or {})}
+
+
+def worker_detail(run, name):
+    """Everything the app's worker drill-down shows: tool calls, messages, checkpoints, tasks and usage history."""
+    bus = open_bus(run)
+    w = next((w for w in bus.workers() if w["name"] == name), None)
+    if not w:
+        raise KeyError(f"no worker {name}")
+    rows = lambda sql, *p: [dict(r) for r in bus.db.execute(sql, p)]  # noqa: E731
+    pw = next((x for x in (load_json(os.path.join(run_dir(run), "plan.json"), {}) or {}).get("workers", [])
+               if x["name"] == name), {})
+    tiles = json.loads(bus.control("tiles") or "{}") or {}
+    return {"name": name, "role": w["role"], "kind": w["kind"], "model": w["model"], "effort": w["effort"],
+            "session": w["session_id"][:8], "cwd": redact(w["cwd"]), "write": pw.get("write", False), "mcp": pw.get("mcp", []),
+            "plugins": [x.split("@")[0] for x in pw.get("plugins", [])], "demo": bool(bus.control("demo")),
+            "console": name in (tiles.get("workers") or {}),
+            "tools": [r | {"detail": redact(r["detail"])} for r in rows(
+                "SELECT ts, detail FROM events WHERE agent=? AND kind='tool' ORDER BY id DESC LIMIT 60", name)],
+            "events": [r | {"detail": redact(r["detail"])} for r in rows(
+                "SELECT ts, kind, detail FROM events WHERE agent=? AND kind!='tool' ORDER BY id DESC LIMIT 30", name)],
+            "messages": [r | {"body": redact(r["body"])} for r in rows(
+                "SELECT id, sender, recipient, body, sent, read FROM messages WHERE sender=? OR recipient=? ORDER BY id DESC LIMIT 40",
+                name, name)],
+            "checkpoints": [r | {"summary": redact(r["summary"])} for r in rows(
+                "SELECT ts, summary FROM checkpoints WHERE agent=? ORDER BY id DESC LIMIT 10", name)],
+            "tasks": rows("SELECT id, title, kind, status, score, fails FROM tasks WHERE owner=? OR author=? OR assignee=? "
+                          "ORDER BY id", name, name, name),
+            "meter": rows("SELECT ts, five_pct, context_pct, cost_usd FROM meter_log WHERE agent=? ORDER BY ts DESC LIMIT 400",
+                          name)[::-1]}
+
+
+def usage(run):
+    """Usage history for the cost panel: per worker, binned (20 s for a young run, 60 s later), plus calibration."""
+    bus = open_bus(run)
+    started = float(bus.control("started") or time.time())
+    step = 20 if time.time() - started < 1800 else 60
+    series = {}
+    for r in bus.db.execute("SELECT agent, CAST(ts / ? AS INTEGER) * ? AS t, max(five_pct) f, max(context_pct) c, "
+                            "max(cost_usd) d FROM meter_log GROUP BY agent, t ORDER BY t", (step, step)):
+        series.setdefault(r["agent"], []).append([r["t"], r["f"], r["c"], r["d"]])
+    cal = (load_json(CALIBRATION, {}) or {}).get("runs", {})
+    return {"now": time.time(), "started": started, "step": step, "series": series,
+            "budget": json.loads(bus.control("budget") or "{}"),
+            "workers": [{"name": w["name"], "model": w["model"]} for w in bus.workers()],
+            "calibration": sorted(({"run": k, **{f: v.get(f) for f in ("total", "api_calls", "workers", "tasks",
+                                                                      "per_worker_task", "measured")}}
+                                   for k, v in cal.items()), key=lambda x: x["measured"] or 0),
+            "measured": cal.get(run)}
+
+
+def replay(run):
+    """Everything the app needs to rebuild the run at any moment: the final state plus the full event, message,
+    checkpoint and usage logs (the live state endpoint only carries the latest slice)."""
+    st, bus = state(run), open_bus(run)
+    rows = lambda sql: [dict(r) for r in bus.db.execute(sql)]  # noqa: E731
+    st.update(all_events=[e | {"detail": redact(e["detail"])} for e in rows("SELECT ts, agent, kind, detail FROM events ORDER BY id")],
+              all_messages=[m | {"body": redact(m["body"])} for m in rows(
+                  "SELECT id, sender, recipient, body, sent, read FROM messages ORDER BY id")],
+              all_checkpoints=[c | {"summary": redact(c["summary"])} for c in rows(
+                  "SELECT agent, ts, summary FROM checkpoints ORDER BY id")],
+              meter_log=rows("SELECT agent, ts, five_pct, context_pct, cost_usd FROM meter_log ORDER BY ts"))
+    return st
+
+
+def history():
+    """Finished and stopped runs, newest first, with their outcome, cost and report."""
+    cal, out = (load_json(CALIBRATION, {}) or {}).get("runs", {}), []
+    for item in runs_summary():
+        if item["status"] not in ("finished", "stopped"):
+            continue
+        bus = open_bus(item["run"])
+        gate = (json.loads(bus.control("budget") or "{}") or {}).get("gate_score", 85)
+        rv = bus.db.execute("SELECT COUNT(*) n, SUM(result LIKE 'pass%' AND (score IS NULL OR score >= ?)) p FROM tasks "
+                            "WHERE kind='review' AND status='done'", (gate,)).fetchone()
+        report = os.path.join(RUNS, item["run"], "report.md")
+        item.update(finished=float(bus.control("finished") or 0) or None, reviews=rv["n"], passed=rv["p"] or 0,
+                    merged=bus.db.execute("SELECT COUNT(*) FROM merges WHERE status='merged'").fetchone()[0],
+                    cost_usd=bus.db.execute("SELECT SUM(cost_usd) FROM meter").fetchone()[0], tokens=cal.get(item["run"]),
+                    report=redact(open(report, encoding="utf-8").read()) if os.path.exists(report) else None)
+        out.append(item)
+    return out
+
+
+def focus_console(run, name):
+    """Bring a worker's console to the front, opening one if it has none (Windows); tmux elsewhere."""
+    bus = open_bus(run)
+    if bus.control("demo"):
+        return {"ok": False, "error": "a demo worker has no console"}
+    w = next((w for w in bus.workers() if w["name"] == name), None)
+    if not w or not (session_of(w["session_id"]) or {}).get("status"):
+        return {"ok": False, "error": f"{name} is not running; resume it first"}
+    tile(bus, only_missing=True)
+    if not IS_WIN:
+        return {"ok": True, "note": "consoles are panes in the run's tmux session"}
+    import ctypes
+    user32 = ctypes.windll.user32
+    h = ((json.loads(bus.control("tiles") or "{}") or {}).get("workers") or {}).get(name, {}).get("hwnd")
+    if not h or not user32.IsWindow(h):
+        return {"ok": False, "error": f"no console window for {name}"}
+    user32.ShowWindow(h, 9)
+    for after in (-1, -2):  # HWND_TOPMOST then NOTOPMOST: raised to the top without stealing focus from the app
+        user32.SetWindowPos(h, ctypes.c_void_p(after), 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0040)
+    user32.FlashWindow(h, True)
+    return {"ok": True}
 
 
 def cmd_status(a):
@@ -1156,7 +1370,7 @@ def runs_summary():
         item = {"run": run, "goal": redact(plan.get("goal", "")), "project": redact(plan.get("project", "")),
                 "workers": [{k: w[k] for k in ("name", "role", "kind", "model", "effort", "write", "mcp")}
                             | {"plugins": [x.split("@")[0] for x in w["plugins"]]} for w in plan["workers"]],
-                "budget": plan.get("budget", {})}
+                "budget": plan.get("budget", {}), "demo": bool(plan.get("demo"))}
         db = os.path.join(rdir, "bus.sqlite3")
         bus = Bus(db, "hub") if os.path.exists(db) else None
         launched = bool(bus and bus.workers())
@@ -1164,9 +1378,10 @@ def runs_summary():
             lo, hi = estimate(plan["workers"], len(plan.get("tasks", [])), per_task)
             item.update(status="planned", estimate=[lo, hi], confirm=confirm_code(plan), tasks=len(plan.get("tasks", [])))
         else:
-            c = {k: bus.control(k) for k in ("finished", "run", "started", "integrated")}
+            c = {k: bus.control(k) for k in ("finished", "run", "started", "integrated", "finishing")}
             n = bus.db.execute("SELECT COUNT(*), SUM(status IN ('merged','done')) FROM tasks WHERE kind='work'").fetchone()
-            item.update(status="finished" if c["finished"] else "stopped" if c["run"] == "stop" else "live",
+            item.update(status="finished" if c["finished"] else "stopped" if c["run"] == "stop" and not c["finishing"]
+                        else "live",
                         started=float(c["started"] or 0), tasks=n[0], finished_tasks=n[1] or 0,
                         integrated=bool(c["integrated"]))
         out.append(item)
@@ -1222,7 +1437,7 @@ def cmd_hub(a):
     os.makedirs(HOME, exist_ok=True)
     token = secrets.token_urlsafe(16)
     pages = {name: open(os.path.join(HERE, name), encoding="utf-8").read().replace("__TOKEN__", token)
-             for name in ("home.html", "dashboard.html")}
+             for name in ("home.html", "dashboard.html", "history.html")}
     fonts = os.path.join(HERE, "assets", "fonts")
     run_re = re.compile(r"^/(?:api/)?run/([A-Za-z0-9-]{1,80})(/.*)?$")
 
@@ -1232,6 +1447,10 @@ def cmd_hub(a):
 
         def send(self, code, body, ctype="application/json"):
             body = body if isinstance(body, (bytes, str)) else json.dumps(body)
+            if ctype.startswith("text/html"):  # the theme is set before first paint, so a light page never flashes dark
+                q = re.search(r"[?&]theme=(\w+)", self.path)  # ?theme=light previews a theme without saving it
+                theme = q.group(1) if q and q.group(1) in THEMES else ui_prefs().get("theme")
+                body = body.replace("__THEME__", theme if theme in THEMES else "dark")
             self.send_response(code)
             self.send_header("Content-Type", ctype)
             self.send_header("Cache-Control", "no-store")
@@ -1242,7 +1461,10 @@ def cmd_hub(a):
             n = int(self.headers.get("Content-Length") or 0)
             if n > 65536:
                 raise ValueError("request too large")
-            return json.loads(self.rfile.read(n) or b"{}") if n else {}
+            out = json.loads(self.rfile.read(n) or b"{}") if n else {}
+            if not isinstance(out, dict):
+                raise ValueError("the request body must be a JSON object")
+            return out
 
         def host_ok(self):
             # Only the hub's own origin: a DNS-rebound page carries a foreign Host header.
@@ -1258,18 +1480,40 @@ def cmd_hub(a):
                 return self.send(200, {"ok": True})
             if path == "/":
                 return self.send(200, pages["home.html"], "text/html; charset=utf-8")
+            if path == "/history":
+                return self.send(200, pages["history.html"], "text/html; charset=utf-8")
+            if path == "/api/history":
+                return self.send(200, {"runs": history(), "now": time.time()})
             if path == "/api/home":
-                cfg = load_json(CONFIG, {}) or {}
+                cfg, profiles = load_json(CONFIG, {}) or {}, load_profiles()
+                shipped = load_json(os.path.join(HERE, "profiles.json"))["kinds"]
                 return self.send(200, {"war_mode": bool(cfg.get("enabled")), "settings": settings(),
                                        "defaults": HARD_DEFAULTS, "limits": SETTING_LIMITS, "runs": runs_summary(),
-                                       "meter": last_meter(), "warning": WARNING, "now": time.time(),
+                                       "meter": last_meter(), "warning": WARNING, "now": time.time(), "ui": ui_prefs(),
                                        "calibration": dict(zip(("per_worker_task", "runs"),
-                                                               per_worker_task(load_json(CALIBRATION, {}))))})
+                                                               per_worker_task(load_json(CALIBRATION, {})))),
+                                       "kinds": {k: {"plugins": v["plugins"], "shipped": shipped[k]["plugins"],
+                                                     "roles": v["roles"]} for k, v in profiles["kinds"].items()},
+                                       "installed": sorted(installed_plugins()), "roles": known_roles(profiles),
+                                       "role_models": cfg.get("role_models") or {}, "presets": cfg.get("presets") or {},
+                                       "tiers": list(FALLBACK_MODELS), "efforts": list(EFFORTS)})
             if m and not path.startswith("/api/") and os.path.isdir(os.path.join(RUNS, m.group(1))):
                 page = pages["dashboard.html"].replace("__TITLE__", app_title(m.group(1))).replace("__RUN__", m.group(1))
                 return self.send(200, page, "text/html; charset=utf-8")
+            if m and not os.path.isdir(os.path.join(RUNS, m.group(1))):
+                return self.send(404, {"error": "no such run"})
             if m and m.group(2) == "/state":
                 return self.send(200, state(m.group(1)))
+            if m and m.group(2) == "/replay":
+                return self.send(200, replay(m.group(1)))
+            if m and m.group(2) == "/usage":
+                return self.send(200, usage(m.group(1)))
+            wm = m and re.match(r"^/worker/([a-z][a-z0-9-]{0,23})$", m.group(2) or "")
+            if wm:
+                try:
+                    return self.send(200, worker_detail(m.group(1), wm.group(1)))
+                except KeyError as e:
+                    return self.send(404, {"error": str(e)})
             if path.startswith("/fonts/") and re.match(r"^/fonts/[\w.-]+\.woff2$", path):
                 f = os.path.join(fonts, path[7:])
                 return self.send(200, open(f, "rb").read(), "font/woff2") if os.path.exists(f) else self.send(404, "")
@@ -1292,6 +1536,54 @@ def cmd_hub(a):
                                                                    **validate_settings(data.get("settings") or {})}
                     save_json(CONFIG, cfg)
                     return self.send(200, {"settings": settings()})
+                if path == "/api/ui":
+                    cfg = load_json(CONFIG, {}) or {}
+                    if "theme" in data and data["theme"] not in THEMES:
+                        raise ValueError(f"theme must be one of {list(THEMES)}")
+                    cfg["ui"] = {**ui_prefs(), **{k: bool(data[k]) for k in ("notify", "sound") if k in data},
+                                 **({"theme": data["theme"]} if "theme" in data else {})}
+                    save_json(CONFIG, cfg)
+                    return self.send(200, {"ui": cfg["ui"]})
+                if path == "/api/presets":
+                    cfg = load_json(CONFIG, {}) or {}
+                    presets, name = cfg.setdefault("presets", {}), str(data.get("name", ""))
+                    if not PRESET_RE.match(name):
+                        raise ValueError("preset names are 1-32 letters, digits, spaces, dots or dashes")
+                    if data.get("op") == "save":
+                        presets[name] = settings()
+                    elif data.get("op") == "delete":
+                        presets.pop(name, None)
+                    elif data.get("op") == "apply":
+                        if name not in presets:
+                            raise ValueError(f"no preset {name!r}")
+                        cfg["defaults"] = validate_settings(presets[name])
+                    else:
+                        raise ValueError("op must be save, apply or delete")
+                    save_json(CONFIG, cfg)
+                    return self.send(200, {"presets": presets, "settings": settings()})
+                if path == "/api/profiles":
+                    kind, shipped = data.get("kind"), load_json(os.path.join(HERE, "profiles.json"))["kinds"]
+                    if kind not in shipped:
+                        raise ValueError(f"unknown worker kind {kind!r}")
+                    over = load_json(USER_PROFILES, {}) or {}
+                    if data.get("reset"):
+                        over.setdefault("kinds", {}).pop(kind, None)
+                    else:
+                        plugins = data.get("plugins")  # installed ones, or ones already listed (so a removal still saves)
+                        have = set(installed_plugins()) | set(load_profiles()["kinds"][kind]["plugins"])
+                        if not isinstance(plugins, list) or len(plugins) > 40 or any(p not in have for p in plugins):
+                            raise ValueError("plugins must be a list of installed plugins")
+                        over.setdefault("kinds", {})[kind] = {"plugins": list(dict.fromkeys(plugins))}
+                    save_json(USER_PROFILES, over)
+                    return self.send(200, {"plugins": load_profiles()["kinds"][kind]["plugins"]})
+                if path == "/api/role-models":
+                    cfg = load_json(CONFIG, {}) or {}
+                    cfg["role_models"] = validate_role_models(data.get("role_models"), known_roles(load_profiles()))
+                    save_json(CONFIG, cfg)
+                    return self.send(200, {"role_models": cfg["role_models"]})
+                if path == "/api/demo":
+                    run = make_demo()
+                    return self.send(200, {"ok": True, "run": run, "url": f"/run/{run}"})
                 m = run_re.match(path)
                 if not m or not os.path.isdir(os.path.join(RUNS, m.group(1))):
                     return self.send(404, {"error": "no such run"})
@@ -1309,9 +1601,19 @@ def cmd_hub(a):
                     return self.send(200, {"ok": True, "url": f"/run/{run}"})
                 if action == "discard":
                     if os.path.exists(os.path.join(RUNS, run, "bus.sqlite3")):
-                        return self.send(409, {"error": "only planned runs that never launched can be discarded"})
+                        b = open_bus(run)
+                        if b.workers() and not (b.control("demo") or b.control("finished")):
+                            return self.send(409, {"error": "only planned, finished or demo runs can be deleted"})
+                        for pid in (json.loads(b.control("daemons") or "{}") or {}).values():
+                            kill_pid(pid, must_contain=run)  # a reused pid of another run's daemon is left alone
+                        b.db.close()
                     shutil.rmtree(os.path.join(RUNS, run), ignore_errors=True)
+                    if os.path.exists(os.path.join(RUNS, run)):
+                        return self.send(409, {"error": "some files are still in use; try again in a few seconds"})
                     return self.send(200, {"ok": True})
+                if action == "focus":
+                    out = focus_console(run, str(data.get("worker", "")))
+                    return self.send(200 if out["ok"] else 409, out)
                 bus = open_bus(run)
                 if action == "stop":
                     stop_all(bus, "STOP ALL from the app")
@@ -1492,6 +1794,8 @@ def integrate_into_project(bus):
     """Merge the integration branch into the project's current branch (--no-ff, never pushed). Refuses a dirty tree."""
     integ = json.loads(bus.control("integration") or "null")
     project = project_of(bus)
+    if bus.control("demo"):
+        return {"ok": False, "error": "a demo run has no project to merge into"}
     if not integ or not project:
         return {"ok": False, "error": "no integration branch"}
     if git("status", "--porcelain", "--untracked-files=no", cwd=project).stdout.strip():
@@ -1515,7 +1819,17 @@ def finish(run, reason):
     bus = open_bus(run)
     if bus.control("finished"):
         return
+    bus.control("finishing", time.time())  # the app shows a finish, not a stop, while sessions are closed
     stop_all(bus, reason)
+    if bus.control("demo"):
+        with open(os.path.join(run_dir(run), "report.md"), "w", encoding="utf-8") as f:
+            f.write(demo_report(bus))
+        bus.control("finished", time.time())
+        bus.event("finish", f"{reason}; demo run, nothing to clean up")
+        bus.agent, prev = "conductor", bus.agent
+        bus.send("orchestrator", f"Demo run {run} is finished. Nothing was launched, merged or pushed.")
+        bus.agent = prev
+        return
     try:
         rec = measure(run)
         print(f"measured {rec['total'] / 1e6:.2f}M tokens ({rec['per_worker_task'] / 1e3:.0f}k per worker-task)")
@@ -1537,6 +1851,8 @@ def finish(run, reason):
     for k in kept:
         bus.event("finish", f"kept worktree {k}")
     bus.control("finished", time.time())
+    if IS_WIN:
+        title_consoles(bus, finished=True)
     budget = json.loads(bus.control("budget") or "{}")
     integ = json.loads(bus.control("integration") or "null")
     has_commits = bool(integ) and integ["branch"] in git("branch", "--list", integ["branch"], cwd=project_of(bus) or ".").stdout
@@ -1565,7 +1881,7 @@ def shutdown(run, reason, close_window=True):
         for h in top_windows(app_title(run)):
             ctypes.windll.user32.PostMessageW(h, 0x0010, 0, 0)  # WM_CLOSE the dashboard app window
     for pid in (json.loads(bus.control("daemons") or "{}") or {}).values():
-        kill_pid(pid)
+        kill_pid(pid, must_contain=run)
     bus.event("shutdown", reason)
 
 
@@ -1573,7 +1889,7 @@ def cmd_restart_daemons(a):
     """Restart the background conductor and dashboard (after a crash or a War Room update); workers keep running."""
     bus = open_bus(a.run)
     for pid in (json.loads(bus.control("daemons") or "{}") or {}).values():
-        kill_pid(pid)
+        kill_pid(pid, must_contain=a.run)
     if IS_WIN:
         import ctypes
         for h in top_windows(app_title(a.run)):
@@ -1590,6 +1906,172 @@ def cmd_restart_daemons(a):
 
 def cmd_shutdown(a):
     shutdown(a.run, "shutdown by orchestrator")
+
+
+# ---------------------------------------------------------------- demo: a simulated run for the app, no Claude sessions
+DEMO_GOAL = "Add rate limiting to the public API, with tests and docs"
+DEMO_ROSTER = [("lead", "project-planner", "planner", "sonnet", "high"), ("scout", "scout", "planner", "haiku", "low"),
+               ("swift", "builder", "builder", "haiku", "medium"), ("forge", "backend-engineer", "builder", "sonnet", "medium"),
+               ("judge", "peer-reviewer", "reviewer", "opus", "high"), ("arbiter", "arbiter", "reviewer", "fable", "high")]
+DEMO_SEED = [("Break the goal into tasks and assign them", "lead"), ("Survey the existing middleware and limits", "scout")]
+DEMO_PLAN = [("Token-bucket limiter core", "swift"), ("Redis-backed counter store", "forge"),
+             ("Wire the limiter into the request pipeline", "forge"), ("429 responses with Retry-After", "swift")]
+DEMO_LATER = [("Config schema and defaults", "forge"), ("Load test: 1k rps burst", "swift"), ("Docs: rate limit headers", "swift")]
+DEMO_SCORES = {"Redis-backed counter store": [72], "429 responses with Retry-After": [68, 79, 88]}  # a fail, an arbitration
+DEMO_TOOLS = {"planner": ["Read src/api/middleware.py", "Grep RateLimit", "Glob src/**/*.py", "WebFetch RFC 6585"],
+              "builder": ["Read src/api/app.py", "Edit src/limits/bucket.py", "Write tests/test_limits.py",
+                          "Bash python -m pytest tests/test_limits.py", "Grep retry_after", "Bash git commit -m wip"],
+              "reviewer": ["Bash git show HEAD --stat", "Bash python -m pytest", "Read src/limits/bucket.py",
+                           "Agent agent-arena-judge score"]}
+DEMO_COST = {"haiku": .004, "sonnet": .018, "opus": .06, "fable": .05}
+
+
+def make_demo(drive=True, speed=1.0):
+    """Create a demo run (it looks live in the app) and start its driver in the background unless drive=False."""
+    run = f"demo-{time.strftime('%Y%m%d-%H%M%S')}"
+    while os.path.exists(os.path.join(RUNS, run)):
+        run += "x"
+    models, kinds = council_models(), load_profiles()["kinds"]
+    workers = [{"name": n, "role": r, "kind": k, "model": models.get(t, FALLBACK_MODELS[t]), "effort": e, "write": k == "builder",
+                "brief": "", "plugins": kinds[k]["plugins"], "plugin_dirs": [], "mcp": []} for n, r, k, t, e in DEMO_ROSTER]
+    save_json(os.path.join(RUNS, run, "plan.json"), {"name": "demo", "goal": DEMO_GOAL, "project": "(simulated project)",
+                                                     "worktrees": "", "workers": workers, "tasks": [], "budget": settings(), "demo": True})
+    bus = open_bus(run)
+    for k, v in (("demo", 1), ("started", time.time()), ("run_id", run), ("project", "(simulated project)"),
+                 ("budget", json.dumps(settings())),
+                 ("integration", json.dumps({"path": "", "branch": f"war-room/{run}", "base": secrets.token_hex(20)}))):
+        bus.control(k, v)
+    for w in workers:
+        sid = secrets.token_hex(16)
+        bus.put_worker(name=w["name"], role=w["role"], kind=w["kind"], model=w["model"], effort=w["effort"], session_id=sid,
+                       cwd="", argv="[]", resume_argv=None, state="running")
+        bus.event("launch", f"{w['name']} {sid[:8]} {w['model']}/{w['effort']}")
+    for title, who in DEMO_SEED:
+        bus.post_task(title, "", who, gate=0)
+    if drive:
+        bus.control("daemons", json.dumps({"demo": spawn_daemon(run, "demo-drive", ["--speed", str(speed)])}))
+    return run
+
+
+def demo_tick(bus, mem, rng):
+    """One step of the simulation. Workers claim, work (tool events), complete, review and get merged through the real
+    bus, so every panel of the app sees the same data a real run produces."""
+    if bus.control("finished"):
+        return "finished"
+    step = mem["step"] = mem.get("step", 0) + 1
+    bus.heartbeat(f"demo step {step}")
+    if bus.control("run") == "stop":
+        return "stopped"
+    paused, five = bus.control("claims") == "paused", min(88.0, 21 + step * .5)
+    for i, w in enumerate(bus.workers()):
+        me = mem.setdefault(w["name"], {"bus": bus_as(bus, w["name"]), "task": None, "cost": 0.0, "ctx": 8.0})
+        wb, kind, t = me["bus"], w["kind"], tier_of(w["model"])
+        if step <= 1 + i:
+            wb.heartbeat("starting")
+            continue
+        if me["task"]:
+            me["left"] -= 1
+            if me["left"] > 0:
+                tool = rng.choice(DEMO_TOOLS[kind])
+                wb.event("tool", tool)
+                wb.heartbeat(f"working: {tool.split()[0]}")
+                me["cost"] += DEMO_COST[t] * rng.uniform(.6, 1.4)
+                me["ctx"] = min(92, me["ctx"] + rng.uniform(.8, 2.6))
+            else:
+                demo_finish_task(bus, wb, w, me, rng, mem)
+        elif paused:
+            wb.heartbeat("parked: waiting for inbox")
+        else:
+            got = wb.claim_task()["task"]
+            if got:
+                me.update(task=got, left=rng.randint(3, 6) + (2 if kind == "builder" else 0))
+                wb.heartbeat("working: claim_task")
+            else:
+                wb.heartbeat("parked: waiting for inbox")
+                wb.inbox()
+        wb.put_meter(five_pct=round(five, 1), five_reset=time.time() + 3 * 3600, week_pct=round(34 + step * .05, 1),
+                     context_pct=round(me["ctx"], 1), cost_usd=round(me["cost"], 4))
+    if step == 30:
+        lead = mem["lead"]["bus"]
+        for title, who in DEMO_LATER:
+            lead.post_task(title, "", who)
+        lead.send("forge", "Added config and load-test tasks; forge takes the config schema.")
+    for m in bus.db.execute("SELECT * FROM merges WHERE status='queued' AND ts < ?", (time.time() - 2.5,)).fetchall():
+        head = secrets.token_hex(20)
+        bus.db.execute("UPDATE merges SET status='merged', detail=?, ts=? WHERE id=?", (head, time.time(), m["id"]))
+        bus.db.execute("UPDATE tasks SET status='merged', updated=? WHERE id=?", (time.time(), m["task_id"]))
+        bus.event("merge", f"#{m['task_id']} {m['commit_ref'][:8]} merged into war-room/{bus.control('run_id')} ({head[:8]})")
+    if is_complete(bus):
+        since = float(bus.control("complete_since") or 0) or time.time() - 80  # a short countdown in the banner
+        bus.control("complete_since", since)
+        if time.time() - since > 90:
+            finish(bus.control("run_id"), "all work merged")
+            return "finished"
+    else:
+        bus.control("complete_since", clear=True)
+    return f"step {step}"
+
+
+def demo_finish_task(bus, wb, w, me, rng, mem):
+    task = bus._task(me["task"]["id"])
+    me["task"] = None
+    if task["kind"] == "review":
+        parent = bus._task(task["parent"])
+        script = mem.setdefault("scores", {k: list(v) for k, v in DEMO_SCORES.items()}).get(parent["title"])
+        score = script.pop(0) if script else rng.randint(86, 97)
+        notes = ("Tests cover the burst case; naming is clear." if score >= 85 else
+                 "Retry-After is missing on the 429 path and the test only checks the status code.")
+        wb.verdict(task["id"], "pass" if score >= 85 else "fail", score, notes)
+        wb.checkpoint(f"reviewed #{parent['id']}: {score}")
+    else:
+        commit = secrets.token_hex(20) if w["kind"] == "builder" else None
+        wb.complete_task(task["id"], f"{task['title']}: done, tests green", commit)
+        wb.checkpoint(f"done #{task['id']} {task['title']}; next: claim_task")
+        if w["name"] == "lead" and task["title"] == DEMO_SEED[0][0]:
+            for title, who in DEMO_PLAN:
+                wb.post_task(title, "", who)
+            wb.send("swift", "You own the limiter core and the 429 path. Keep the bucket lock-free.")
+            wb.send("forge", "You own the Redis store and the pipeline wiring.")
+        elif w["name"] == "scout":
+            wb.send("lead", "Middleware has no limiter yet; nginx caps at 2k rps. Token bucket per API key fits.")
+        elif rng.random() < .4:
+            wb.send("lead", f"#{task['id']} committed, waiting for review.")
+    wb.heartbeat("parked: waiting for inbox")
+
+
+def demo_report(bus):
+    tasks = [dict(t) for t in bus.db.execute("SELECT id, title, status, score, fails FROM tasks WHERE kind='work'")]
+    lines = [f"# War Room run {bus.control('run_id')} (demo)", "", "Simulated run: no Claude sessions, no git.", "", "## Tasks"]
+    lines += [f"- #{t['id']} {t['status']}: {t['title']}" + (f" (review {t['score']:.0f}" if t["score"] is not None else "")
+              + (f", {t['fails']} failed review(s))" if t["fails"] else (")" if t["score"] is not None else "")) for t in tasks]
+    merged = bus.db.execute("SELECT task_id, commit_ref FROM merges WHERE status='merged' ORDER BY id").fetchall()
+    lines += ["", "## Commits", "```"] + [f"{m['commit_ref'][:8]} task #{m['task_id']}" for m in merged] + ["```"]
+    return NL.join(lines)
+
+
+def cmd_demo(a):
+    run = make_demo(speed=a.speed)
+    url = ensure_hub() + f"run/{run}"
+    if not a.no_open:
+        open_app(url)
+    print(f"demo run {run}: {url}\nIt plays for two to three minutes. Delete it from the app's History page when done.")
+
+
+def cmd_demo_drive(a):
+    import random
+    bus, mem, rng = open_bus(a.run, "conductor"), {}, random.Random(a.seed)
+    stopped_since = None
+    while os.path.isdir(os.path.join(RUNS, a.run)):
+        try:
+            out = demo_tick(bus, mem, rng)
+            if out == "finished":
+                return
+            stopped_since = (stopped_since or time.time()) if out == "stopped" else None
+            if stopped_since and time.time() - stopped_since > 1800:
+                return  # a demo left stopped for 30 min: its driver exits rather than linger
+        except Exception as e:  # keep the demo going; show the failure in the activity feed
+            bus.event("conductor-error", f"demo: {str(e)[:300]}")
+        time.sleep(2.0 / max(.1, a.speed))
 
 
 # ---------------------------------------------------------------- toggle and list
@@ -1653,6 +2135,10 @@ def main(argv=None):
     s = sub.add_parser("app"); s.add_argument("run", nargs="?"); s.add_argument("--quit", action="store_true")
     s.set_defaults(f=cmd_app)
     s = sub.add_parser("hub"); s.add_argument("--port", type=int, default=0); s.set_defaults(f=cmd_hub)
+    s = sub.add_parser("demo", help="a simulated run in the app: no Claude sessions, no tokens")
+    s.add_argument("--speed", type=float, default=1.0); s.add_argument("--no-open", action="store_true"); s.set_defaults(f=cmd_demo)
+    s = sub.add_parser("demo-drive"); s.add_argument("run"); s.add_argument("--speed", type=float, default=1.0)
+    s.add_argument("--seed", type=int); s.set_defaults(f=cmd_demo_drive)
     a = p.parse_args(argv)
     a.f(a)
 

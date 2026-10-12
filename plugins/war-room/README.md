@@ -14,6 +14,16 @@ Install with `/plugin install war-room@moaa` (the MOAA installer adds it to both
 
 ![A finished run: Flow view with every task integrated, review gates, report and timeline](docs/media/run-finished.png)
 
+![The Tree tab: the run as an agent tree with the reviewer rail, bus meters, workers and session log](docs/media/run-tree.png)
+
+![The Cost tab: spend per worker, the 5-hour window with its projection, and the cost model](docs/media/run-cost.png)
+
+![A finished run replayed halfway through, with the scrubber above the run view](docs/media/run-replay.png)
+
+![The light theme](docs/media/run-light.png)
+
+To see the app without spending any tokens, run `python warroom.py demo` (or press **Start demo** on Home). It plays a simulated six-worker run through the real bus for two to three minutes: no Claude session is started.
+
 ## The app
 
 `python warroom.py app` opens the War Room as a desktop window. It is a local hub on 127.0.0.1, shown in a chromeless Edge, Chrome or Brave `--app` window with its own profile, so it has no tabs or address bar. The hub serves every run, and you can also reach it with `warroom.py app <run>`.
@@ -29,20 +39,30 @@ Install with `/plugin install war-room@moaa` (the MOAA installer adds it to both
   - keep-alive wait
   - auto finish and auto integrate
 
-  Values are validated, and the built-in defaults can be restored.
+  Values are validated, and the built-in defaults can be restored. **Presets** save the current settings under a name and apply them later. **Alerts** switch the desktop notification and sound on or off.
+- **Worker profiles.** The plugins each worker kind loads (planner, builder, reviewer), and a default model tier and effort per Specialist Council role. Changes apply to new plans and are kept in `~/.claude/war-room/profiles.json` and `config.json`. Allow and deny lists are never changed here, but a plugin brings its own hooks and MCP servers, so add only plugins you trust for that kind of worker. A plan that names a model still wins.
+- **History** (header link): finished and stopped runs with outcome, review results, measured tokens, statusline spend and the report. Runs can be deleted there.
+- **Start demo** (header): opens a simulated run.
+- **Replay** on a finished or stopped run card (and on History) opens the run view in replay mode.
+- **Theme** (Settings → Alerts): graphite dark (the default), light, or follow the system. The Tree tab stays dark in the light theme, as a terminal pane would. `?theme=light` on any page previews a theme without saving it.
 - **Runs.** Every run with its status, goal, roster (tier swatch, worker, council role) and progress. A planned run has **Preview & launch**, which shows the roster, plugins, calibrated token estimate, guard, gates and warning, then an acknowledgement, then a launch sequence before it hands over to the run view.
 
 **Run view**
 
 - **Flow** (default tab): a live view of the workflow. Five stations (Board → Build → Review → Merge queue → Integrated) are linked by moving conveyor belts. Each task is a persistent block that glides between stations. A forward move leaves an amber trail, and a failed review sends it back with a red trail. Each station lists the workers on it, with status lights. Below 640 px wide the view switches to rows.
+- **Tree** tab: the run as a terminal-style agent tree. A stepper marks the phases (plan, build, review, merge, done). A reviewer rail on the left lists the reviewers on call and the latest gates, and the gate under review is wired to the conductor. Below the conductor sit the bus (5-hour, weekly, board and inbox block meters), the workers fanned out in boxes coloured by model tier, and the integration branch. A session log and a status line close it off.
+- **Cost** tab: total spend, the 5-hour window with its burn rate and a dotted projection to the pause and stop thresholds, spend per worker over time with a crosshair, a per-worker table (share, burn per minute, context), and the measured runs behind the cost model.
+- **Worker drill-down:** click a worker card (or its box in the Tree) for its recent tool calls with a histogram, messages, checkpoints, tasks and context and spend charts. **Focus console** raises the worker's console, opening one if it has none; **Copy attach command** copies `claude attach <session>`.
+- **Alerts:** a toast when a human gate opens or the run stops or finishes, plus a desktop notification and two beeps when Alerts is on.
+- **Replay** (`/run/<run>?replay=1`, or Replay on History and Home): the run rebuilt from its full logs at any moment and played through the same panels, with play and pause, 1x to 120x speed and a scrubber. Tasks, reviews, merges, workers, inbox counts, checkpoints, meters and usage are all as they stood at that moment, and moving the scrubber back works too. `&at=0.5` opens it halfway through.
 - **Topology** tab: who talks to whom. Messages travel along the edges as packets. A newly launched worker's node draws itself in while a deploy line runs from the orchestrator.
-- **Boot sequence:** a launching or resumed worker's card slides in and steps through SPAWN → PROFILE → PLUGINS n → BUS → READY. READY is reached only when the worker has really started.
+- **Boot sequence:** a launching or resumed worker's card slides in and steps through SPAWN → PROFILE → PLUGINS n → BUS → READY. READY is reached only when the worker has really started. While workers boot, a fleet boot panel in the Flow view shows them all together.
 - **Workers:** each card shows a status light (busy, parked, booting, stopped), model, effort, ticking heartbeat, inbox count, a 20-minute activity sparkline, context use, current task and last checkpoint.
 - **Review gates:** every verdict, with a score bar against the pass line, PASS, FAIL or REVIEWING, reviewer → author, and the notes.
 - **Merge queue**, a scrolling 30-minute timeline, and an activity feed. When the run finishes, the merge queue panel shows the report.
 - **Header:** conductor pulse, uptime, plan meters with threshold ticks, and Pause, Stop all, Finish, Resume and Integrate (each shown when it applies). A banner reports stopped, paused, human-gate, finishing-countdown and complete states.
 
-The visual style is flat graphite, hairline borders, IBM Plex and muted model-tier colours, with no gradients, glow or pills. Motion is mechanical (stepped lights, marching dashes, belts) and is switched off under reduced-motion settings.
+The visual style is flat graphite, hairline borders, IBM Plex and muted model-tier colours, with no gradients, glow or pills. The Tree tab uses a brighter terminal palette, and the Cost charts use a categorical palette checked for colour-blind separation. Motion is mechanical (stepped lights, marching dashes, belts) and is switched off under reduced-motion settings.
 
 ## Command line
 
@@ -51,6 +71,7 @@ python warroom.py toggle on|off|status
 python warroom.py plan plan.json                  # preview: roles, models, curated plugins, calibrated estimate, warning
 python warroom.py launch <run> --confirm <code>   # or Preview & launch in the app
 python warroom.py app [<run>] [--quit]
+python warroom.py demo [--speed N]                # a simulated run in the app: no Claude sessions, no tokens
 python warroom.py status <run> [--json]
 python warroom.py post <run> "title" --detail "..." [--to worker]
 python warroom.py send <run> <worker> "message"
@@ -104,8 +125,9 @@ python warroom.py tile <run> / restart-daemons <run> [--open] / list
   - The SessionStart hook restores checkpoints and claimed tasks after a resume.
 - **Cost model:** `measure` sums token use from transcripts, deduplicated across resumed copies. `plan` estimates from the median measured cost per worker per task.
 - **Tiling:**
-  - Windows: one `conhost` console per worker running `claude attach`, so a hang stays local. The dashboard app takes the left 56% of the primary screen and the consoles grid on the right, with the last row stretching. Placement uses asynchronous `SetWindowPos`. The conductor reopens any console that is missing.
+  - Windows: one `conhost` console per worker running `claude attach`, so a hang stays local. The conductor writes each worker's state into its console's title (`swift · working · War Room`: working, waiting, idle, stopped or done). Claude Code reports the same states through the Program Status Protocol (OSC 7501) to terminals that support it, and conhost does not. The consoles start with `CLAUDE_CODE_DISABLE_TERMINAL_TITLE=1`, so Claude Code's own title spinner never overwrites the status. The dashboard app takes the left 56% of the primary screen and the consoles grid on the right, with the last row stretching. Placement uses asynchronous `SetWindowPos`. The conductor reopens any console that is missing.
   - macOS / Linux: a tiled tmux session in a Terminal window (checked live on Linux with tmux 3.4; the macOS Terminal launch is untested).
+  - Workers retry an overloaded API (HTTP 529) with a longer backoff (`CLAUDE_CODE_OVERLOADED_RETRY_BASE_DELAY_MS` 5 s, `..._MAX_DELAY_MS` 5 min) rather than fail a turn while unattended.
 - **Safety:**
   - Workers run in `dontAsk` mode with allow-lists. Push, publish, branch and tag deletion, `rm -rf` and web access are denied.
   - The hub listens only on 127.0.0.1. Every POST needs a per-start token embedded in the page.

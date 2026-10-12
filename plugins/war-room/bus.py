@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS workers (name TEXT PRIMARY KEY, role TEXT, kind TEXT,
   session_id TEXT, cwd TEXT, argv TEXT, resume_argv TEXT, state TEXT, updated REAL);
 CREATE TABLE IF NOT EXISTS meter (agent TEXT PRIMARY KEY, ts REAL, five_pct REAL, five_reset REAL,
   week_pct REAL, week_reset REAL, context_pct REAL, cost_usd REAL, transcript TEXT);
+CREATE TABLE IF NOT EXISTS meter_log (id INTEGER PRIMARY KEY, agent TEXT, ts REAL, five_pct REAL, context_pct REAL,
+  cost_usd REAL);
 CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, ts REAL, agent TEXT, kind TEXT, detail TEXT);
 CREATE TABLE IF NOT EXISTS merges (id INTEGER PRIMARY KEY, task_id INTEGER, worker TEXT, commit_ref TEXT,
   status TEXT NOT NULL DEFAULT 'queued', detail TEXT, ts REAL);
@@ -332,6 +334,10 @@ class Bus:
         m["agent"], m["ts"] = self.agent, time.time()
         cols = ",".join(m)
         self.db.execute(f"INSERT OR REPLACE INTO meter({cols}) VALUES ({','.join('?' * len(m))})", list(m.values()))
+        last = self.db.execute("SELECT max(ts) FROM meter_log WHERE agent=?", (self.agent,)).fetchone()[0]
+        if not last or m["ts"] - last >= 20:  # usage history for the cost panel, one sample per 20 s per worker
+            self.db.execute("INSERT INTO meter_log(agent, ts, five_pct, context_pct, cost_usd) VALUES (?,?,?,?,?)",
+                            (self.agent, m["ts"], m.get("five_pct"), m.get("context_pct"), m.get("cost_usd")))
 
 
 def _schema(props, required=()):
