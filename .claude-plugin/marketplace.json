@@ -1330,7 +1330,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-adr",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "ADR lifecycle management — create, index, supersede, and link Architecture Decision Records to code",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1345,7 +1345,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-agent",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Agent runtimes — local WASM-sandboxed agents (rvagent) + Anthropic Claude Managed Agents (cloud); one interface, local-vs-cloud backends",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1360,7 +1360,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-agentdb",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "AgentDB memory controllers with HNSW vector search, RuVector embeddings, and causal graphs",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1375,7 +1375,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-agntcy",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "AGNTCY/Outshift Internet-of-Cognition runtime integration — SLIM secure transport, CASA intent-scoped tool authorization, and AGNTCY identity/observability spans (ADR-380); optional, removable augmentation per ADR-150",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1390,7 +1390,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-aidefence",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "AI safety scanning, PII detection, prompt injection defense, and adaptive threat learning",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1405,7 +1405,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-arena",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Competitive ruliology for ruflo swarms — arenas, tournaments, and adaptive co-evolution of program strategies (ADR-147/148); strategies-as-programs compete under payoff games",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1420,7 +1420,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-autopilot",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Autonomous /loop-driven task completion with learning, prediction, and progress tracking",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1435,9 +1435,9 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-bbs-federation",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
-      "description": "AgentBBS federated business-domain BBS room integration (ADR-164 Phase 1) — register/publish/watch/human-join MCP tools wrapping the agentbbs Rust workspace as a federation peer; degrades gracefully when agentbbs is absent",
+      "description": "AgentBBS cross-host agent federation (ADR-164). Phase 1: register/publish/watch/human-join room coordination. Phase 2 (v3.40.0): signed cross-host federation — identity, peer_add (pin by nodeId+Ed25519 key), peers, serve (read-only pull), sync (pull + union-merge what verifies). Registry-anchored pinning; works on any network (no tailnet required); coordinates work claims (ClaimIssued/Released/Handoff/Ack). Degrades gracefully when agentbbs is absent.",
       "homepage": "https://github.com/ruvnet/ruflo",
       "category": "upstream",
       "tags": [
@@ -1450,7 +1450,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-browser",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Agentic browser automation with Playwright for testing, scraping, and UI interaction",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1465,7 +1465,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-business-pods",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Business-domain pod templates for the federated business autopilot (ADR-164 Phase 2) — pod templates plus a dry-run-by-default single-tick runner that validates, reserves budget, and resolves agent roles before posting to the BBS room",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1480,7 +1480,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-core",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Core Ruflo MCP tools, commands, and Claude Code orchestration patterns",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1495,7 +1495,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-cost-tracker",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Token usage tracking, model cost attribution per agent, budget alerts, and optimization recommendations",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1510,7 +1510,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-daa",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Dynamic Agentic Architecture with cognitive patterns, knowledge sharing, and adaptive agents",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1525,7 +1525,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-ddd",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Domain-Driven Design scaffolding — bounded contexts, aggregate roots, domain events, and anti-corruption layers",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1540,7 +1540,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-docs",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Documentation generation, drift detection, and API docs automation",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1555,7 +1555,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-federation",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Cross-installation agent federation with zero-trust security, PII-gated data flow, and compliance-grade audit trails",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1570,7 +1570,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-goals",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Long-horizon goal planning, deep research orchestration, and adaptive replanning using GOAP",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1585,7 +1585,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-graph-intelligence",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Real-time graph intelligence — personalized PageRank, streaming delta updates, witness-signed reasoning, and federation-distributable vectors",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1600,7 +1600,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-intelligence",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Self-learning neural intelligence with SONA patterns, trajectory learning, and model routing",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1615,7 +1615,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-iot-cognitum",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "IoT device lifecycle, telemetry anomaly detection, fleet management, and witness chain verification for Cognitum Seed hardware",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1630,7 +1630,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-jujutsu",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Advanced git workflows with diff analysis, risk scoring, and reviewer recommendations",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1645,7 +1645,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-knowledge-graph",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Knowledge graph construction — entity extraction, relation mapping, and pathfinder graph traversal",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1660,7 +1660,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-loop-workers",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Cache-aware /loop workers and CronCreate background automation",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1675,7 +1675,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-market-data",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Market data ingestion — feed normalization, OHLCV vectorization, and HNSW-indexed pattern matching",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1690,7 +1690,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-metaharness",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "MetaHarness integration — surfaces score/genome/mint/mcp-scan/threat-model via skills; pairs with @metaharness/router (ADR-148/149) for cost-optimal model routing; honors ADR-150 optional-augmentation constraint",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1705,7 +1705,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-migrations",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Schema migration management — generate, validate, dry-run, and rollback database migrations",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1720,7 +1720,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-music",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "AI music generation via Cognitum Music (cogmusic MCP) — compose lyrics/prompts, generate tracks, separate stems, extract MIDI, and master through your own music.cognitum.one account",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1735,7 +1735,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-neural-trader",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Neural trading strategies — self-learning LSTM/Transformer/N-BEATS models with Rust/NAPI backtesting",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1750,7 +1750,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-observability",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Structured logging, distributed tracing, and metrics — correlate agent swarm activity with application telemetry",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1765,7 +1765,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-plugin-creator",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Scaffold, validate, and publish new Claude Code plugins with proper structure",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1780,7 +1780,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-rag-memory",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "RuVector memory with HNSW search, AgentDB, and semantic retrieval",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1795,7 +1795,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-ruvector",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Self-learning vector database — HNSW, FlashAttention-3, Graph RAG, hybrid search, DiskANN, and Brain AGI",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1810,7 +1810,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-ruvllm",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "RuVLLM local inference with chat formatting, MicroLoRA fine-tuning, and SONA adaptation",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1825,7 +1825,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-rvf",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "RVF format for portable agent memory, session persistence, and cross-platform transfer",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1840,7 +1840,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-security-audit",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Security review, dependency scanning, policy gates, and CVE monitoring",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1855,7 +1855,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-sparc",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "SPARC methodology — Specification, Pseudocode, Architecture, Refinement, Completion phases with quality gates",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1870,7 +1870,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-swarm",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Agent teams, swarm coordination, Monitor streams, and worktree isolation",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1885,7 +1885,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-testgen",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Test gap detection, coverage analysis, and automated test generation",
       "homepage": "https://github.com/ruvnet/ruflo",
@@ -1900,7 +1900,7 @@
         "source": "git-subdir",
         "url": "https://github.com/ruvnet/ruflo.git",
         "path": "plugins/ruflo-workflows",
-        "sha": "277c7bc03ad192eef6d6f57e59ab7bab69a5728d"
+        "sha": "ea0ea3d7e74a4fea890625b83aacc422321dd641"
       },
       "description": "Visual workflow automation with templates, orchestration, and lifecycle management",
       "homepage": "https://github.com/ruvnet/ruflo",

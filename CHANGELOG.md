@@ -6,6 +6,11 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ### Fixed
 - `config/kit.json` records the tested versions actually shipped: specialist-council 1.3.2 and plot-deck 0.2.1 (it still said 1.3.0 and 0.2.0).
+- Agent Arena 0.4.5: the README now explains installing from the `moaa` marketplace and points at the real library path, `~/.claude/plugins/data/agent-arena-mode-moaa/`. It had still described the pre-MOAA `Agent_arena` folder and the `agent-arena-local` marketplace.
+
+### Changed
+- ruflo's 39 plugins are re-pinned from `277c7bc` to `ea0ea3d`. This includes ruflo's Windows hook-launch fix: hooks now start through `node -e` instead of `cmd /c`, which used to open an interactive `cmd`. superpowers stays at 6.4.1, because Anthropic's official marketplace doesn't list 7.0.0 yet.
+- The installer also sets `CLAUDE_CODE_OVERLOADED_RETRY_MAX_DELAY_MS=60000` (new in Claude Code 2.1.296). Long council, arena and War Room runs now back off for up to a minute when the API is overloaded, instead of failing early. `--uninstall` removes it like the other settings.
 
 ## [0.5.0] - 2026-10-12
 

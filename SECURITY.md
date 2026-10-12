@@ -13,7 +13,7 @@ Read this before you install, especially the `--full` profile.
   - All of this runs with your user account's permissions.
 - **Third-party plugins are pinned, not audited.** Each one is installed at the exact commit the MOAA maintainer tested (see the plugin list in the README). Pinning protects you from surprise upstream changes; it is not a security review. Review any plugin you don't trust before installing it, or install only the core profile.
 - **The installer changes your settings.** It merges into `~/.claude/settings.json` after writing a timestamped backup. It only adds, never overwrites:
-  - It adds plugins, the `ECC_GATEGUARD=off` env setting, a deny rule for one skill, and allow rules so `council.py` runs without a permission prompt.
+  - It adds plugins, the env settings `ECC_GATEGUARD=off` and `CLAUDE_CODE_OVERLOADED_RETRY_MAX_DELAY_MS=60000` (a longer backoff when the API is overloaded, for long council, arena and War Room runs), a deny rule for one skill, and allow rules so `council.py` runs without a permission prompt.
   - The allow rules match only `python …specialist-council…council.py…`. `council.py` uses only the Python standard library and has no network access.
   - Every change is recorded in `~/.claude/.moaa-manifest.json`, and `--uninstall` reverses it.
 - **MCP servers:**
