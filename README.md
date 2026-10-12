@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/ahmadhammoud56/MOAA/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmadhammoud56/MOAA/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/ahmadhammoud56/MOAA)](https://github.com/ahmadhammoud56/MOAA/releases) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Turn Claude Code into a team.** MOAA gives you a **Specialist Council** of 60 expert agents, each with its own model and effort level, and an **Agent Arena** where agents compete and get judged. Agents that keep winning are **forged** into new permanent council members. It installs with one command or loads as a plugin marketplace.
+**Turn Claude Code into a team.** MOAA gives you a **Specialist Council** of 60 expert agents, each with its own model and effort level, and an **Agent Arena** where agents compete and get judged. Agents that keep winning are **forged** into new permanent council members. For the biggest jobs, a **War Room** runs a whole team of parallel Claude Code sessions, with review gates and a live control app. It installs with one command or loads as a plugin marketplace.
 
 Created by **[Ahmad Hammoud](https://github.com/ahmadhammoud56)**. The Specialist Council and the Agent Arena are original work; everything else is credited in [NOTICE](NOTICE) and [THIRD_PARTY.md](THIRD_PARTY.md).
 
@@ -64,27 +64,67 @@ The same task in an interactive session with Specialist Council 1.3.1: both work
 
 ## War Room
 
-For giant or multi-workflow jobs, `war-room` runs a team of real Claude Code workers in parallel. The coordinator picks council roles, models, efforts and a curated plugin set per worker; finished work goes through review gates on a different model tier and merges into a per-run branch. Usage limits pause, stop and resume the team automatically, and a finished run cleans up after itself. Everything is visible live in a local app:
+**A team of real Claude Code sessions working one big job in parallel.** Subagents share one context and one turn. A War Room is different: it starts several independent `claude` sessions, each with its own Specialist Council role, model, effort, plugins and permissions. They coordinate through a shared task board and message bus, review each other's work and merge it into one branch. A local app shows the whole team at work.
 
 ![War Room Tree view: the run as an agent tree with the reviewer rail, bus meters, workers by model tier and a session log](plugins/war-room/docs/media/run-tree.png)
 
-The app (War Room 0.3.0) has:
-- **New run:** describe the job and let a headless planner draft the team (or fill the form yourself), edit it, then preview and launch.
+### How a run works
+
+1. **Plan.** Describe the job, either in the app (Home → New run) or to Claude in a chat (`/war-room`). The plan names the workers (for example a planner, two builders, a reviewer and an arbiter), the seed tasks and the budget. In the app, **Draft with Claude** writes the plan with one headless Sonnet call (about 5k tokens, no tools); **Write by hand** costs nothing. You can edit every worker and task before saving.
+2. **Preview and launch.** The preview lists every worker with its role, model, effort and plugins, plus a calibrated token estimate and the usage guard. Launching needs war mode armed, an acknowledgement and a confirm code tied to that exact plan.
+3. **Work.** Workers claim tasks from the board, message each other and checkpoint as they go. Builders write in their own git worktree. Parked workers wait for new work without using tokens, and the conductor wakes idle ones when work arrives.
+4. **Review gates.** Finished work counts only after a reviewer on a **different model tier** passes it (score 85 by default). Failed work goes back to its author. After repeated failures an arbiter decides, and after that you do.
+5. **Merge.** Approved commits merge into a per-run branch, `war-room/<run>`. Merge conflicts go back to the author.
+6. **Finish.** When everything is merged, the run stops its workers, measures the real token cost (this calibrates later estimates), removes its sessions and merged worktrees, and writes a report. Merging into your own branch is a separate **Integrate** step, and it never pushes.
+
+### The app
+
+![War Room home: war mode master switch, new run, settings and runs](plugins/war-room/docs/media/home.png)
+
+- **Home:**
+  - the war mode master switch (SAFE or ARMED);
+  - **New run**, with a folder picker and a job prompt;
+  - settings: team size, the usage guard, gates, presets, plugins per worker kind and a default model per role;
+  - every run, with Preview & launch.
 - **Run views:**
-  - **Flow:** tasks moving through the review gates
-  - **Tree:** the run as an agent tree, shown above
-  - **Topology:** messages between workers
-  - **Cost:** spend and burn per worker, with a projection to the usage guard
-- **Worker drill-down:** a worker's tool calls, messages, checkpoints and usage charts.
-- **Replay** of finished runs, and a **History** page.
-- **Alerts** for human gates, stops and finished runs.
-- **Settings:** presets, plugins per worker kind, a default model per council role, and a dark, light or system theme.
+  - **Flow:** tasks moving through Board, Build, Review, Merge queue and Integrated;
+  - **Tree:** the run as an agent tree, shown above;
+  - **Topology:** messages between workers;
+  - **Cost:** spend and burn per worker, with a projection to the usage guard.
+- **Worker drill-down:** a worker's tool calls, messages, checkpoints and usage charts, and a button to raise its console.
+- **Replay** of any finished run at up to 120x, and a **History** page with outcomes, review results and measured cost.
+- **Alerts:** a toast, a desktop notification and a sound when a human gate opens or a run stops or finishes.
+- **Look:** a flat graphite design in dark, light or system theme, with mechanical motion that turns off under reduced-motion settings.
 
 ![War Room Cost view: spend per worker, the 5-hour window with its projection, and the cost model](plugins/war-room/docs/media/run-cost.png)
 
-To try it at no token cost, run `python plugins/war-room/warroom.py demo`. It plays a simulated six-worker run in the app, with no Claude sessions. `warroom.py app --install-shortcut` puts the app in the Start menu and on the desktop.
+On Windows the app sits on the left of the main screen, with one attached console per worker in a grid on the right, so you can type into any worker. Each console's title shows the worker's state. On macOS and Linux the workers run in a tiled tmux session.
 
-To run real work, arm war mode in the app (`python plugins/war-room/warroom.py app`), then ask Claude for a War Room. You review the plan and launch it yourself. See [plugins/war-room/README.md](plugins/war-room/README.md).
+### Safety rails
+
+- **Nothing launches without you.** War mode starts SAFE. Every launch needs the switch armed, an acknowledgement and the plan's confirm code, and Claude cannot arm it silently.
+- **Narrow permissions.** Each worker runs with an allow-list for its kind. Push, publish, delete and spend are denied, and workers bring those requests to you as human gates.
+- **Usage guard.** At the pause threshold (85% of the 5-hour window by default), workers stop claiming new tasks, checkpoint and park. At the stop threshold (95%) every worker stops; conversations are kept, and the team resumes after the limit resets.
+- **Trusted folders only.** War Room works only in folders Claude Code already trusts, and never bypasses the trust prompt.
+- **Local only.** The app's server listens on 127.0.0.1, checks the Host header and requires a per-session token on every action.
+
+### Cost, and when to use it
+
+A War Room costs far more than subagents. Every worker loads its own context, and a measured three-worker Haiku/Sonnet run processed 3–4M tokens, mostly cache reads. Use it for jobs with several independent streams of work, or with audits between steps. The `/war-room` skill tells you when a few subagents would do instead.
+
+### Try it
+
+```bash
+python plugins/war-room/warroom.py demo
+```
+
+The demo plays a simulated six-worker run in the app for two to three minutes, with claims, a failed review, an arbitration and merges. It starts no Claude sessions and uses no tokens.
+
+```bash
+python plugins/war-room/warroom.py app --install-shortcut
+```
+
+This adds War Room to the Start menu and the desktop. `python plugins/war-room/warroom.py app` opens the app directly. Full details are in [plugins/war-room/README.md](plugins/war-room/README.md).
 
 ## Profiles
 
