@@ -1,6 +1,6 @@
 {
   "name": "war-room",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "War Room: run a team of real, parallel Claude Code workers for large jobs. Each worker gets a Specialist Council role, its own model and effort, a curated plugin set and a narrow permission profile; they coordinate through a local task and message bus, survive usage limits with checkpoints and auto-resume, tile on the primary screen and report to a live dashboard.",
   "author": { "name": "Ahmad Hammoud", "url": "https://github.com/ahmadhammoud56" },
   "homepage": "https://github.com/ahmadhammoud56/MOAA",

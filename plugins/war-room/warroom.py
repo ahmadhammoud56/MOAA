@@ -19,6 +19,7 @@ to workers through the bus, and restarts idle ones with `claude --resume`. Stand
   python warroom.py serve RUN [--port N]       live dashboard on 127.0.0.1
   python warroom.py list                       runs on this machine
   python warroom.py app [RUN] [--quit]         the War Room app (home, runs, history); --quit stops its hub
+  python warroom.py app --install-shortcut     Start-menu and desktop shortcuts for the app (--remove-shortcut)
   python warroom.py demo [--speed N]           a simulated run in the app: no Claude sessions, no tokens
 """
 import argparse
@@ -75,9 +76,15 @@ WARNING - WAR MODE uses real, parallel Claude Code sessions.
 
 
 # ---------------------------------------------------------------- small helpers
+class Fatal(SystemExit):
+    """die(): exit code 2 on the command line; the hub catches it and shows .msg instead of exiting."""
+
+
 def die(msg):
     print(f"error: {msg}", file=sys.stderr)
-    sys.exit(2)
+    e = Fatal(2)
+    e.msg = msg
+    raise e
 
 
 def load_json(path, default=None):
@@ -388,15 +395,27 @@ def confirm_code(resolved):
     return hashlib.sha256(json.dumps(resolved, sort_keys=True).encode()).hexdigest()[:6]
 
 
-def cmd_plan(a):
-    plan = load_json(a.plan) or die(f"cannot read {a.plan}")
+def untrusted_msg(project):
+    return (f"Claude Code does not trust {project} yet. Run `claude` there once, accept the trust prompt, "
+            "then plan again.")
+
+
+def save_plan(plan):
+    """Resolve a plan dict and store it as a new planned run (CLI `plan` and the app's New run); returns (run, resolved)."""
     resolved = resolve_plan(plan, load_profiles(), installed_plugins(), user_mcp_servers(), settings(),
                             (load_json(CONFIG, {}) or {}).get("role_models"))
     if not trusted(resolved["project"]):
-        die(f"Claude Code does not trust {resolved['project']} yet. Run `claude` there once, accept the trust prompt, "
-            "then plan again.")
-    run = f"{re.sub(r'[^a-z0-9]+', '-', resolved['name'].lower()).strip('-')[:20]}-{time.strftime('%Y%m%d-%H%M%S')}"
+        die(untrusted_msg(resolved["project"]))
+    run = f"{re.sub(r'[^a-z0-9]+', '-', resolved['name'].lower()).strip('-')[:20] or 'run'}-{time.strftime('%Y%m%d-%H%M%S')}"
+    if os.path.exists(os.path.join(RUNS, run)):
+        die("a run with this name was planned this second; try again")
     save_json(os.path.join(RUNS, run, "plan.json"), resolved)
+    return run, resolved
+
+
+def cmd_plan(a):
+    plan = load_json(a.plan) or die(f"cannot read {a.plan}")
+    run, resolved = save_plan(plan)
     cal = load_json(CALIBRATION, {})
     per_task, n_runs = per_worker_task(cal)
     lo, hi = estimate(resolved["workers"], len(resolved["tasks"]), per_task, calibration_values(cal))
@@ -431,6 +450,159 @@ def last_meter():
     if not best:
         return "unknown (no worker has reported yet)"
     return f"5-hour {best['five_pct']}%, weekly {best['week_pct']}% ({int((time.time() - best['ts']) / 60)} min ago)"
+
+
+# ---------------------------------------------------------------- new run from the app: planner, form, folder picker
+PLANNER_MODEL = "sonnet"
+PLAN_SCHEMA = {"type": "object", "required": ["name", "goal", "workers", "tasks"], "properties": {
+    "name": {"type": "string"}, "goal": {"type": "string"},
+    "workers": {"type": "array", "items": {"type": "object", "required": ["name", "role", "brief"], "properties": {
+        "name": {"type": "string"}, "role": {"type": "string"}, "brief": {"type": "string"},
+        "model": {"type": "string", "enum": list(FALLBACK_MODELS)}, "effort": {"type": "string", "enum": list(EFFORTS)}}}},
+    "tasks": {"type": "array", "items": {"type": "object", "required": ["title"], "properties": {
+        "title": {"type": "string"}, "detail": {"type": "string"}, "assignee": {"type": "string"},
+        "gate": {"type": "integer", "enum": [0, 1]}}}}}}
+PLANNER_PROMPT = """You draft War Room plans. A War Room is a team of real, parallel Claude Code workers sharing a task \
+board and message bus; finished work is reviewed by another worker before it merges. You only write the plan: you \
+have no tools and cannot read the project. Reply with the plan object and nothing else.
+
+Rules:
+- name: 2-4 lowercase words joined by dashes. goal: one paragraph saying what done looks like.
+- workers: at most {max_workers}. name: lowercase letters, digits and dashes, max 24 chars, starts with a letter, \
+unique, never "orchestrator". role: one of the Specialist Council roles below. brief: one or two sentences.
+- Worker kinds follow from the role: {kinds}. Any other role is a reader.
+- Builders write code in their own git worktree. Whenever there is a builder, add a reviewer (challenger or \
+test-engineer) on a different model tier from the builders it audits. Add an arbiter for long or risky jobs.
+- Prefer model sonnet or haiku; keep opus or fable for planning, arbitration and hard reviews. Omit model and effort \
+to use the role's default. effort: one of {efforts}.
+- tasks: the first concrete steps (3-10). assignee: a worker name. gate 0 for coordination-only tasks (planning, \
+splitting work), gate 1 (or omitted) for work that must be reviewed.
+- Keep the team as small as the job allows: every worker costs real usage.
+
+Specialist Council roles: {roles}"""
+
+
+def _text(v, n):
+    return str(v or "").strip()[:n]
+
+
+def clean_plan(raw, project):
+    """The fields a plan from the app may set (the planner's draft or the form): no plugins, permissions or kinds."""
+    if not isinstance(raw, dict):
+        raise ValueError("the plan must be an object")
+    models, ws, ts = council_models(), raw.get("workers"), raw.get("tasks") or []
+    if not isinstance(ws, list) or not isinstance(ts, list):
+        raise ValueError("workers and tasks must be lists")
+    workers = []
+    for w in ws[:HARD_MAX_WORKERS + 1]:
+        w = w if isinstance(w, dict) else {}
+        out = {"name": _text(w.get("name"), 24).lower(), "role": _text(w.get("role"), 80), "brief": _text(w.get("brief"), 1000)}
+        if w.get("model"):  # an alias from the form or planner; a full id passes through
+            out["model"] = models.get(w["model"], FALLBACK_MODELS.get(w["model"], _text(w["model"], 60)))
+        if w.get("effort") in EFFORTS:
+            out["effort"] = w["effort"]
+        workers.append(out)
+    tasks = [{"title": _text(t.get("title"), 200), "detail": _text(t.get("detail"), 2000),
+              "assignee": _text(t.get("assignee"), 24), "gate": 0 if t.get("gate") in (0, False, "0") else 1}
+             for t in ts[:40] if isinstance(t, dict) and _text(t.get("title"), 200)]
+    return {"name": _text(raw.get("name"), 40) or "run", "goal": _text(raw.get("goal"), 4000), "project": project,
+            "workers": workers, "tasks": tasks}
+
+
+def check_project(project):
+    project = os.path.normpath(str(project or "").strip())
+    if not os.path.isabs(project) or not os.path.isdir(project):
+        raise ValueError("pick an existing project folder")
+    if not trusted(project):
+        raise ValueError(untrusted_msg(project))
+    return project
+
+
+def draft_plan(prompt, project):
+    """One headless, tool-less Claude call that turns the user's prompt into a draft plan (not saved, not launched)."""
+    profiles = load_profiles()
+    system = PLANNER_PROMPT.format(max_workers=min(settings()["max_workers"], HARD_MAX_WORKERS),
+                                   kinds="; ".join(f"{k} = {', '.join(v['roles'])}" for k, v in profiles["kinds"].items()),
+                                   efforts=", ".join(EFFORTS), roles=", ".join(known_roles(profiles)))
+    # No tools, no session file, no MCP servers, no user settings (so no plugin hooks): a small, side-effect-free call.
+    code, out = claude("-p", f"Project folder: {project}\n\nThe job:\n{prompt}", "--model", PLANNER_MODEL,
+                       "--tools", "", "--system-prompt", system, "--json-schema", json.dumps(PLAN_SCHEMA),
+                       "--output-format", "json", "--no-session-persistence", "--strict-mcp-config",
+                       "--setting-sources", "project", cwd=HOME, timeout=300)
+    try:
+        res = json.JSONDecoder().raw_decode(out[out.index("{"):])[0]
+    except ValueError:
+        raise ValueError(f"the planner failed: {out.strip()[-400:] or f'exit code {code}'}")
+    if code or res.get("is_error"):
+        raise ValueError(f"the planner failed: {str(res.get('result') or out)[-400:]}")
+    draft = res.get("structured_output")
+    if not isinstance(draft, dict):  # older CLIs return the JSON as text
+        txt = str(res.get("result") or "")
+        try:
+            draft = json.JSONDecoder().raw_decode(txt[txt.index("{"):])[0]
+        except ValueError:
+            raise ValueError("the planner did not return a plan; try rewording the prompt")
+    u = res.get("usage") or {}
+    tokens = sum(int(u.get(k) or 0) for k in ("input_tokens", "output_tokens", "cache_read_input_tokens",
+                                              "cache_creation_input_tokens"))
+    return clean_plan(draft, project), {"cost_usd": res.get("total_cost_usd"), "tokens": tokens}
+
+
+PLANNER_JOB = {"status": "idle"}
+_planner_lock = threading.Lock()
+
+
+def start_draft(prompt, project):
+    """Run draft_plan in the background (one at a time); the app polls PLANNER_JOB."""
+    prompt = _text(prompt, 8000)
+    if len(prompt) < 10:
+        raise ValueError("describe the job in a sentence or more")
+    project = check_project(project)  # before spending any tokens
+    with _planner_lock:
+        if PLANNER_JOB.get("status") == "running":
+            raise ValueError("a draft is already being planned")
+        PLANNER_JOB.clear()
+        PLANNER_JOB.update(status="running", started=time.time(), project=project)
+
+    def work():
+        try:
+            draft, cost = draft_plan(prompt, project)
+            PLANNER_JOB.update(status="done", draft=draft, **cost)
+        except Fatal as e:
+            PLANNER_JOB.update(status="error", error=e.msg)
+        except Exception as e:  # noqa: BLE001 - whatever failed, the app shows it
+            PLANNER_JOB.update(status="error", error=str(e)[:500])
+        PLANNER_JOB["ended"] = time.time()
+    threading.Thread(target=work, daemon=True).start()
+    return dict(PLANNER_JOB)
+
+
+def clear_draft():
+    with _planner_lock:
+        if PLANNER_JOB.get("status") != "running":
+            PLANNER_JOB.clear()
+            PLANNER_JOB["status"] = "idle"
+    return dict(PLANNER_JOB)
+
+
+PICK_FOLDER = ("import sys, tkinter, tkinter.filedialog as fd\n"
+               "r = tkinter.Tk(); r.withdraw(); r.attributes('-topmost', True)\n"
+               "print(fd.askdirectory(parent=r, initialdir=sys.argv[1] or None, mustexist=True, "
+               "title='War Room: project folder') or '')")
+
+
+def pick_folder(start=""):
+    """The OS folder dialog (tkinter, in its own process so the hub never runs a GUI loop). '' when cancelled."""
+    try:
+        p = subprocess.run([sys.executable, "-c", PICK_FOLDER, start if os.path.isdir(str(start or "")) else ""],
+                           capture_output=True, text=True, encoding="utf-8", timeout=900,
+                           env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+    except subprocess.TimeoutExpired:
+        raise ValueError("the folder dialog was left open too long")
+    if p.returncode:
+        raise ValueError("no folder dialog on this system (tkinter is missing); type the path instead")
+    path = p.stdout.strip()
+    return {"path": os.path.normpath(path) if path else "", "trusted": bool(path) and trusted(path)}
 
 
 # ---------------------------------------------------------------- launch
@@ -992,6 +1164,98 @@ def open_app(url):
                              "--autoplay-policy=no-user-gesture-required"])  # alert sounds before the first click
 
 
+def icon_png(n=256):
+    """The brand mark (amber frame and core on graphite) as a PNG, drawn with zlib: the app shortcut's icon."""
+    import struct
+    import zlib
+    bg, edge, amber = b"\x0b\x0d\x10", b"\x34\x3b\x45", b"\xc8\xa2\x4a"
+
+    def px(x, y):  # bands by distance from the centre, in 256-px units: edge, ring, core
+        d = max(abs(x + .5 - n / 2), abs(y + .5 - n / 2)) * 256 / n
+        return edge if d >= 124 else amber if 92 <= d < 112 or d < 64 else bg
+    raw = b"".join(b"\x00" + b"".join(px(x, y) for x in range(n)) for y in range(n))
+    chunk = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d))  # noqa: E731
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", n, n, 8, 2, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
+
+
+def launcher_source(fallback):
+    """A tiny launcher kept in ~/.claude/war-room: it opens whichever War Room is installed (the plugin cache path
+    changes with every version, so a shortcut must not point into it)."""
+    return f'''"""War Room app launcher, written by `warroom.py app --install-shortcut`."""
+import json, os, subprocess, sys
+
+
+def find():
+    try:
+        with open(os.path.join(os.path.expanduser("~"), ".claude", "plugins", "installed_plugins.json"), encoding="utf-8") as f:
+            for v in (json.load(f).get("plugins") or {{}}).get("war-room@moaa") or []:
+                if os.path.isfile(os.path.join(v["installPath"], "warroom.py")):
+                    return os.path.join(v["installPath"], "warroom.py")
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return {os.path.join(fallback, "warroom.py")!r}
+
+
+exe = sys.executable
+if exe.lower().endswith("pythonw.exe"):  # the hub logs to a file; python.exe with no window keeps stdout valid
+    exe = exe[:-len("w.exe")] + ".exe"
+subprocess.Popen([exe, find(), "app"], creationflags=0x08000000 if os.name == "nt" else 0)
+'''
+
+
+SHORTCUT_PS = r"""$w = New-Object -ComObject WScript.Shell
+foreach ($d in @([Environment]::GetFolderPath('Programs'), [Environment]::GetFolderPath('Desktop'))) {
+  $p = Join-Path $d 'War Room.lnk'
+  if ($env:WR_OP -eq 'remove') { if (Test-Path -LiteralPath $p) { Remove-Item -LiteralPath $p; $p } ; continue }
+  $s = $w.CreateShortcut($p); $s.TargetPath = $env:WR_EXE; $s.Arguments = '"' + $env:WR_LAUNCHER + '"'
+  $s.IconLocation = $env:WR_ICON; $s.WorkingDirectory = $env:WR_HOME
+  $s.Description = 'War Room: parallel Claude Code workers'; $s.Save(); $p
+}"""
+
+
+def shortcut(remove=False):
+    """Start-menu and desktop shortcuts (Windows) or a menu entry (Linux) that open the War Room app."""
+    launcher = os.path.join(HOME, "War Room.pyw")
+    if sys.platform == "darwin":
+        die("app shortcuts are not supported on macOS yet; run `warroom.py app`")
+    if not IS_WIN:
+        entry = os.path.join(os.path.expanduser("~"), ".local", "share", "applications", "war-room.desktop")
+        if remove:
+            for f in (entry, launcher, os.path.join(HOME, "war-room.png")):
+                if os.path.exists(f):
+                    os.remove(f)
+            return [entry]
+        os.makedirs(os.path.dirname(entry), exist_ok=True)
+        os.makedirs(HOME, exist_ok=True)
+        open(os.path.join(HOME, "war-room.png"), "wb").write(icon_png())
+        open(launcher, "w", encoding="utf-8").write(launcher_source(HERE))
+        open(entry, "w", encoding="utf-8").write(
+            f"[Desktop Entry]\nType=Application\nName=War Room\nComment=Parallel Claude Code workers\n"
+            f"Exec={shlex.quote(sys.executable)} {shlex.quote(launcher)}\nIcon={os.path.join(HOME, 'war-room.png')}\n"
+            "Terminal=false\nCategories=Development;\n")
+        return [entry]
+    ico = os.path.join(HOME, "war-room.ico")
+    if not remove:
+        os.makedirs(HOME, exist_ok=True)
+        import struct
+        png = icon_png()
+        open(ico, "wb").write(struct.pack("<HHHBBBBHHII", 0, 1, 1, 0, 0, 0, 0, 1, 32, len(png), 22) + png)
+        open(launcher, "w", encoding="utf-8").write(launcher_source(HERE))
+    pyw = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
+    env = {**os.environ, "WR_OP": "remove" if remove else "install", "WR_LAUNCHER": launcher, "WR_ICON": ico,
+           "WR_HOME": HOME, "WR_EXE": pyw if os.path.isfile(pyw) else sys.executable}
+    p = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", SHORTCUT_PS], env=env,
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if p.returncode:
+        die(f"could not write the shortcuts: {p.stderr.strip()[-300:]}")
+    if remove:
+        for f in (launcher, ico):
+            if os.path.exists(f):
+                os.remove(f)
+    return [x for x in p.stdout.splitlines() if x.strip()]
+
+
 def top_windows(prefix):
     """Visible top-level windows whose title starts with prefix (Windows only)."""
     import ctypes
@@ -1423,6 +1687,10 @@ def cmd_app(a):
         kill_pid((h or {}).get("pid"))
         print("hub stopped")
         return
+    if a.install_shortcut or a.remove_shortcut:
+        done = shortcut(remove=a.remove_shortcut)
+        print(("removed: " if a.remove_shortcut else "War Room shortcut: ") + (", ".join(done) or "none found"))
+        return
     url = ensure_hub() + (f"run/{a.run}" if a.run else "")
     open_app(url)
     print(f"War Room app: {url}")
@@ -1480,6 +1748,8 @@ def cmd_hub(a):
                 return self.send(200, {"ok": True})
             if path == "/":
                 return self.send(200, pages["home.html"], "text/html; charset=utf-8")
+            if path == "/api/planner":
+                return self.send(200, PLANNER_JOB)
             if path == "/history":
                 return self.send(200, pages["history.html"], "text/html; charset=utf-8")
             if path == "/api/history":
@@ -1581,6 +1851,18 @@ def cmd_hub(a):
                     cfg["role_models"] = validate_role_models(data.get("role_models"), known_roles(load_profiles()))
                     save_json(CONFIG, cfg)
                     return self.send(200, {"role_models": cfg["role_models"]})
+                if path == "/api/planner":
+                    if data.get("clear"):  # the draft was discarded in the app
+                        return self.send(200, clear_draft())
+                    return self.send(200, start_draft(data.get("prompt"), data.get("project")))
+                if path == "/api/plan":
+                    raw = data.get("plan") if isinstance(data.get("plan"), dict) else {}
+                    plan = clean_plan(raw, check_project(raw.get("project")))
+                    run, _ = save_plan(plan)
+                    clear_draft()  # the draft became a plan: a reload must not offer it again
+                    return self.send(200, {"ok": True, "run": run})
+                if path == "/api/pick-folder":
+                    return self.send(200, pick_folder(data.get("start", "")))
                 if path == "/api/demo":
                     run = make_demo()
                     return self.send(200, {"ok": True, "run": run, "url": f"/run/{run}"})
@@ -1631,6 +1913,8 @@ def cmd_hub(a):
                 return self.send(200, {"ok": True})
             except (ValueError, KeyError, TypeError) as e:
                 return self.send(400, {"error": str(e)})
+            except Fatal as e:  # die() inside plan resolution: report it, keep the hub up
+                return self.send(400, {"error": e.msg})
 
     srv = ThreadingHTTPServer(("127.0.0.1", a.port), H)
     save_json(HUB, {"pid": os.getpid(), "port": srv.server_address[1], "started": time.time()})
@@ -2133,6 +2417,8 @@ def main(argv=None):
     s = sub.add_parser("restart-daemons"); s.add_argument("run"); s.add_argument("--open", action="store_true")
     s.set_defaults(f=cmd_restart_daemons)
     s = sub.add_parser("app"); s.add_argument("run", nargs="?"); s.add_argument("--quit", action="store_true")
+    s.add_argument("--install-shortcut", action="store_true", help="Start-menu and desktop shortcuts (Windows), menu entry (Linux)")
+    s.add_argument("--remove-shortcut", action="store_true")
     s.set_defaults(f=cmd_app)
     s = sub.add_parser("hub"); s.add_argument("--port", type=int, default=0); s.set_defaults(f=cmd_hub)
     s = sub.add_parser("demo", help="a simulated run in the app: no Claude sessions, no tokens")

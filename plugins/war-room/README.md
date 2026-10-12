@@ -28,8 +28,15 @@ To see the app without spending any tokens, run `python warroom.py demo` (or pre
 
 `python warroom.py app` opens the War Room as a desktop window. It is a local hub on 127.0.0.1, shown in a chromeless Edge, Chrome or Brave `--app` window with its own profile, so it has no tabs or address bar. The hub serves every run, and you can also reach it with `warroom.py app <run>`.
 
+`python warroom.py app --install-shortcut` adds **War Room** to the Start menu and the desktop on Windows, with its own icon, or a menu entry on Linux. The shortcut runs a small launcher in `~/.claude/war-room/` that opens whichever War Room version is installed, so it survives plugin updates. No console window appears. `--remove-shortcut` takes it away again. War Room stays a MOAA plugin: the app still needs Claude Code and Python.
+
 **Home**
 
+- **New run.** Pick the project folder with **Browse…** (the system folder dialog) or type its path; it must be a folder Claude Code already trusts. Then describe the job and either:
+  - **Draft with Claude:** one headless Sonnet call with no tools, no session file and no plugins drafts the plan (about 10–30k tokens of your plan; the app asks first and shows the progress and any error), or
+  - **Write by hand:** an empty form with a planner, a builder and a reviewer, at no token cost.
+
+  Both open the plan editor: name, goal, workers (council role, model, effort, brief) and seed tasks (assignee, review on or off). The budget comes from Settings. **Create plan** resolves roles and plugins exactly like `warroom.py plan` and opens **Preview & launch**; nothing starts until you arm war mode, acknowledge and launch. The draft survives a reload.
 - **War mode master switch.** Arming it opens a warning, the live plan meter and an acknowledgement. While the switch is SAFE, launches are blocked.
 - **Settings.** These are the defaults for every new plan:
   - max workers
@@ -71,6 +78,7 @@ python warroom.py toggle on|off|status
 python warroom.py plan plan.json                  # preview: roles, models, curated plugins, calibrated estimate, warning
 python warroom.py launch <run> --confirm <code>   # or Preview & launch in the app
 python warroom.py app [<run>] [--quit]
+python warroom.py app --install-shortcut          # Start-menu and desktop shortcuts (Windows) or a menu entry (Linux)
 python warroom.py demo [--speed N]                # a simulated run in the app: no Claude sessions, no tokens
 python warroom.py status <run> [--json]
 python warroom.py post <run> "title" --detail "..." [--to worker]

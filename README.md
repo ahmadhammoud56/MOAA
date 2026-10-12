@@ -68,7 +68,8 @@ For giant or multi-workflow jobs, `war-room` runs a team of real Claude Code wor
 
 ![War Room Tree view: the run as an agent tree with the reviewer rail, bus meters, workers by model tier and a session log](plugins/war-room/docs/media/run-tree.png)
 
-The app (War Room 0.2.0) has:
+The app (War Room 0.3.0) has:
+- **New run:** describe the job and let a headless planner draft the team (or fill the form yourself), edit it, then preview and launch.
 - **Run views:**
   - **Flow:** tasks moving through the review gates
   - **Tree:** the run as an agent tree, shown above
@@ -81,7 +82,7 @@ The app (War Room 0.2.0) has:
 
 ![War Room Cost view: spend per worker, the 5-hour window with its projection, and the cost model](plugins/war-room/docs/media/run-cost.png)
 
-To try it at no token cost, run `python plugins/war-room/warroom.py demo`. It plays a simulated six-worker run in the app, with no Claude sessions.
+To try it at no token cost, run `python plugins/war-room/warroom.py demo`. It plays a simulated six-worker run in the app, with no Claude sessions. `warroom.py app --install-shortcut` puts the app in the Start menu and on the desktop.
 
 To run real work, arm war mode in the app (`python plugins/war-room/warroom.py app`), then ask Claude for a War Room. You review the plan and launch it yourself. See [plugins/war-room/README.md](plugins/war-room/README.md).
 

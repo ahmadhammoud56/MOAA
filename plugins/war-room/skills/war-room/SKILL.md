@@ -23,6 +23,9 @@ user's confirmation of the preview.
 
 ## 2. Plan
 
+The user can also plan a run themselves in the app (Home → New run: a prompt drafted by a headless planner, or a
+form). If they did, skip to the preview: their plan is already listed as a planned run.
+
 Write a plan JSON (anywhere in the scratchpad) and run `WR plan <file>`:
 
 ```json

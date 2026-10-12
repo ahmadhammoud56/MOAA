@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>War Room</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'%3E%3Crect width='256' height='256' fill='%230b0d10'/%3E%3Crect x='2' y='2' width='252' height='252' fill='none' stroke='%23343b45' stroke-width='4'/%3E%3Crect x='26' y='26' width='204' height='204' fill='none' stroke='%23c8a24a' stroke-width='20'/%3E%3Crect x='64' y='64' width='128' height='128' fill='%23c8a24a'/%3E%3C/svg%3E">
 <style>
 @font-face { font-family: "Plex Sans"; src: url(/fonts/IBMPlexSans-Variable.woff2) format("woff2"); font-weight: 100 700; }
 @font-face { font-family: "Plex Mono"; src: url(/fonts/IBMPlexMono-Regular.woff2) format("woff2"); font-weight: 400; }
@@ -198,6 +199,31 @@ table.rm select { width: 100%; }
 .toast.danger { border-left-color: var(--danger); } .toast.ok { border-left-color: var(--ok); }
 .tag.demo { color: var(--info-ink); border-color: var(--info); }
 
+/* ---------- new run: prompt, planner, plan editor ---------- */
+textarea { width: 100%; font: 12.5px/1.5 var(--sans); color: var(--text); background: var(--sunk); border: 1px solid var(--line-strong);
+  border-radius: 2px; padding: 8px 10px; resize: vertical; display: block; }
+textarea:focus { outline: none; border-color: var(--accent); }
+.fl { display: block; font: 500 10px var(--mono); letter-spacing: .14em; color: var(--faint); text-transform: uppercase; margin: 12px 0 6px; }
+.fl:first-child { margin-top: 0; }
+.nr-act { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+.nr-act .pmsg { flex: 1 1 260px; clear: none; }
+.nr-act .pmsg code { font-family: var(--mono); }
+.nr-act .pmsg .led { width: 7px; height: 7px; margin-right: 6px; vertical-align: 1px; }
+.nr-act .pmsg.run { color: var(--accent); } .nr-act .pmsg.run .led { background: var(--accent); animation: blink 1s steps(2, jump-none) infinite; }
+.ed { margin-top: 14px; border: 1px solid var(--line); border-left: 2px solid var(--info); background: var(--panel); animation: rise .3s ease-out; }
+.ed .kh { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); font: 500 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+.ed .kh span { color: var(--faint); letter-spacing: .02em; text-transform: none; font-weight: 400; }
+.ed .eb { padding: 4px 12px 12px; }
+.ed table.rm td { border-bottom: 0; padding: 4px 4px 0; } .ed table.rm th { padding: 6px 4px; }
+.ed table.rm select[data-f=model], .ed table.rm select[data-f=effort] { min-width: 92px; }
+.ed table.rm tr.sub td { padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.ed table.rm input[type=text] { width: 100%; }
+.ed table.rm td.x { width: 1%; } .ed table.rm td.g { width: 1%; text-align: center; }
+.ed table.rm input[type=checkbox] { accent-color: #c8a24a; }
+.ed .add { margin-top: 8px; }
+.ed .foot { display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding: 10px 12px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.ed .foot .pmsg { margin-right: auto; clear: none; }
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .seq div { opacity: 1; } }
 @media (max-width: 980px) { main { grid-template-columns: 1fr; } .col { border-right: 0; } }
 @media (max-width: 700px) { header { height: auto; flex-wrap: wrap; padding: 10px 16px; overflow: visible; } .hdr { flex-wrap: wrap; white-space: normal; margin-left: 0; } }
@@ -266,6 +292,18 @@ table.rm select { width: 100%; }
     </section>
   </div>
   <div class="col">
+    <section class="panel">
+      <h2>New run <span>prompt · draft plan · preview &amp; launch</span></h2>
+      <div class="pad">
+        <label class="fl" for="nr-proj">Project folder</label>
+        <div class="prow two"><input type="text" id="nr-proj" spellcheck="false" placeholder="a folder Claude Code already trusts"><button type="button" id="nr-browse">Browse…</button></div>
+        <label class="fl" for="nr-prompt">The job</label>
+        <textarea id="nr-prompt" rows="4" maxlength="8000" placeholder="What should the team build or fix, and what does done look like?"></textarea>
+        <div class="nr-act"><button class="primary" type="button" id="nr-draft">Draft with Claude</button><button type="button" id="nr-hand">Write by hand</button>
+          <span class="pmsg" id="nr-msg">Drafting is one Sonnet call with no tools: roughly 10–30k tokens of your plan. Nothing launches until you preview and confirm.</span></div>
+        <div id="nr-ed"></div>
+      </div>
+    </section>
     <section class="panel">
       <h2>Runs <span id="rcount"></span></h2>
       <div class="runs" id="runs"></div>
@@ -494,6 +532,96 @@ $("demo").onclick = async () => {
   try { location.href = (await api("/api/demo", {})).url; } catch (e) { fail(e); $("demo").disabled = false; }
 };
 
+/* ---------- new run: project folder, planner, plan editor ---------- */
+const NR_KEY = "warroom.newrun";
+let draft = null, plannerTimer = null;
+const store = v => { try { v ? localStorage.setItem(NR_KEY, JSON.stringify(v)) : localStorage.removeItem(NR_KEY); } catch (e) { /* storage is optional */ } };
+const nrmsg = (html, cls = "") => { $("nr-msg").className = `pmsg ${cls}`; $("nr-msg").innerHTML = html; };
+$("nr-browse").onclick = async () => {
+  $("nr-browse").disabled = true; nrmsg("folder dialog open…");
+  try {
+    const out = await api("/api/pick-folder", {start: $("nr-proj").value.trim()});
+    if (out.path) $("nr-proj").value = out.path;
+    nrmsg(!out.path ? "no folder picked" : out.trusted ? "folder trusted by Claude Code" : "Claude Code does not trust this folder yet: run <code>claude</code> there once and accept the trust prompt",
+      !out.path ? "" : out.trusted ? "ok" : "err");
+  } catch (e) { nrmsg(esc(e.message), "err"); }
+  $("nr-browse").disabled = false;
+};
+$("nr-draft").onclick = async () => {
+  if (!confirm("Draft a plan with Claude? This runs one Sonnet call (no tools, roughly 10–30k tokens of your plan). Nothing is launched.")) return;
+  try { await api("/api/planner", {prompt: $("nr-prompt").value, project: $("nr-proj").value.trim()}); watchPlanner(); }
+  catch (e) { nrmsg(esc(e.message), "err"); }
+};
+$("nr-hand").onclick = () => editDraft({name: "", goal: $("nr-prompt").value.trim(), project: $("nr-proj").value.trim(),
+  workers: [{name: "planner", role: "project-planner", brief: ""}, {name: "builder", role: "builder", brief: ""}, {name: "reviewer", role: "challenger", brief: ""}], tasks: []});
+async function watchPlanner() {
+  clearTimeout(plannerTimer);
+  let job; try { job = await api("/api/planner"); } catch (e) { plannerTimer = setTimeout(watchPlanner, 2000); return; }
+  const busy = job.status === "running";
+  $("nr-draft").disabled = busy;
+  if (busy) {
+    const s = Math.max(0, Math.floor(Date.now() / 1000 - job.started));
+    nrmsg(`<i class="led"></i>PLANNING · ${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")} · Sonnet, no tools`, "run");
+    plannerTimer = setTimeout(watchPlanner, 1000);
+  } else if (job.status === "error" && job.ended !== watchPlanner.seen) { watchPlanner.seen = job.ended; nrmsg(`Planner: ${esc(job.error)}`, "err"); }
+  else if (job.status === "done" && job.draft && job.ended !== watchPlanner.seen) {
+    watchPlanner.seen = job.ended;
+    if (draft && draft._job === job.ended) return;  /* this draft is already in the editor (restored after a reload) */
+    nrmsg(`Draft ready · ${Math.round((job.tokens || 0) / 1000)}k tokens · edit it below, then create the plan`, "ok");
+    editDraft({...job.draft, _job: job.ended});
+  }
+}
+const optList = (arr, v, first) => (first ? `<option value="">${esc(first)}</option>` : "") + arr.map(x => `<option value="${esc(x)}" ${x === v ? "selected" : ""}>${esc(x)}</option>`).join("");
+function editDraft(d) {
+  draft = d; store(d);
+  const roles = [...new Set([...(home?.roles || []), ...d.workers.map(w => w.role).filter(Boolean)])];
+  const names = d.workers.map(w => w.name).filter(Boolean);
+  $("nr-ed").innerHTML = `<div class="ed"><div class="kh">Plan draft <span>${d.workers.length} worker${d.workers.length === 1 ? "" : "s"} · ${d.tasks.length} task${d.tasks.length === 1 ? "" : "s"} · budget from Settings</span></div>
+    <div class="eb"><label class="fl" for="ed-name">Name</label><input type="text" id="ed-name" maxlength="40" value="${esc(d.name)}" placeholder="short-name" style="width:100%">
+      <label class="fl" for="ed-goal">Goal</label><textarea id="ed-goal" rows="3" maxlength="4000">${esc(d.goal)}</textarea>
+      <label class="fl">Workers</label><table class="rm" id="ed-w"><thead><tr><th>Name</th><th>Council role</th><th>Model</th><th>Effort</th><th></th></tr></thead>
+      ${d.workers.map((w, i) => `<tbody data-i="${i}"><tr><td><input type="text" data-f="name" maxlength="24" value="${esc(w.name)}" aria-label="Worker name"></td>
+        <td><select data-f="role" aria-label="Council role">${optList(roles, w.role)}</select></td>
+        <td><select data-f="model" aria-label="Model">${optList(home?.tiers || [], w.model ? tier(w.model) : "", "default")}</select></td>
+        <td><select data-f="effort" aria-label="Effort">${optList(home?.efforts || [], w.effort || "", "default")}</select></td>
+        <td class="x" rowspan="2"><button type="button" data-delw="${i}" aria-label="Remove worker">✕</button></td></tr>
+        <tr class="sub"><td colspan="4"><input type="text" data-f="brief" maxlength="1000" value="${esc(w.brief)}" placeholder="brief: what this worker does" aria-label="Brief"></td></tr></tbody>`).join("")}</table>
+      <button type="button" class="add" id="ed-addw">Add worker</button>
+      <label class="fl">Seed tasks</label><table class="rm" id="ed-t"><thead><tr><th>Title</th><th>Assignee</th><th title="Reviewed before it counts (off for coordination-only tasks)">Review</th><th></th></tr></thead>
+      ${d.tasks.map((t, i) => `<tbody data-i="${i}"><tr><td><input type="text" data-f="title" maxlength="200" value="${esc(t.title)}" aria-label="Task title"></td>
+        <td><select data-f="assignee" aria-label="Assignee">${optList(names, t.assignee, "anyone")}</select></td>
+        <td class="g"><input type="checkbox" data-f="gate" ${t.gate === 0 ? "" : "checked"} aria-label="Needs review" title="Reviewed before it counts (off for coordination-only tasks)"></td>
+        <td class="x" rowspan="2"><button type="button" data-delt="${i}" aria-label="Remove task">✕</button></td></tr>
+        <tr class="sub"><td colspan="3"><input type="text" data-f="detail" maxlength="2000" value="${esc(t.detail)}" placeholder="detail" aria-label="Task detail"></td></tr></tbody>`).join("") || `<tbody><tr><td colspan="4" style="color:var(--faint)">No seed tasks: the planner worker fills the board.</td></tr></tbody>`}</table>
+      <button type="button" class="add" id="ed-addt">Add task</button></div>
+    <div class="foot"><span class="pmsg" id="ed-msg">Creating the plan resolves roles and plugins; it does not launch anything.</span><button type="button" id="ed-discard">Discard draft</button><button class="primary" type="button" id="ed-create">Create plan</button></div></div>`;
+}
+function readDraft() {
+  const rows = id => [...$(id).querySelectorAll("tbody[data-i]")].map(tb => Object.fromEntries([...tb.querySelectorAll("[data-f]")].map(el => [el.dataset.f, el.type === "checkbox" ? (el.checked ? 1 : 0) : el.value.trim()])));
+  return {...draft, name: $("ed-name").value.trim(), goal: $("ed-goal").value.trim(), project: $("nr-proj").value.trim(),
+    workers: rows("ed-w").map(w => ({name: w.name, role: w.role, brief: w.brief, ...(w.model ? {model: w.model} : {}), ...(w.effort ? {effort: w.effort} : {})})), tasks: rows("ed-t")};
+}
+$("nr-ed").addEventListener("input", () => { if (draft) store(readDraft()); });
+$("nr-proj").addEventListener("input", () => { if (draft) store(readDraft()); });
+$("nr-ed").addEventListener("click", async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const d = readDraft();
+  if (b.dataset.delw) { d.workers.splice(+b.dataset.delw, 1); return editDraft(d); }
+  if (b.dataset.delt) { d.tasks.splice(+b.dataset.delt, 1); return editDraft(d); }
+  if (b.id === "ed-addw") { d.workers.push({name: "", role: "builder", brief: ""}); return editDraft(d); }
+  if (b.id === "ed-addt") { d.tasks.push({title: "", detail: "", assignee: "", gate: 1}); return editDraft(d); }
+  if (b.id === "ed-discard" && confirm("Discard this draft?")) { draft = null; store(null); $("nr-ed").innerHTML = ""; api("/api/planner", {clear: true}).catch(() => {}); return; }
+  if (b.id === "ed-create") {
+    b.disabled = true; pmsg("ed-msg", "resolving roles and plugins…");
+    try {
+      const out = await api("/api/plan", {plan: d});
+      draft = null; store(null); $("nr-ed").innerHTML = ""; nrmsg(`Planned <b>${esc(out.run)}</b>: review it in Preview &amp; launch.`, "ok");
+      await refresh(); const r = home.runs.find(x => x.run === out.run); if (r) launchModal(r);
+    } catch (err) { pmsg("ed-msg", err.message, "err"); b.disabled = false; }
+  }
+});
+try { const saved = JSON.parse(localStorage.getItem(NR_KEY) || "null"); if (saved && Array.isArray(saved.workers)) { $("nr-proj").value = saved.project || ""; draft = saved; } } catch (e) { /* no saved draft */ }
+
 /* ---------- runs ---------- */
 function roster(r) { return (r.workers || []).map(w => `<span class="chip"><i style="background:var(--${tier(w.model)})"></i><b>${esc(w.name)}</b>${esc(w.role)}</span>`).join(""); }
 function runCard(r) {
@@ -516,7 +644,7 @@ function renderRuns() {
   $("rcount").textContent = runs.length ? `${runs.filter(r => r.status === "live").length} live · ${runs.length} total` : "";
   const safe = r => { try { return runCard(r); } catch (e) { return `<article class="run"><div class="top"><span class="name">${esc(r.run)}</span><span class="tag">unreadable</span></div></article>`; } };
   const html = runs.length ? runs.map(safe).join("") :
-    `<div class="empty">No runs yet. Ask Claude for a War Room (<code>/war-room</code>); its plan appears here for preview and launch.</div>`;
+    `<div class="empty">No runs yet. Describe a job under New run, or ask Claude for a War Room (<code>/war-room</code>); its plan appears here for preview and launch.</div>`;
   if ($("runs")._h !== html) { $("runs").innerHTML = html; $("runs")._h = html; }
 }
 $("runs").addEventListener("click", async e => {
@@ -571,7 +699,7 @@ async function refresh() {
   } catch (e) { $("hub").textContent = "offline"; $("hub").style.color = "var(--danger)"; }
 }
 setInterval(() => $("clock").textContent = new Date().toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"}), 1000);
-refresh(); setInterval(refresh, 2500);
+refresh().then(() => { if (draft) editDraft(draft); watchPlanner(); }); setInterval(refresh, 2500);
 </script>
 </body>
 </html>
