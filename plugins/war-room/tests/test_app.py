@@ -174,11 +174,11 @@ class NewRun(Sandbox):
         self.assertEqual((e.exception.code, e.exception.msg), (2, "bad plan"))
 
     def test_icon_and_launcher(self):
-        import zlib
-        png = warroom.icon_png(32)
+        import struct
+        png = open(warroom.ICON_PNG, "rb").read()
         self.assertTrue(png.startswith(b"\x89PNG\r\n\x1a\n"))
-        raw = zlib.decompress(png[png.index(b"IDAT") + 4:png.index(b"IEND") - 8])
-        self.assertEqual(len(raw), 32 * (1 + 32 * 3))
+        self.assertEqual(struct.unpack(">II", png[16:24]), (256, 256))  # Windows wants a 256-px icon
+        self.assertTrue(os.path.isfile(os.path.join(HERE, "assets", "icon.svg")))
         compile(warroom.launcher_source("/somewhere"), "launcher", "exec")
 
 

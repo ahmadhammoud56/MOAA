@@ -1164,19 +1164,7 @@ def open_app(url):
                              "--autoplay-policy=no-user-gesture-required"])  # alert sounds before the first click
 
 
-def icon_png(n=256):
-    """The brand mark (amber frame and core on graphite) as a PNG, drawn with zlib: the app shortcut's icon."""
-    import struct
-    import zlib
-    bg, edge, amber = b"\x0b\x0d\x10", b"\x34\x3b\x45", b"\xc8\xa2\x4a"
-
-    def px(x, y):  # bands by distance from the centre, in 256-px units: edge, ring, core
-        d = max(abs(x + .5 - n / 2), abs(y + .5 - n / 2)) * 256 / n
-        return edge if d >= 124 else amber if 92 <= d < 112 or d < 64 else bg
-    raw = b"".join(b"\x00" + b"".join(px(x, y) for x in range(n)) for y in range(n))
-    chunk = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d))  # noqa: E731
-    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", n, n, 8, 2, 0, 0, 0))
-            + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
+ICON_PNG = os.path.join(HERE, "assets", "icon.png")  # 256-px render of assets/icon.svg
 
 
 def launcher_source(fallback):
@@ -1228,7 +1216,7 @@ def shortcut(remove=False):
             return [entry]
         os.makedirs(os.path.dirname(entry), exist_ok=True)
         os.makedirs(HOME, exist_ok=True)
-        open(os.path.join(HOME, "war-room.png"), "wb").write(icon_png())
+        shutil.copyfile(ICON_PNG, os.path.join(HOME, "war-room.png"))
         open(launcher, "w", encoding="utf-8").write(launcher_source(HERE))
         open(entry, "w", encoding="utf-8").write(
             f"[Desktop Entry]\nType=Application\nName=War Room\nComment=Parallel Claude Code workers\n"
@@ -1239,7 +1227,7 @@ def shortcut(remove=False):
     if not remove:
         os.makedirs(HOME, exist_ok=True)
         import struct
-        png = icon_png()
+        png = open(ICON_PNG, "rb").read()
         open(ico, "wb").write(struct.pack("<HHHBBBBHHII", 0, 1, 1, 0, 0, 0, 0, 1, 32, len(png), 22) + png)
         open(launcher, "w", encoding="utf-8").write(launcher_source(HERE))
     pyw = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
@@ -1784,6 +1772,8 @@ def cmd_hub(a):
                     return self.send(200, worker_detail(m.group(1), wm.group(1)))
                 except KeyError as e:
                     return self.send(404, {"error": str(e)})
+            if path == "/icon.svg":
+                return self.send(200, open(os.path.join(HERE, "assets", "icon.svg"), "rb").read(), "image/svg+xml")
             if path.startswith("/fonts/") and re.match(r"^/fonts/[\w.-]+\.woff2$", path):
                 f = os.path.join(fonts, path[7:])
                 return self.send(200, open(f, "rb").read(), "font/woff2") if os.path.exists(f) else self.send(404, "")
