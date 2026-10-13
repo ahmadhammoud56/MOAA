@@ -4,6 +4,8 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-10-13
+
 ### Changed
 - **War Room 0.3.1: a new app icon, the situation table.** Seen from above, an amber ring holds a Claude-style spark (the orchestrator), wired to eight workers (War Room's hard cap) in the model-tier colours, on a plotting table with range rings. The spark is a generic asterisk drawn for War Room, not Anthropic's logo. It ships as `assets/icon.svg`, used as the favicon of every page and served at `/icon.svg`, with a 256-px `assets/icon.png` for the Start-menu, desktop and Linux shortcuts. Run `warroom.py app --install-shortcut` again to refresh existing shortcuts. The old drawing code is gone.
 
@@ -129,6 +131,7 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 ### Added
 - First one-command installer: plugins, council, arena, skills, MCP servers and settings merge, with uninstall.
 
+[0.5.3]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/ahmadhammoud56/MOAA/compare/v0.4.3...v0.5.0
