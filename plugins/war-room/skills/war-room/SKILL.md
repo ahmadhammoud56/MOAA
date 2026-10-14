@@ -40,7 +40,7 @@ Write a plan JSON (anywhere in the scratchpad) and run `WR plan <file>`:
   ],
   "tasks": [{"title": "...", "detail": "...", "assignee": "planner", "gate": 0}],
   "budget": {"max_workers": 3, "pause_at": 85, "stop_at": 95, "max_hours": 4,
-             "gates": true, "gate_score": 85, "max_fails": 2, "wait_seconds": 570}
+             "gates": true, "gate_score": 85, "max_fails": 2, "wait_seconds": 570, "max_cost_usd": 0}
 }
 ```
 
@@ -55,6 +55,10 @@ Write a plan JSON (anywhere in the scratchpad) and run `WR plan <file>`:
   only its `verdict` (pass with score >= `gate_score`) approves it. After `max_fails` failed reviews an `arbiter`
   role worker decides, then you. Seed coordination-only tasks with `"gate": 0`.
 - Include a reviewer whenever there is a writer (add an `arbiter` role worker for long or risky runs).
+- `max_cost_usd` caps the run's API-equivalent spend (0 = no cap). Suggest one for any long run. A run stopped at its
+  cap resumes only with a new cap the user chooses: `WR resume <run> --max-cost USD`.
+- For a common team shape, start from `WR template` (feature-team, bug-hunt, review-swarm, research-fanout, refactor):
+  `WR template feature-team --project <path> --goal "..."` prints a plan file to edit, at no token cost.
 - `wait_seconds` is how long an idle worker stays parked (no tokens) before it goes idle; the conductor re-wakes idle
   workers when work arrives, so the default is fine. Long waits (e.g. 1500) also work.
 

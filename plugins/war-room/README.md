@@ -34,7 +34,7 @@ To see the app without spending any tokens, run `python warroom.py demo` (or pre
 
 - **New run.** Pick the project folder with **Browse…** (the system folder dialog) or type its path; it must be a folder Claude Code already trusts. Then describe the job and either:
   - **Draft with Claude:** one headless Sonnet call with no tools, no session file and no plugins drafts the plan (about 5–10k tokens of your plan; the app asks first and shows the progress and any error), or
-  - **Write by hand:** an empty form with a planner, a builder and a reviewer, at no token cost.
+  - **Write by hand:** a form with a planner, a builder and a reviewer, at no token cost. The picker beside it starts the form from a team template instead: **feature team** (planner, builder, test-engineer reviewer), **bug hunt** (debugger, scout, challenger), **review swarm** (security, reliability and test reviewers, read-only), **research fan-out** (literature reviewer, editor, peer-reviewer fact-checker) or **refactor** (refactoring engineer, test engineer, challenger). Each has three workers, a reviewer whenever someone writes, and seed tasks.
 
   Both open the plan editor: name, goal, workers (council role, model, effort, brief) and seed tasks (assignee, review on or off). The budget comes from Settings. **Create plan** resolves roles and plugins exactly like `warroom.py plan` and opens **Preview & launch**; nothing starts until you arm war mode, acknowledge and launch. The draft survives a reload.
 - **War mode master switch.** Arming it opens a warning, the live plan meter and an acknowledgement. While the switch is SAFE, launches are blocked.
@@ -42,6 +42,7 @@ To see the app without spending any tokens, run `python warroom.py demo` (or pre
   - max workers
   - usage guard pause and stop thresholds, shown on a gauge with the live meter marked
   - max run length
+  - spend cap in USD (0 = none): the API-equivalent statusline cost of all workers, summed across resumed sessions. The conductor stops the run when it is reached and never resumes it by itself; resuming asks for a higher cap
   - review gates: on/off, pass score, failed reviews before arbitration
   - keep-alive wait
   - auto finish and auto integrate
@@ -79,7 +80,8 @@ python warroom.py plan plan.json                  # preview: roles, models, cura
 python warroom.py launch <run> --confirm <code>   # or Preview & launch in the app
 python warroom.py app [<run>] [--quit]
 python warroom.py app --install-shortcut          # Start-menu and desktop shortcuts (Windows) or a menu entry (Linux)
-python warroom.py demo [--speed N]                # a simulated run in the app: no Claude sessions, no tokens
+python warroom.py demo [--speed N] [--max-cost USD]  # a simulated run in the app: no Claude sessions, no tokens
+python warroom.py template [NAME --project P --goal "..."]  # list team templates, or print one as a plan file
 python warroom.py status <run> [--json]
 python warroom.py post <run> "title" --detail "..." [--to worker]
 python warroom.py send <run> <worker> "message"
@@ -88,6 +90,7 @@ python warroom.py approve <run> <task> [--reject "notes"]   # human gate for blo
 python warroom.py merge <run>                     # process the merge queue now
 python warroom.py integrate <run> [--apply]       # report, or merge the run branch into the current branch (no push)
 python warroom.py pause|unpause|stop|resume <run>
+python warroom.py resume <run> --max-cost USD     # continue a run stopped at its spend cap with a new cap (0 = none)
 python warroom.py finish <run> / shutdown <run>   # finish: stop, measure, clean up; shutdown also closes the window
 python warroom.py measure <run>                   # record real token use (calibrates estimates)
 python warroom.py watch <run> [--schedule]        # the conductor (normally a background daemon)

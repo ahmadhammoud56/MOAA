@@ -83,8 +83,8 @@ The same task in an interactive session with Specialist Council 1.3.1: both work
 
 - **Home:**
   - the war mode master switch (SAFE or ARMED);
-  - **New run**, with a folder picker and a job prompt;
-  - settings: team size, the usage guard, gates, presets, plugins per worker kind and a default model per role;
+  - **New run**, with a folder picker, a job prompt and team templates (feature team, bug hunt, review swarm, research fan-out, refactor) that fill the plan at no token cost;
+  - settings: team size, the usage guard, a spend cap, gates, presets, plugins per worker kind and a default model per role;
   - every run, with Preview & launch.
 - **Run views:**
   - **Flow:** tasks moving through Board, Build, Review, Merge queue and Integrated;
@@ -105,6 +105,7 @@ On Windows the app sits on the left of the main screen, with one attached consol
 - **Nothing launches without you.** War mode starts SAFE. Every launch needs the switch armed, an acknowledgement and the plan's confirm code, and Claude cannot arm it silently.
 - **Narrow permissions.** Each worker runs with an allow-list for its kind. Push, publish, delete and spend are denied, and workers bring those requests to you as human gates.
 - **Usage guard.** At the pause threshold (85% of the 5-hour window by default), workers stop claiming new tasks, checkpoint and park. At the stop threshold (95%) every worker stops; conversations are kept, and the team resumes after the limit resets.
+- **Spend cap.** Set a cap in USD (the API-equivalent statusline cost of all workers, counted across resumed sessions) in Settings or a plan's `budget.max_cost_usd`. The run stops when it is reached and does not resume by itself; `warroom.py resume RUN --max-cost USD` (or Resume in the app) continues with a higher cap.
 - **Trusted folders only.** War Room works only in folders Claude Code already trusts, and never bypasses the trust prompt.
 - **Local only.** The app's server listens on 127.0.0.1, checks the Host header and requires a per-session token on every action.
 
@@ -118,7 +119,9 @@ A War Room costs far more than subagents. Every worker loads its own context, an
 python plugins/war-room/warroom.py demo
 ```
 
-The demo plays a simulated six-worker run in the app for two to three minutes, with claims, a failed review, an arbitration and merges. It starts no Claude sessions and uses no tokens.
+The demo plays a simulated six-worker run in the app for two to three minutes, with claims, a failed review, an arbitration and merges. It starts no Claude sessions and uses no tokens. Add `--max-cost 1` to watch the spend cap stop it.
+
+`python plugins/war-room/warroom.py template` lists the team templates; `template feature-team --project PATH --goal "..." > plan.json` writes one as a plan file for `warroom.py plan`.
 
 ```bash
 python plugins/war-room/warroom.py app --install-shortcut
@@ -177,6 +180,8 @@ Both wrappers pass these flags through to `scripts/install.py`:
 | `--skip-ansys` / `--skip-mcp` | Skip the ansys server, or both MCP servers. |
 | `--dry-run` | Print every command without changing anything. |
 | `--uninstall` | Reverse everything recorded in `~/.claude/.moaa-manifest.json`. |
+| `--status` | Change nothing; compare the install with this repo. It lists MOAA plugins, skills, agents and MCP servers that are outdated, missing or edited after install, third-party plugins whose version differs from the tested one, and old plugin versions left in the cache. Add `--verbose` to list every plugin. Exits 1 if anything is missing or outdated. |
+| `--doctor` | Run every pre-commit check: all test suites, `MODELS.md`, the catalog, the public-release scan and `claude plugin validate`. For maintainers. |
 
 Restart Claude Code afterwards. The installer respects `CLAUDE_CONFIG_DIR`, so you can trial it in a throwaway config directory:
 
@@ -470,7 +475,8 @@ Forging rules:
 - **Eligibility:** the agent must be validated in 2 or more independent runs, with every validated score at least 85, a score spread of at most 10, and nothing in its lineage invalidated.
 - **Earning a second run:** reuse a saved agent in a new arena run with `--reuse ID`.
 - **Suspension:** a later failed validation suspends the member automatically and unregisters its agent card. `python <council plugin dir>/council.py check` validates the 60 roles plus every forged member.
-- **Command line:** you can run the library by hand without Claude Code: `python <plugin dir>/scripts/library.py list|show|promote|council`. It finds the installed library on its own, so `--database` is optional.
+- **Command line:** you can run the library by hand without Claude Code: `python <plugin dir>/scripts/library.py list|show|promote|council|view`. It finds the installed library on its own, so `--database` is optional.
+- **Library page:** `library.py view --open` (or `/agent-arena-mode:library view`) writes one self-contained HTML page: forged members, each task's champion and champion changes, and every saved agent with its assessment scores and lineage. It reads the database read-only and leaves out answers and evidence.
 - **Not shipped:** no forged members come with this kit. Every machine forges its own.
 
 ## Tests
@@ -479,13 +485,16 @@ Forging rules:
 python -m unittest discover -s tests                         # installer
 (cd plugins/specialist-council && python -m unittest discover -s tests)
 (cd plugins/agent-arena-mode && python -m unittest discover -s tests)
+(cd plugins/war-room && python -m unittest discover -s tests && python tests/test_bus.py)
 ```
 
-`python scripts/scan.py` checks the tree for secrets and machine-specific paths. Run it before every push. `python scripts/scan.py --public` also fails on any vendored item without a clear licence.
+`python scripts/install.py --doctor` runs all of these plus every other pre-commit check in one go. `python scripts/scan.py` checks the tree for secrets and machine-specific paths. Run it before every push. `python scripts/scan.py --public` also fails on any vendored item without a clear licence.
 
 ## Updating the kit from a working machine
 
-This repo is the canonical source: on the maintainer machine it lives at `~/code/claude-kit`, and the live install's `moaa` marketplace points at it. Edit here, bump the plugin version in `plugins/<name>/.claude-plugin/plugin.json`, then rerun the installer. It runs `claude plugin marketplace update moaa` before installing. Plugin versions that were tested together are recorded as `tested_version` in `config/kit.json`. After updating any third-party plugin, run `python scripts/sync_catalog.py` to re-pin the catalog to the installed commits, and run `python scripts/models_doc.py` after changing any model or effort preset. The tests fail if `MODELS.md` drifts.
+This repo is the canonical source: on the maintainer machine it lives at `~/code/claude-kit`, and the live install's `moaa` marketplace points at it. Edit here, bump the plugin version in `plugins/<name>/.claude-plugin/plugin.json`, then rerun the installer. It runs `claude plugin marketplace update moaa` before installing. Plugin versions that were tested together are recorded as `tested_version` in `config/kit.json`. After updating any third-party plugin, run `python scripts/sync_catalog.py` to re-pin the catalog to the installed commits, and run `python scripts/models_doc.py` after changing any model or effort preset. The tests fail if `MODELS.md` drifts. `python plugins/specialist-council/council.py diff` shows how a preset change moves roles, team presets and the tier mix against the last commit (or `--against REF|FILE`).
+
+Vendored skills record their upstream repo, path and commit in `config/kit.json` (`vendored_skills`). `python scripts/sync_skills.py --check` compares them with upstream HEAD, and `python scripts/sync_skills.py` updates them, keeping MOAA's LICENSE and NOTICE files and rewriting the commits in `kit.json` and THIRD_PARTY.md. `python scripts/sync_catalog.py --drift` lists pinned plugin repos with newer upstream commits. A weekly GitHub Actions job runs both and fails when a vendored skill has drifted; CI also checks that every vendored skill still matches its recorded commit.
 
 See [THIRD_PARTY.md](THIRD_PARTY.md) for the source and licence of everything vendored or referenced.
 

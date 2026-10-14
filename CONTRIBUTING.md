@@ -20,6 +20,8 @@ python scripts/models_doc.py --check
 claude plugin validate .
 ```
 
+`python scripts/install.py --doctor` runs all of these (plus the War Room suites, the catalog check and validation of every plugin) in one go.
+
 Everything is Python standard library; no `pip install` is needed for development. To try the installer without touching your real setup, point it at an empty config dir:
 
 ```bash
@@ -30,11 +32,12 @@ CLAUDE_CONFIG_DIR=/tmp/moaa-test ./install.sh --dry-run
 
 | Change | Where | Then run |
 |---|---|---|
-| Council role preset (model/effort) | `plugins/specialist-council/profile.json` | `council.py apply`, `scripts/models_doc.py` |
+| Council role preset (model/effort) | `plugins/specialist-council/profile.json` | `council.py apply`, `scripts/models_doc.py`; `council.py diff` to review the shift |
 | New council role | `profile.json`, `agents/council-<role>.md`, a role family file in `skills/specialist-council/references/` | `council.py apply`, council tests |
 | Arena mode or library logic | `plugins/agent-arena-mode/` | arena tests |
 | Add or bump a third-party plugin | install it locally, add it to `config/kit.json` | `scripts/sync_catalog.py` (re-pins and regenerates the README plugin list) |
 | Installer behaviour | `scripts/install.py` | installer tests, then a dry run in an empty `CLAUDE_CONFIG_DIR` |
+| Update a vendored skill | `config/kit.json` `vendored_skills` | `scripts/sync_skills.py [NAME]`, review the diff, fix version labels in THIRD_PARTY.md |
 
 Bump the plugin `version` in `plugins/<name>/.claude-plugin/plugin.json` when you change a MOAA plugin, and add a line to `CHANGELOG.md`.
 

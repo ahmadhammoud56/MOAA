@@ -70,7 +70,7 @@ def council_permissions(home):
 # War Room subcommands that only read, message, or stop. toggle, launch, integrate, finish, shutdown and approve are
 # left out on purpose: they stay behind a permission prompt so arming and launching remain the user's own decision.
 WAR_ROOM_SAFE = ("plan", "status", "post", "send", "wake", "app", "list", "measure", "tile", "merge",
-                 "pause", "unpause", "stop", "resume", "demo")
+                 "pause", "unpause", "stop", "resume", "demo", "template")
 
 
 def war_room_permissions():

@@ -4,6 +4,38 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-14
+
+### Added
+- **Installer `--status` and `--doctor`.**
+  - `install.py --status` changes nothing. It compares the install with the repo:
+    - MOAA plugins against their repo versions;
+    - skills, the agent and MCP servers: current, an older MOAA copy (rerun the installer), or edited after install (and whether the installer would overwrite or keep the edit);
+    - third-party plugins whose installed version differs from `tested_version` ("drift");
+    - old plugin versions left in the cache.
+    It exits 1 if anything is missing or outdated.
+  - `install.py --doctor` runs every pre-commit check of the release routine in one go, with a pass/fail line each.
+- **War Room 0.4.0: spend cap and team templates.**
+  - **Spend cap:** `max_cost_usd` in Settings, presets or a plan's `budget`. When the run's API-equivalent statusline cost reaches it, the conductor stops every worker. Spend is summed across resumed sessions, whose counters restart at zero. The run never resumes by itself: `warroom.py resume RUN --max-cost USD`, or Resume in the app, asks for a higher cap. The Cost tab shows spend against the cap, and Preview & launch and `warroom.py plan` show the cap. `warroom.py demo --max-cost 1` shows it working.
+  - **Team templates:** feature team, bug hunt, review swarm, research fan-out and refactor. Each has three workers (so it fits the default team size), a reviewer whenever someone writes, and seed tasks. Pick one next to **Write by hand** in New run, or run `warroom.py template NAME > plan.json`. No tokens are spent.
+- **Specialist Council 1.4.0: `council.py diff`.** It compares `profile.json` with a git ref (default `HEAD`) or a file (`--against`) and shows changed roles, resolved team presets, model IDs, and roles per tier before and after (`--json` for scripts). It gives no dollar figure: cost depends on how often each role is dispatched.
+- **Agent Arena 0.5.0: a library page.** `library.py view [--out FILE] [--open]`, or `/agent-arena-mode:library view`, writes one self-contained HTML page. It shows forged members, each task with its champion and champion changes, and a filterable table of saved agents with assessment-score sparklines and lineage links. It opens the database read-only and leaves out answers and evidence. `library.html#ID` opens one agent. It works offline in dark, light or system theme.
+- **`scripts/sync_skills.py`** re-syncs the vendored skills from their upstream repos.
+  - Upstream repo, path and full commit now live in `config/kit.json` under `vendored_skills`.
+  - `--check` compares with upstream HEAD, and `--check --pinned` with the recorded commit.
+  - An update rewrites the skill folders (keeping MOAA's LICENSE and NOTICE), the commits in `kit.json` and the short commits in THIRD_PARTY.md. The commit moves only when content changed.
+  - It uses shallow sparse fetches into a short temp path, so deep upstream trees work on Windows.
+- **`sync_catalog.py --drift`** lists pinned plugin repos whose upstream HEAD has moved. It needs only the network, not an install.
+- **CI:**
+  - A weekly **Upstream drift** workflow fails when a vendored skill differs from upstream HEAD, and lists moved plugin repos in the job summary.
+  - The main workflow now checks that every vendored skill still matches its recorded upstream commit.
+
+### Changed
+- CITATION.cff now carries the current version (it said 0.5.0).
+
+### Notes
+- `sync_catalog.py --check` reads this machine's installed plugins, so CI cannot run it; `install.py --doctor` runs it locally.
+
 ## [0.5.5] - 2026-10-14
 
 ### Changed

@@ -27,6 +27,10 @@ python council.py resolve --role validation-auditor --style skeptic
 ```
 
 ```bash
+python council.py diff [--against HEAD~1|FILE] [--json]   # roles, team presets and tier mix changed since a ref
+```
+
+```bash
 python -m unittest discover -s tests -v
 ```
 
