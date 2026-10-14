@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Arena Library</title>
+<style>
+:root {
+  --bg: #0b0d10; --panel: #121519; --raise: #171b20; --sunk: #0e1013; --line: #232830; --line-strong: #343b45;
+  --text: #d7dce2; --dim: #8a939e; --faint: #5c6570; --accent: #c8a24a; --accent-soft: rgba(200,162,74,.14);
+  --danger: #c4544a; --ok: #6f9e7a; --info: #5f86b0;
+  --haiku: #6f9e7a; --sonnet: #5f86b0; --opus: #b08a4f; --fable: #8c78b0;
+  --sans: "IBM Plex Sans", "Plex Sans", "Segoe UI", system-ui, sans-serif; --mono: "IBM Plex Mono", "Plex Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --bg: #eef0f3; --panel: #f8f9fa; --raise: #ffffff; --sunk: #e4e7eb; --line: #d5dae0; --line-strong: #b4bcc6;
+  --text: #14181d; --dim: #4d5661; --faint: #77818c; --accent: #8f6a12; --accent-soft: rgba(143,106,18,.12);
+  --danger: #b03d33; --ok: #3a7549; --info: #3a6796;
+  --haiku: #4a8a5a; --sonnet: #3f6fa3; --opus: #96703a; --fable: #6f5a9f; color-scheme: light;
+}
+@media (prefers-color-scheme: light) { :root[data-theme="system"] {
+  --bg: #eef0f3; --panel: #f8f9fa; --raise: #ffffff; --sunk: #e4e7eb; --line: #d5dae0; --line-strong: #b4bcc6;
+  --text: #14181d; --dim: #4d5661; --faint: #77818c; --accent: #8f6a12; --accent-soft: rgba(143,106,18,.12);
+  --danger: #b03d33; --ok: #3a7549; --info: #3a6796;
+  --haiku: #4a8a5a; --sonnet: #3f6fa3; --opus: #96703a; --fable: #6f5a9f; color-scheme: light;
+} }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font: 13px/1.5 var(--sans); }
+header { display: flex; align-items: center; gap: 18px; min-height: 52px; padding: 8px 20px; background: var(--panel);
+  border-bottom: 1px solid var(--line); border-top: 2px solid var(--accent); flex-wrap: wrap; }
+.brand { font: 500 12px var(--mono); letter-spacing: .22em; display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+.brand .mark { width: 14px; height: 14px; border: 1px solid var(--accent); position: relative; }
+.brand .mark::after { content: ""; position: absolute; inset: 3px; background: var(--accent); }
+.hdr { font: 11px var(--mono); color: var(--dim); display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap; }
+.hdr b { color: var(--text); font-weight: 500; }
+button, select, input { font: 12px var(--mono); color: var(--text); background: var(--sunk); border: 1px solid var(--line-strong);
+  border-radius: 2px; padding: 6px 8px; min-width: 0; }
+button { cursor: pointer; } button:hover { border-color: var(--dim); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+main { display: grid; grid-template-columns: minmax(300px, 400px) minmax(0, 1fr); min-height: calc(100vh - 54px); }
+.col { border-right: 1px solid var(--line); min-width: 0; } .col:last-child { border-right: 0; }
+h2 { margin: 0; padding: 0 18px; height: 36px; display: flex; align-items: center; justify-content: space-between;
+  font: 500 11px var(--mono); letter-spacing: .14em; color: var(--dim); text-transform: uppercase;
+  border-bottom: 1px solid var(--line); background: var(--panel); }
+h2 span { color: var(--faint); letter-spacing: .04em; text-transform: none; }
+.empty { padding: 16px 18px; color: var(--faint); font: 12px var(--mono); }
+.item { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); border-left: 2px solid transparent;
+  background: transparent; padding: 10px 16px; font: 13px/1.45 var(--sans); }
+.item:hover { background: var(--raise); }
+.item.on { border-left-color: var(--accent); background: var(--accent-soft); }
+.item .t { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .m { display: block; font: 11px var(--mono); color: var(--dim); margin-top: 2px; }
+.tool { display: flex; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; align-items: center; }
+.tool input { flex: 1 1 180px; }
+.tool .scope { font: 11px var(--mono); color: var(--dim); }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font: 500 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--faint);
+  padding: 8px 10px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); }
+td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr.row { cursor: pointer; } tr.row:hover td { background: var(--raise); } tr.row.open td { background: var(--accent-soft); }
+td.n { font: 12px var(--mono); white-space: nowrap; }
+.tag { display: inline-block; font: 500 10px var(--mono); letter-spacing: .06em; padding: 1px 6px; border: 1px solid currentColor; border-radius: 0; }
+.v-target-met { color: var(--ok); } .v-validated { color: var(--info); } .v-provisional { color: var(--dim); } .v-invalidated, .v-ineligible { color: var(--danger); }
+.bar { display: inline-block; width: 64px; height: 6px; background: var(--sunk); border: 1px solid var(--line); vertical-align: middle; margin-left: 6px; position: relative; }
+.bar i { position: absolute; inset: 0 auto 0 0; background: var(--dim); }
+.bar.hi i { background: var(--accent); }
+.sq { display: inline-block; width: 8px; height: 8px; margin-right: 6px; vertical-align: 0; }
+.crown { color: var(--accent); font: 500 11px var(--mono); margin-left: 6px; }
+.detail td { background: var(--panel); padding: 14px 16px; }
+.dgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.dgrid h3 { margin: 0 0 6px; font: 500 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+.dgrid p { margin: 0; overflow-wrap: anywhere; }
+.mono { font: 11px var(--mono); color: var(--dim); overflow-wrap: anywhere; }
+svg.spark { width: 100%; height: 70px; display: block; background: var(--sunk); border: 1px solid var(--line); }
+.scroll { overflow-x: auto; }
+footer { padding: 12px 20px; font: 11px var(--mono); color: var(--faint); border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+@media (max-width: 820px) { main { grid-template-columns: minmax(0, 1fr); } .hdr { margin-left: 0; } .col { border-right: 0; border-bottom: 1px solid var(--line); }
+  header { padding: 8px 16px; } .hide-sm { display: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><i class="mark"></i>AGENT ARENA · LIBRARY</div>
+  <div class="hdr" id="stats"></div>
+  <button type="button" id="theme" aria-label="Colour theme">Theme: system</button>
+</header>
+<main>
+  <div class="col">
+    <section><h2>Forged council <span id="mcount"></span></h2><div id="members"></div></section>
+    <section><h2>Tasks <span id="ccount"></span></h2><div id="cohorts"></div></section>
+  </div>
+  <div class="col">
+    <section>
+      <h2>Saved agents <span id="ecount"></span></h2>
+      <div class="tool">
+        <input type="search" id="q" placeholder="filter by name, tag, model, strategy" aria-label="Filter saved agents">
+        <select id="vf" aria-label="Validation"><option value="">every status</option><option value="target-met">target met</option>
+          <option value="validated">validated</option><option value="provisional">provisional</option><option value="invalidated">invalidated</option></select>
+        <span class="scope" id="scope"></span>
+      </div>
+      <div class="scroll"><table><thead><tr><th>Agent</th><th class="hide-sm">Task</th><th>Score</th><th>Status</th><th class="hide-sm">Model</th><th class="hide-sm">Saved</th></tr></thead>
+        <tbody id="rows"></tbody></table></div>
+    </section>
+  </div>
+</main>
+<footer id="foot"></footer>
+<script type="application/json" id="data">__DATA__</script>
+<script>
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[c]);
+const tier = m => /haiku/.test(m) ? "haiku" : /sonnet/.test(m) ? "sonnet" : /fable/.test(m) ? "fable" : /opus/.test(m) ? "opus" : null;
+const day = t => t ? new Date(t * 1000).toLocaleDateString([], {year: "numeric", month: "short", day: "numeric"}) : "--";
+const byId = Object.fromEntries(D.entries.map(e => [e.id, e]));
+const cohortOf = Object.fromEntries(D.cohorts.map(c => [c.cohort, c]));
+const champions = new Set(D.cohorts.map(c => c.champion).filter(Boolean));
+let cohort = null, open = null;
+
+/* theme: per-viewer convenience only */
+const THEMES = ["system", "dark", "light"];
+let theme = "system"; try { theme = localStorage.getItem("arena.theme") || "system"; } catch (e) { /* storage optional */ }
+function setTheme(t) { theme = t; document.documentElement.dataset.theme = t; $("theme").textContent = `Theme: ${t}`;
+  try { localStorage.setItem("arena.theme", t); } catch (e) { /* storage optional */ } }
+$("theme").onclick = () => setTheme(THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]);
+setTheme(theme);
+
+const validated = D.entries.filter(e => e.validation === "validated" || e.validation === "target-met").length;
+$("stats").innerHTML = [["saved", D.entries.length], ["validated", validated], ["tasks", D.cohorts.length],
+  ["forged", D.members.filter(m => m.status === "active").length]].map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join("");
+$("foot").textContent = `${D.database} · generated ${new Date(D.generated * 1000).toLocaleString()} · read-only snapshot; answers and evidence are not included`;
+
+$("mcount").textContent = D.members.length ? `${D.members.length}` : "";
+$("members").innerHTML = D.members.length ? D.members.map(m => `<button type="button" class="item" data-agent="${esc(m.agent_id)}">
+  <span class="t"><span class="sq" style="background:var(--${tier(m.model) || "dim"})"></span>${esc(m.slug)}</span>
+  <span class="m">${esc(m.status)} · ${esc((m.model || "").replace("claude-", ""))} / ${esc(m.effort)} · ${m.runs} runs · mean ${(+m.mean_score).toFixed(1)} · min ${(+m.min_score).toFixed(1)}</span></button>`).join("")
+  : `<div class="empty">No forged members yet. An agent validated in two runs can be promoted with library.py promote.</div>`;
+
+function renderCohorts() {
+  $("ccount").textContent = `${D.cohorts.length}`;
+  $("cohorts").innerHTML = `<button type="button" class="item${cohort ? "" : " on"}" data-cohort=""><span class="t">Every task</span><span class="m">${D.entries.length} saved agents</span></button>` +
+    D.cohorts.map(c => { const ch = byId[c.champion];
+      return `<button type="button" class="item${cohort === c.cohort ? " on" : ""}" data-cohort="${esc(c.cohort)}">
+        <span class="t">${esc(c.task)}</span>
+        <span class="m">${c.entries} saved · ${ch ? `champion ${esc(ch.name)} (${(+ch.score).toFixed(0)})` : "no eligible champion"}${c.changes.length > 1 ? ` · ${c.changes.length} champion changes` : ""}</span></button>`; }).join("");
+}
+function spark(e) {
+  const pts = e.history.filter(h => h.total != null);
+  if (!pts.length) return `<p class="mono">no assessments</p>`;
+  const W = 300, H = 70, x = i => pts.length < 2 ? W / 2 : 8 + i * (W - 16) / (pts.length - 1), y = v => H - 6 - (v / 100) * (H - 12);
+  const thr = e.threshold != null ? `<line x1="0" x2="${W}" y1="${y(e.threshold)}" y2="${y(e.threshold)}" stroke="var(--accent)" stroke-dasharray="3 3" stroke-width="1"/>` : "";
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Assessment scores: ${pts.map(p => p.total).join(", ")}">
+    ${thr}<polyline fill="none" stroke="var(--text)" stroke-width="1.5" points="${pts.map((p, i) => `${x(i)},${y(p.total)}`).join(" ")}"/>
+    ${pts.map((p, i) => `<rect x="${x(i) - 2.5}" y="${y(p.total) - 2.5}" width="5" height="5" fill="${p.eligible === false ? "var(--danger)" : p.final ? "var(--accent)" : "var(--dim)"}"/>`).join("")}</svg>
+    <p class="mono">${pts.map(p => p.total).join(" → ")}${e.threshold != null ? ` · target ${e.threshold}` : ""} · square: accent final, red ineligible</p>`;
+}
+const link = id => byId[id] ? `<a href="#" data-goto="${esc(id)}" style="color:var(--info)">${esc(byId[id].name)}</a> <span class="mono">${esc(id)}</span>` : `<span class="mono">${esc(id)}</span>`;
+function detail(e) {
+  return `<tr class="detail"><td colspan="6"><div class="dgrid">
+    <div><h3>Strategy</h3><p>${esc(e.strategy) || "<span class=mono>not recorded</span>"}</p></div>
+    <div><h3>Assessments</h3>${spark(e)}</div>
+    <div><h3>Identity</h3><p class="mono">${esc(e.id)}<br>run ${esc(e.run)} · candidate ${esc(e.candidate)} · mode ${esc(e.mode)}<br>
+      ${esc(e.model || "model unknown")} / ${esc(e.effort || "effort unknown")}${e.tags.length ? `<br>tags ${e.tags.map(esc).join(", ")}` : ""}</p></div>
+    <div><h3>Lineage</h3><p>${[...e.parents.map(p => "parent " + link(p)), ...e.sources.map(s => "reused " + link(s))].join("<br>") || "<span class=mono>no parents</span>"}</p></div>
+  </div></td></tr>`;
+}
+function renderRows() {
+  const q = $("q").value.trim().toLowerCase(), vf = $("vf").value;
+  const list = D.entries.filter(e => (!cohort || e.cohort === cohort) && (!vf || e.validation === vf || (vf === "invalidated" && e.validation === "ineligible"))
+    && (!q || [e.name, e.tags.join(" "), e.model, e.strategy, e.candidate, e.id].join(" ").toLowerCase().includes(q)))
+    .sort((a, z) => (z.score - a.score) || (z.created - a.created));
+  $("ecount").textContent = `${list.length} of ${D.entries.length}`;
+  $("scope").textContent = cohort ? `task: ${cohortOf[cohort].task.slice(0, 60)}` : "";
+  $("rows").innerHTML = list.length ? list.map(e => `<tr class="row${open === e.id ? " open" : ""}" data-id="${esc(e.id)}" tabindex="0" aria-expanded="${open === e.id}">
+    <td>${esc(e.name)}${champions.has(e.id) ? `<span class="crown" title="current champion of its task">CHAMPION</span>` : ""}</td>
+    <td class="hide-sm" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cohortOf[e.cohort]?.task)}</td>
+    <td class="n">${(+e.score).toFixed(1)}<span class="bar${e.threshold != null && e.score >= e.threshold ? " hi" : ""}"><i style="width:${Math.max(0, Math.min(100, e.score))}%"></i></span></td>
+    <td><span class="tag v-${esc(e.validation)}">${esc(e.validation)}</span></td>
+    <td class="n hide-sm">${tier(e.model) ? `<span class="sq" style="background:var(--${tier(e.model)})"></span>` : ""}${esc((e.model || "--").replace("claude-", ""))}</td>
+    <td class="n hide-sm">${day(e.created)}</td></tr>${open === e.id ? detail(e) : ""}`).join("")
+    : `<tr><td colspan="6" class="empty">No saved agents match.</td></tr>`;
+}
+function show(id) { const e = byId[id]; if (!e) return; open = id; if (cohort && e.cohort !== cohort) { cohort = null; renderCohorts(); } $("q").value = ""; $("vf").value = ""; renderRows();
+  document.querySelector(`tr.row[data-id="${CSS.escape(id)}"]`)?.scrollIntoView({block: "center"}); }
+$("cohorts").onclick = ev => { const b = ev.target.closest("[data-cohort]"); if (!b) return; cohort = b.dataset.cohort || null; renderCohorts(); renderRows(); };
+$("members").onclick = ev => { const b = ev.target.closest("[data-agent]"); if (b) show(b.dataset.agent); };
+$("rows").onclick = ev => { const g = ev.target.closest("[data-goto]"); if (g) { ev.preventDefault(); show(g.dataset.goto); return; }
+  const r = ev.target.closest("tr.row"); if (r) { open = open === r.dataset.id ? null : r.dataset.id; renderRows(); } };
+$("rows").onkeydown = ev => { const r = ev.target.closest("tr.row"); if (r && (ev.key === "Enter" || ev.key === " ")) { ev.preventDefault(); r.click(); } };
+$("q").oninput = renderRows; $("vf").onchange = renderRows;
+renderCohorts(); renderRows();
+if (location.hash.length > 1) show(decodeURIComponent(location.hash.slice(1)));  /* library.html#ag_... opens that agent */
+</script>
+</body>
+</html>

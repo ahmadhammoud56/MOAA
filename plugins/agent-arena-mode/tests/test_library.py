@@ -36,12 +36,12 @@ class LibraryTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def candidate(self, cid, parents=(), source_agents=()):
+    def candidate(self, cid, parents=(), source_agents=(), name=None):
         source = self.root / f"{cid}.md"
         source.write_text(f"Complete answer from {cid}", encoding="utf-8")
         evidence = self.root / f"{cid}.bin"
         evidence.write_bytes(bytes(range(256)))
-        profile = {"name": "Parser specialist " + cid, "instructions": "Use concrete counterexamples and minimal patches.",
+        profile = {"name": name or "Parser specialist " + cid, "instructions": "Use concrete counterexamples and minimal patches.",
                    "strategy": "Test edge cases", "model_requested": "sonnet", "model_actual": "unknown",
                    "tags": ["parser", "python"], "source_agents": list(source_agents)}
         arena.add_candidate(self.run, self.state, cid, source, parents, profile, [evidence])
@@ -52,6 +52,29 @@ class LibraryTests(unittest.TestCase):
                   "gates": {"check": {"status": "pass" if eligible else "fail", "evidence": "Observed test output"}},
                   "fatal": False, "findings": [], "rationale": "Verified task evidence"}
         return arena.assess(self.run, self.state, report, final)
+
+    def test_view_is_read_only_and_leaves_out_answers_and_evidence(self):
+        self.candidate("first")
+        self.assess("first", 8)
+        self.candidate("better", ["first"], name="better</script><b>x")  # must not break out of the data block
+        self.assess("better", 9)
+        saved = library.sync_run(self.run, self.state)
+        before = self.database.read_bytes()
+        data = library.view_data(self.database)
+        self.assertEqual(self.database.read_bytes(), before)  # opened read-only
+        self.assertEqual(len(data["entries"]), 2)
+        cohort = data["cohorts"][0]
+        self.assertEqual((cohort["task"], cohort["entries"], cohort["champion"]), ("Solve the benchmark", 2, saved["champion"]))
+        child = next(e for e in data["entries"] if e["id"] == saved["champion"])
+        self.assertEqual(child["parents"], [library.entry_id(self.state, "first")])
+        self.assertEqual(child["model"], "sonnet")  # "unknown" actual model falls back to the requested one
+        self.assertEqual([h["total"] for h in child["history"]], [90])
+        page = Path(library.write_view(self.database, self.root / "view.html")["written"]).read_text(encoding="utf-8")
+        self.assertNotIn("Complete answer from", page)
+        self.assertNotIn("base64", page)
+        self.assertEqual(page.count("</script>"), 2)  # only the page's own two script blocks close
+        with self.assertRaises(ValueError):
+            library.view_data(self.root / "missing.sqlite3")
 
     def test_incremental_save_and_champion_replacement_keeps_history(self):
         self.candidate("first")

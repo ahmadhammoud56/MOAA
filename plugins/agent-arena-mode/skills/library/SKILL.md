@@ -1,7 +1,7 @@
 ---
 name: library
 description: Find, inspect, load, and reuse the best saved agent-arena profiles and results from the persistent database. Use when the user asks for saved arena agents, the agent library, or /agent-arena-mode:library.
-argument-hint: "list|show|load|use|history|promote|council|sync [args]"
+argument-hint: "list|show|load|use|history|promote|council|view|sync [args]"
 ---
 
 # Agent Arena library
@@ -58,6 +58,10 @@ Actions:
   Report that the new agent loads in new sessions. Do not lower the thresholds unless the user asks, and
   label any such member probationary. A later failed validation automatically suspends the member and unregisters its agent card.
 - `council`: list forged council members and their status.
+- `view [--out FILE] [--open]`: write a self-contained HTML page of the whole library (forged members, each
+  task's champion and champion changes, every saved agent with its assessment scores and lineage), then report
+  its path. Default file: `library.html` next to the database. It reads the database read-only and leaves out
+  answers and evidence. Pass `--open` only when the user asked to see it.
 - `sync --run PATH`: retry a pending database synchronization for an existing run.
 
 Accept `--database PATH` with any action; use the same resolved path for every call.

@@ -111,6 +111,7 @@ User-facing commands:
 /agent-arena-mode:library show AGENT_ID
 /agent-arena-mode:library load AGENT_ID
 /agent-arena-mode:library use AGENT_ID -- Review this new parser.
+/agent-arena-mode:library view
 /agent-arena-mode:evolution --agents 24 --reuse AGENT_ID -- Improve the saved approach for this task.
 ```
 
@@ -132,7 +133,12 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/library.py" show --database DB --id AGENT
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/library.py" load --database DB --id AGENT_ID --out NEW_DIR
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/library.py" sync --dir RUN
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/library.py" history --database DB --cohort COHORT_HASH
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/library.py" view --database DB --open
 ```
+
+`view` writes one self-contained HTML page (no server, no network): forged council members, every task with its
+current champion and champion changes, and a filterable table of saved agents with assessment scores and lineage.
+It opens the database read-only and leaves out answers and evidence. `library.html#AGENT_ID` opens one agent.
 
 `load` writes a new directory with the answer, profile, original task, rubric,
 assessment history, parent metadata, evidence files, and checksum manifest. It

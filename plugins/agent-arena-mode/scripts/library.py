@@ -419,10 +419,70 @@ Work only on the parent's bounded assignment. Do not spawn agents or invoke Spec
             "knowledge_base": str(knowledge), "evidence": evidence}
 
 
+def task_title(task):
+    """First line of prose in a task: the line a person would read as its title."""
+    for line in task.splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            return line[:160]
+    return "(empty task)"
+
+
+def known(*values):
+    return next((v for v in values if v and v != "unknown"), None)
+
+
+def view_data(database):
+    """Everything the library page shows, read with a read-only connection: no answers or evidence, only metadata."""
+    path = Path(database).resolve()
+    if not path.is_file():
+        raise ValueError(f"No library at {path}")
+    with closing(sqlite3.connect(f"{path.as_uri()}?mode=ro", uri=True)) as db:
+        db.row_factory = sqlite3.Row
+        entries, cohorts = [], {}
+        for row in db.execute("SELECT id, cohort, run_id, candidate, name, tags, score, eligible, validation, created, "
+                              "updated, payload FROM entries ORDER BY created"):
+            p = json.loads(row["payload"])
+            prof = p.get("profile", {})
+            entries.append({"id": row["id"], "cohort": row["cohort"], "run": row["run_id"], "candidate": row["candidate"],
+                            "name": row["name"], "tags": json.loads(row["tags"]), "score": row["score"],
+                            "eligible": bool(row["eligible"]), "validation": row["validation"], "created": row["created"],
+                            "updated": row["updated"], "mode": p.get("mode"), "threshold": p.get("threshold"),
+                            "model": known(prof.get("model_actual"), prof.get("model_requested")),
+                            "effort": known(prof.get("effort_actual"), prof.get("effort_requested")),
+                            "strategy": prof.get("strategy", ""), "sources": prof.get("source_agents", []),
+                            "parents": [x.get("library_id") for x in p.get("parents", [])],
+                            "history": [{"total": h.get("total"), "final": h.get("final"), "eligible": h.get("eligible"),
+                                         "judge": h.get("judge")} for h in p.get("assessment_history", [])]})
+            cohorts.setdefault(row["cohort"], {"cohort": row["cohort"], "task": task_title(p.get("task", "")), "entries": 0})
+            cohorts[row["cohort"]]["entries"] += 1
+        for c in cohorts.values():
+            changes = [dict(r) for r in db.execute("SELECT entry_id, changed FROM champions WHERE cohort=? ORDER BY sequence",
+                                                   (c["cohort"],))]
+            c["champion"] = changes[-1]["entry_id"] if changes else None
+            c["changes"] = changes
+        members = [dict(r) for r in db.execute("SELECT slug, agent_id, status, model, effort, runs, mean_score, min_score, "
+                                               "promoted FROM council_members ORDER BY promoted")]
+    return {"database": str(path), "generated": time.time(), "entries": entries,
+            "cohorts": sorted(cohorts.values(), key=lambda c: -max((e["created"] for e in entries if e["cohort"] == c["cohort"]),
+                                                                     default=0)),
+            "members": members}
+
+
+def write_view(database, out):
+    """A self-contained HTML page of the library (no network, no server)."""
+    data = json.dumps(view_data(database), ensure_ascii=False, allow_nan=False).replace("</", "<\\/")
+    page = (Path(__file__).with_name("library_view.html")).read_text(encoding="utf-8").replace("__DATA__", data)
+    out = Path(out).resolve()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(page, encoding="utf-8", newline="\n")
+    return {"written": str(out)}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for command in ("list", "show", "load", "sync", "history", "promote", "council"):
+    for command in ("list", "show", "load", "sync", "history", "promote", "council", "view"):
         p = sub.add_parser(command)
         p.add_argument("--database")
         if command == "list":
@@ -447,6 +507,9 @@ def main(argv=None):
             p.add_argument("--min-score", type=float, default=85.0)
             p.add_argument("--max-spread", type=float, default=10.0)
             p.add_argument("--check", action="store_true", help="Only report eligibility")
+        elif command == "view":
+            p.add_argument("--out", help="HTML file to write (default: library.html next to the database)")
+            p.add_argument("--open", action="store_true", help="open the page in the default browser")
     args = parser.parse_args(argv)
     try:
         database = args.database or default_database()
@@ -466,6 +529,11 @@ def main(argv=None):
             else:
                 result = promote(database, args.id, args.council_home, args.slug,
                                  args.min_runs, args.min_score, args.max_spread)
+        elif args.command == "view":
+            result = write_view(database, args.out or Path(database).resolve().with_name("library.html"))
+            if args.open:
+                import webbrowser
+                webbrowser.open(Path(result["written"]).as_uri())
         elif args.command == "council":
             with closing(connect(database)) as db:
                 result = [dict(r) for r in db.execute("SELECT * FROM council_members ORDER BY promoted")]
