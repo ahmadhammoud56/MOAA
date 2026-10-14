@@ -47,6 +47,9 @@ jobs:
         run: python scripts/scan.py --public
       - name: MODELS.md matches the plugins
         run: python scripts/models_doc.py --check
+      - name: Vendored skills match their recorded upstream commits
+        if: runner.os == 'Linux'
+        run: python scripts/sync_skills.py --check --pinned
       - name: Validate marketplace and plugins
         shell: bash
         run: |

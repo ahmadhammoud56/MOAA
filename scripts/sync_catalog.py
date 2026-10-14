@@ -7,6 +7,7 @@ Vendored MOAA plugins (relative ./plugins/... sources) are kept as they are. Sta
 
   python scripts/sync_catalog.py            write the marketplace
   python scripts/sync_catalog.py --check    exit 1 if the marketplace is out of date
+  python scripts/sync_catalog.py --drift    list pinned repos whose upstream HEAD has moved (network; no install needed)
 """
 import json
 import os
@@ -116,6 +117,37 @@ def readme_with_table(market):
     head, rest = text.split(START, 1)
     return head + plugin_table(market) + rest.split(END, 1)[1]
 
+
+def upstream_drift(market, ls_remote=None):
+    """[(repo, pinned sha, upstream HEAD sha, plugin count)] for pinned repos whose default branch has moved on.
+    Needs only the network, not an install, so CI can run it. A moved HEAD in a monorepo need not touch our plugins."""
+    import subprocess
+    ls_remote = ls_remote or (lambda url: subprocess.run(["git", "ls-remote", url, "HEAD"], capture_output=True,
+                                                         text=True, timeout=60).stdout.split("\t")[0].strip())
+    repos = {}
+    for p in market["plugins"]:
+        src = p["source"]
+        if isinstance(src, dict):
+            url = f"https://github.com/{src['repo']}.git" if src.get("repo") else src["url"]
+            pin, n = repos.get(url, (src["sha"], 0))
+            repos[url] = (pin, n + 1)
+    out = []
+    for url, (pin, n) in sorted(repos.items()):
+        head = ls_remote(url)
+        if head and head != pin:
+            out.append((url.removeprefix("https://github.com/").removesuffix(".git"), pin, head, n))
+    return out
+
+
+if __name__ == "__main__" and "--drift" in sys.argv:
+    moved = upstream_drift(json.loads(MARKET.read_text(encoding="utf-8")))
+    for repo, pin, head, n in moved:
+        print(f"  {repo:<45} pinned {pin[:7]}  upstream HEAD {head[:7]}  ({n} plugin{'s' if n > 1 else ''})")
+    print(f"[sync_catalog] {len(moved)} pinned repo(s) have newer commits upstream" if moved else
+          "[sync_catalog] every pinned repo is at its upstream HEAD")
+    print("  To adopt: update the plugins locally (`claude plugin update ...`), test, then run scripts/sync_catalog.py"
+          if moved else "")
+    sys.exit(0)  # informational: CI flags vendored-skill drift, not routine upstream commits
 
 if __name__ == "__main__":
     market = build()

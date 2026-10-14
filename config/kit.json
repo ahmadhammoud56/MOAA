@@ -608,6 +608,38 @@
     "scientific-brainstorming",
     "uncertainty-and-units"
   ],
+  "vendored_skills": {
+    "networkx": {
+      "repo": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "path": "skills/networkx",
+      "commit": "a1043ef544e3a100c28e70a736b6cf32554d0677"
+    },
+    "pyzotero": {
+      "repo": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "path": "skills/pyzotero",
+      "commit": "a1043ef544e3a100c28e70a736b6cf32554d0677"
+    },
+    "scientific-brainstorming": {
+      "repo": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "path": "skills/scientific-brainstorming",
+      "commit": "a1043ef544e3a100c28e70a736b6cf32554d0677"
+    },
+    "uncertainty-and-units": {
+      "repo": "https://github.com/K-Dense-AI/scientific-agent-skills",
+      "path": "skills/uncertainty-and-units",
+      "commit": "a1043ef544e3a100c28e70a736b6cf32554d0677"
+    },
+    "reverse-engineer-anything": {
+      "repo": "https://github.com/morluto/rea",
+      "path": ".agents/skills/reverse-engineer-anything",
+      "commit": "322506d0c0d39d3cd1e2e1c285c2cc23cfa73ee7"
+    },
+    "paper2agent": {
+      "repo": "https://github.com/jmiao24/Paper2Agent",
+      "path": "skills/paper2agent",
+      "commit": "8c2d059165ef8cdcb70dbea76655b9c2b55b38e6"
+    }
+  },
   "agents": [
     "code-improver.md"
   ],

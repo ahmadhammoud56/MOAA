@@ -1,0 +1,35 @@
+name: Upstream drift
+
+# Weekly: fails when a vendored skill differs from its upstream's current HEAD (run scripts/sync_skills.py to adopt),
+# and lists pinned plugin repos with newer commits in the job summary (informational).
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pinned plugin repos with newer upstream commits
+        run: |
+          echo '## Pinned plugin repos' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          python scripts/sync_catalog.py --drift | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - name: Vendored skills against upstream HEAD
+        run: |
+          echo '## Vendored skills' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          set -o pipefail
+          status=0
+          python scripts/sync_skills.py --check | tee -a "$GITHUB_STEP_SUMMARY" || status=$?
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          exit $status
