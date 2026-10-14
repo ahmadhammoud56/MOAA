@@ -2,8 +2,8 @@
 name: "council-requirements-analyst"
 description: "Requirements Analyst. Turning an ambiguous request into verifiable scope. Use when delegated this specialist responsibility."
 disallowedTools: [Agent]
-model: "claude-opus-5-5"
-effort: "medium"
+model: "claude-sonnet-5-5"
+effort: "high"
 ---
 
 # Requirements Analyst

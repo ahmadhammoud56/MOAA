@@ -3,7 +3,7 @@ name: "council-scout"
 description: "Scout. Research, documentation, sources Use when delegated this specialist responsibility."
 disallowedTools: [Agent]
 model: "claude-haiku-5-5"
-effort: "medium"
+effort: "low"
 ---
 
 # Scout

@@ -39,8 +39,8 @@
     "api-designer": {"tier": "opus", "effort": "high", "why": "Public contracts are costly to change."},
     "database-engineer": {"tier": "opus", "effort": "high", "why": "Schemas, transactions, and migrations risk data loss."},
     "reliability-engineer": {"tier": "opus", "effort": "high", "why": "Failure and recovery behavior under degraded conditions."},
-    "integration-engineer": {"tier": "opus", "effort": "medium", "why": "Cross-component contracts; mostly checking assembled behavior."},
-    "requirements-analyst": {"tier": "opus", "effort": "medium", "why": "Resolving ambiguity into verifiable scope."},
+    "integration-engineer": {"tier": "sonnet", "effort": "high", "why": "Cross-component contracts; checking assembled behavior is observable work, verified at high effort."},
+    "requirements-analyst": {"tier": "sonnet", "effort": "high", "why": "Resolving ambiguity into verifiable scope; checkable output, verified at high effort."},
     "reproducibility-auditor": {"tier": "opus", "effort": "medium", "why": "Tracing raw inputs to results; methodical rather than creative."},
     "materials-specialist": {"tier": "opus", "effort": "medium", "why": "Processing-structure-property reasoning."},
     "rheology-specialist": {"tier": "opus", "effort": "medium", "why": "Flow-curve interpretation and protocol artifacts."},
@@ -74,8 +74,8 @@
     "process-improvement-analyst": {"tier": "sonnet", "effort": "medium", "why": "Workflow bottlenecks."},
     "cost-analyst": {"tier": "sonnet", "effort": "medium", "why": "Budget arithmetic and tradeoffs."},
     "accessibility-reviewer": {"tier": "sonnet", "effort": "medium", "why": "Standards-based inclusive-use review."},
-    "scout": {"tier": "haiku", "effort": "medium", "why": "Fast, broad source discovery."},
-    "information-architect": {"tier": "haiku", "effort": "medium", "why": "Organizing and indexing existing knowledge."}
+    "scout": {"tier": "haiku", "effort": "low", "why": "Fast, broad source discovery; lookups, so low effort."},
+    "information-architect": {"tier": "sonnet", "effort": "medium", "why": "Organizing and indexing knowledge; structure and navigation need judgment, not just scanning."}
   },
   "personality_effort_shift": {
     "skeptic": 1, "perfectionist": 1, "theorist": 1, "detective": 1, "contrarian": 1, "synthesist": 1,

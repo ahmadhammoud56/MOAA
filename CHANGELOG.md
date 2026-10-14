@@ -4,6 +4,16 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-10-14
+
+### Changed
+- **Specialist Council 1.3.3: four role presets retuned.** Each change brings a role in line with the council's own tier and effort policy.
+  - `scout`: Haiku, effort medium → **low**. It does lookups only.
+  - `information-architect`: Haiku → **Sonnet**, effort medium. Structuring knowledge and navigation needs judgment, not just scanning.
+  - `requirements-analyst`: Opus medium → **Sonnet high**. Its output can be checked, so the cheaper tier with verification-level effort fits.
+  - `integration-engineer`: Opus medium → **Sonnet high**, for the same reason.
+  - The change was made in `profile.json`. The agent files, the model-profile reference and `MODELS.md` were regenerated from it, and `council.py check` passes.
+
 ## [0.5.4] - 2026-10-14
 
 ### Changed
@@ -168,6 +178,7 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 ### Added
 - First one-command installer: plugins, council, arena, skills, MCP servers and settings merge, with uninstall.
 
+[0.5.5]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.4...v0.5.5
 [0.5.4]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.1...v0.5.2

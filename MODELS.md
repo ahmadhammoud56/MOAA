@@ -47,9 +47,9 @@ Source: `plugins/specialist-council/profile.json`, applied to each `agents/counc
 | fem-specialist | `claude-opus-5-5` | high |
 | frontend-engineer | `claude-sonnet-5-5` | medium |
 | geospatial-analyst | `claude-sonnet-5-5` | medium |
-| information-architect | `claude-haiku-5-5` | medium |
+| information-architect | `claude-sonnet-5-5` | medium |
 | instructional-designer | `claude-sonnet-5-5` | medium |
-| integration-engineer | `claude-opus-5-5` | medium |
+| integration-engineer | `claude-sonnet-5-5` | high |
 | interpretability-analyst | `claude-opus-5-5` | high |
 | literature-reviewer | `claude-sonnet-5-5` | medium |
 | materials-specialist | `claude-opus-5-5` | medium |
@@ -66,12 +66,12 @@ Source: `plugins/specialist-council/profile.json`, applied to each `agents/counc
 | release-engineer | `claude-sonnet-5-5` | medium |
 | reliability-engineer | `claude-opus-5-5` | high |
 | reproducibility-auditor | `claude-opus-5-5` | medium |
-| requirements-analyst | `claude-opus-5-5` | medium |
+| requirements-analyst | `claude-sonnet-5-5` | high |
 | retrieval-engineer | `claude-sonnet-5-5` | medium |
 | rheology-specialist | `claude-opus-5-5` | medium |
 | scenario-planner | `claude-opus-5-5` | medium |
 | scientific-writer | `claude-sonnet-5-5` | high |
-| scout | `claude-haiku-5-5` | medium |
+| scout | `claude-haiku-5-5` | low |
 | security-reviewer | `claude-fable-5-1` | xhigh |
 | statistician | `claude-opus-5-5` | high |
 | systems-thinker | `claude-opus-5-5` | high |

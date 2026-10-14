@@ -2,7 +2,7 @@
 name: "council-information-architect"
 description: "Information Architect. Knowledge organization, notes, navigation, and information retrieval. Use when delegated this specialist responsibility."
 disallowedTools: [Agent]
-model: "claude-haiku-5-5"
+model: "claude-sonnet-5-5"
 effort: "medium"
 ---
 

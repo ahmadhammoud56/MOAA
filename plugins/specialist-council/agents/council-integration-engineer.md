@@ -2,8 +2,8 @@
 name: "council-integration-engineer"
 description: "Integration Engineer. Cross-component wiring, dependency contracts, and assembled behavior. Use when delegated this specialist responsibility."
 disallowedTools: [Agent]
-model: "claude-opus-5-5"
-effort: "medium"
+model: "claude-sonnet-5-5"
+effort: "high"
 ---
 
 # Integration Engineer

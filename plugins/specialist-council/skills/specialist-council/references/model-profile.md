@@ -31,14 +31,12 @@ Each `specialist-council:council-<role>` plugin agent carries this model and eff
 | experimental-design-specialist | opus | high | Choosing discriminating experiments under constraints. |
 | failure-mechanics-specialist | opus | high | Failure modes and load paths are safety relevant. |
 | fem-specialist | opus | high | Discretization and convergence errors are silent. |
-| integration-engineer | opus | medium | Cross-component contracts; mostly checking assembled behavior. |
 | interpretability-analyst | opus | high | Model behavior explanations are easy to over-read. |
 | materials-specialist | opus | medium | Processing-structure-property reasoning. |
 | optimization-specialist | opus | high | Formulation and feasibility proofs. |
 | peer-reviewer | opus | high | Whether claims survive scrutiny. |
 | reliability-engineer | opus | high | Failure and recovery behavior under degraded conditions. |
 | reproducibility-auditor | opus | medium | Tracing raw inputs to results; methodical rather than creative. |
-| requirements-analyst | opus | medium | Resolving ambiguity into verifiable scope. |
 | rheology-specialist | opus | medium | Flow-curve interpretation and protocol artifacts. |
 | scenario-planner | opus | medium | Robustness across plausible futures. |
 | statistician | opus | high | Inference, sampling units, and effect sizes. |
@@ -57,7 +55,9 @@ Each `specialist-council:council-<role>` plugin agent carries this model and eff
 | experimentalist | sonnet | medium | Running and documenting methods. |
 | frontend-engineer | sonnet | medium | Client behavior and state. |
 | geospatial-analyst | sonnet | medium | Spatial joins and projections. |
+| information-architect | sonnet | medium | Organizing and indexing knowledge; structure and navigation need judgment, not just scanning. |
 | instructional-designer | sonnet | medium | Lesson alignment. |
+| integration-engineer | sonnet | high | Cross-component contracts; checking assembled behavior is observable work, verified at high effort. |
 | literature-reviewer | sonnet | medium | Source gathering and synthesis. |
 | metrology-specialist | sonnet | high | Error budgets and calibration arithmetic. |
 | ml-engineer | sonnet | high | Training and inference pipelines with baselines. |
@@ -68,14 +68,14 @@ Each `specialist-council:council-<role>` plugin agent carries this model and eff
 | project-planner | sonnet | medium | Sequencing and milestones. |
 | refactoring-engineer | sonnet | medium | Behavior-preserving changes guarded by tests. |
 | release-engineer | sonnet | medium | Builds, CI gates, packaging. |
+| requirements-analyst | sonnet | high | Resolving ambiguity into verifiable scope; checkable output, verified at high effort. |
 | retrieval-engineer | sonnet | medium | Indexing and retrieval pipelines. |
 | scientific-writer | sonnet | high | Claims must match evidence precisely. |
 | technical-documentarian | sonnet | medium | Guides and runbooks. |
 | test-engineer | sonnet | high | Acceptance and regression coverage. |
 | transport-network-analyst | sonnet | high | Graph and assignment semantics. |
 | visualization-specialist | sonnet | medium | Charts and figures. |
-| information-architect | haiku | medium | Organizing and indexing existing knowledge. |
-| scout | haiku | medium | Fast, broad source discovery. |
+| scout | haiku | low | Fast, broad source discovery; lookups, so low effort. |
 
 ## Personality effort shifts
 
