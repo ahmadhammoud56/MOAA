@@ -155,5 +155,27 @@ class CouncilTests(unittest.TestCase):
         self.assertEqual(out.returncode, 0, out.stderr)
 
 
+class DiffTests(unittest.TestCase):
+    def test_diff_reports_roles_teams_and_tier_mix(self):
+        old = council.load_profile()
+        new = json.loads(json.dumps(old))
+        self.assertEqual(council.diff(old, new)["roles"], [])
+        self.assertTrue(council.diff_text(council.diff(old, new)).startswith("no preset changes"))
+        team, members = next(iter(new["teams"].items()))
+        rid = members[0][0]
+        new["roles"][rid] = dict(new["roles"][rid], tier="fable" if new["roles"][rid]["tier"] != "fable" else "haiku")
+        d = council.diff(old, new)
+        self.assertEqual([r["role"] for r in d["roles"]], [rid])
+        self.assertIn(team, [t["team"] for t in d["teams"]])
+        self.assertEqual(sum(d["tiers"]["from"].values()), sum(d["tiers"]["to"].values()))
+        self.assertNotEqual(d["tiers"]["from"], d["tiers"]["to"])
+        self.assertIn(f"role {rid}:", council.diff_text(d))
+
+    def test_diff_against_a_file(self):
+        path = Path(tempfile.mkdtemp()) / "p.json"
+        shutil.copy(ROOT / "profile.json", path)
+        self.assertEqual(council.base_profile(str(path)), council.load_profile())
+
+
 if __name__ == "__main__":
     unittest.main()

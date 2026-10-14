@@ -10,6 +10,7 @@ Commands:
   apply    [--agents DIR]             write model/effort frontmatter from profile.json
   resolve  --role ID [--style S1,S2]  print model/effort for a role or a forged member (forged-<slug>)
   render   --out FILE                 write the generated model-profile reference
+  diff     [--against REF|FILE]       role, team and tier-mix changes against a git ref (default HEAD) or a file
   migrate  [--home ~/.claude]         move a pre-plugin standalone install (skill, 60 user agents, forged/) to the plugin layout
 """
 import argparse
@@ -222,6 +223,55 @@ def render(profile):
     return "\n".join(out) + "\n"
 
 
+def base_profile(against):
+    """The profile to compare with: a file path, or a git ref (default HEAD) of this plugin's profile.json."""
+    if Path(against).is_file():
+        return load_profile(against)
+    import subprocess
+    out = subprocess.run(["git", "-C", str(ROOT), "show", f"{against}:./profile.json"], capture_output=True)
+    require(out.returncode == 0, f"cannot read profile.json at {against!r}: "
+            + (out.stderr.decode(errors="replace").strip() or "not a git checkout"))
+    return json.loads(out.stdout.decode("utf-8"))
+
+
+def diff(old, new):
+    """Role, team and tier-mix changes between two profiles. Tier counts are how the council's work shifts between
+    price tiers; actual cost also depends on how often each role is dispatched, so no dollar figure is given."""
+    roles = []
+    for rid in sorted(set(old["roles"]) | set(new["roles"])):
+        a, b = old["roles"].get(rid), new["roles"].get(rid)
+        if a is None or b is None or (a["tier"], a["effort"]) != (b["tier"], b["effort"]):
+            roles.append({"role": rid, "from": a and f"{a['tier']}/{a['effort']}", "to": b and f"{b['tier']}/{b['effort']}"})
+    teams = []
+    for team in sorted(set(old["teams"]) | set(new["teams"])):
+        def resolved(p):
+            if team not in p["teams"]:
+                return None
+            return [f"{m[0]} {resolve(p, m[0], m[1:])['tier']}/{resolve(p, m[0], m[1:])['effort']}" for m in p["teams"][team]]
+        a, b = resolved(old), resolved(new)
+        if a != b:
+            teams.append({"team": team, "from": a, "to": b})
+    count = lambda p: {t: sum(r["tier"] == t for r in p["roles"].values()) for t in TIERS}  # noqa: E731
+    models = {t: (old["models"][t], new["models"][t]) for t in TIERS if old["models"][t] != new["models"][t]}
+    return {"roles": roles, "teams": teams, "models": models, "tiers": {"from": count(old), "to": count(new)}}
+
+
+def diff_text(d):
+    out = []
+    for t, (a, b) in d["models"].items():
+        out.append(f"model {t}: {a} -> {b}")
+    out += [f"role {r['role']}: {r['from'] or '(new)'} -> {r['to'] or '(removed)'}" for r in d["roles"]]
+    for t in d["teams"]:
+        out.append(f"team {t['team']}:")
+        a, b = t["from"] or [], t["to"] or []
+        out += [f"  {x} -> {y}" for x, y in zip(a, b) if x != y]
+        out += [f"  + {y}" for y in b[len(a):]] + [f"  - {x}" for x in a[len(b):]]
+    f, t = d["tiers"]["from"], d["tiers"]["to"]
+    out.append("roles per tier: " + ", ".join(f"{k} {f[k]}" + (f" -> {t[k]} ({t[k] - f[k]:+d})" if t[k] != f[k] else "")
+                                              for k in TIERS))
+    return "\n".join(out) if d["roles"] or d["teams"] or d["models"] else "no preset changes\n" + out[-1]
+
+
 def migrate(home, profile):
     """Move a pre-plugin standalone install to the plugin layout. Forged members are kept; old files are backed up."""
     home = Path(home).expanduser().resolve()
@@ -262,13 +312,15 @@ def migrate(home, profile):
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("command", choices=("check", "apply", "resolve", "render", "migrate"))
+    p.add_argument("command", choices=("check", "apply", "resolve", "render", "diff", "migrate"))
     p.add_argument("--agents", default=str(ROOT / "agents"))
     p.add_argument("--profile", default=str(ROOT / "profile.json"))
     p.add_argument("--role")
     p.add_argument("--style", default="")
     p.add_argument("--out")
     p.add_argument("--home", default=str(claude_home()))
+    p.add_argument("--against", default="HEAD", help="diff: git ref or profile file to compare with")
+    p.add_argument("--json", action="store_true", help="diff: print JSON")
     a = p.parse_args(argv)
     try:
         profile = load_profile(a.profile)
@@ -286,6 +338,9 @@ def main(argv=None):
             if a.out:
                 Path(a.out).write_text(text, encoding="utf-8", newline="\n")
             result = {"written": a.out} if a.out else text
+        elif a.command == "diff":
+            d = diff(base_profile(a.against), profile)
+            result = d if a.json else diff_text(d)
         else:
             result = migrate(a.home, profile)
         print(result if isinstance(result, str) else json.dumps(result, indent=2))
