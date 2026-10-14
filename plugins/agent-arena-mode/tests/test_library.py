@@ -75,6 +75,7 @@ class LibraryTests(unittest.TestCase):
         self.assertEqual(page.count("</script>"), 2)  # only the page's own two script blocks close
         with self.assertRaises(ValueError):
             library.view_data(self.root / "missing.sqlite3")
+        self.assertEqual([library.number(v) for v in ("91", "x", None, float("nan"), 7)], [91.0, None, None, None, 7.0])
 
     def test_incremental_save_and_champion_replacement_keeps_history(self):
         self.candidate("first")

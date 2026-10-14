@@ -428,6 +428,15 @@ def task_title(task):
     return "(empty task)"
 
 
+def number(v):
+    """A finite float or None: stored payloads are model-written, so nothing reaches the page unchecked."""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f if f == f and abs(f) != float("inf") else None
+
+
 def known(*values):
     return next((v for v in values if v and v != "unknown"), None)
 
@@ -447,13 +456,14 @@ def view_data(database):
             entries.append({"id": row["id"], "cohort": row["cohort"], "run": row["run_id"], "candidate": row["candidate"],
                             "name": row["name"], "tags": json.loads(row["tags"]), "score": row["score"],
                             "eligible": bool(row["eligible"]), "validation": row["validation"], "created": row["created"],
-                            "updated": row["updated"], "mode": p.get("mode"), "threshold": p.get("threshold"),
+                            "updated": row["updated"], "mode": p.get("mode"), "threshold": number(p.get("threshold")),
                             "model": known(prof.get("model_actual"), prof.get("model_requested")),
                             "effort": known(prof.get("effort_actual"), prof.get("effort_requested")),
                             "strategy": prof.get("strategy", ""), "sources": prof.get("source_agents", []),
                             "parents": [x.get("library_id") for x in p.get("parents", [])],
-                            "history": [{"total": h.get("total"), "final": h.get("final"), "eligible": h.get("eligible"),
-                                         "judge": h.get("judge")} for h in p.get("assessment_history", [])]})
+                            "history": [{"total": number(h.get("total")), "final": bool(h.get("final")),
+                                         "eligible": h.get("eligible") is not False, "judge": str(h.get("judge") or "")}
+                                        for h in p.get("assessment_history", [])]})
             cohorts.setdefault(row["cohort"], {"cohort": row["cohort"], "task": task_title(p.get("task", "")), "entries": 0})
             cohorts[row["cohort"]]["entries"] += 1
         for c in cohorts.values():
@@ -461,7 +471,8 @@ def view_data(database):
                                                    (c["cohort"],))]
             c["champion"] = changes[-1]["entry_id"] if changes else None
             c["changes"] = changes
-        members = [dict(r) for r in db.execute("SELECT slug, agent_id, status, model, effort, runs, mean_score, min_score, "
+        members = [dict(r, runs=int(r["runs"]), mean_score=number(r["mean_score"]), min_score=number(r["min_score"]))
+                   for r in db.execute("SELECT slug, agent_id, status, model, effort, runs, mean_score, min_score, "
                                                "promoted FROM council_members ORDER BY promoted")]
     return {"database": str(path), "generated": time.time(), "entries": entries,
             "cohorts": sorted(cohorts.values(), key=lambda c: -max((e["created"] for e in entries if e["cohort"] == c["cohort"]),
@@ -471,7 +482,8 @@ def view_data(database):
 
 def write_view(database, out):
     """A self-contained HTML page of the library (no network, no server)."""
-    data = json.dumps(view_data(database), ensure_ascii=False, allow_nan=False).replace("</", "<\\/")
+    data = (json.dumps(view_data(database), ensure_ascii=False, allow_nan=False)
+            .replace("</", "<\\/").replace("<!--", "<\\u0021--"))  # neither can end or derail the data block
     page = (Path(__file__).with_name("library_view.html")).read_text(encoding="utf-8").replace("__DATA__", data)
     out = Path(out).resolve()
     out.parent.mkdir(parents=True, exist_ok=True)

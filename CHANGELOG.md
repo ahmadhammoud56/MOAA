@@ -34,6 +34,14 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 - CITATION.cff now carries the current version (it said 0.5.0).
 
 ### Notes
+- An independent review before release led to these fixes:
+  - the conductor's own auto-resume after a usage reset now honours the spend cap;
+  - a new cap is validated (a number, not negative, above what the run already spent);
+  - `sync_skills.py` refuses an upstream path that is missing or empty, instead of reading it as "delete every file";
+  - the library page coerces stored numbers before display;
+  - `--drift` reports unreachable repos instead of hiding them;
+  - `--status` reports a corrupt JSON file instead of crashing.
+- Known limit: the spend cap reads each worker's statusline cost every 20 s, so it can stop a run slightly late.
 - `sync_catalog.py --check` reads this machine's installed plugins, so CI cannot run it; `install.py --doctor` runs it locally.
 
 ## [0.5.5] - 2026-10-14

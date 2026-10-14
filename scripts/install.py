@@ -382,6 +382,13 @@ def status_rows(home, kit):
     item older than the repo; rerun the installer), drift (a third-party plugin at another version than the tested
     one), modified (edited after install), missing, info."""
     rows = []
+
+    def read_json(path, default):  # noqa: F811  status reports a corrupt file instead of crashing
+        try:
+            return globals()["read_json"](path, default)
+        except ValueError:
+            rows.append(("file", path.name, "corrupt", f"{path} is not valid JSON"))
+            return default
     record = read_json(home / MANIFEST, None) or read_json(home / LEGACY_MANIFEST, {})
     if record.get("kit_version") and record["kit_version"] != kit["version"]:
         rows.append(("moaa", "kit", "outdated", f"installed from {record['kit_version']}; repo is {kit['version']}"))

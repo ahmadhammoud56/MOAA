@@ -22,6 +22,7 @@ jobs:
         run: |
           echo '## Pinned plugin repos' >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+          set -o pipefail
           python scripts/sync_catalog.py --drift | tee -a "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
       - name: Vendored skills against upstream HEAD

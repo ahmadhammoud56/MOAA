@@ -48,7 +48,11 @@ def fetch(repo, ref, paths, work):
     git(work, "fetch", "-q", "--depth", "1", "--filter=blob:none", repo, ref)
     git(work, "sparse-checkout", "set", "--no-cone", *[f"/{p.strip('/')}/" for p in paths])
     git(work, "checkout", "-q", "FETCH_HEAD")
-    return git(work, "rev-parse", "FETCH_HEAD"), {p: tree(Path(work) / p) for p in paths}
+    trees = {p: tree(Path(work) / p) if (Path(work) / p).is_dir() else {} for p in paths}
+    empty = [p for p, t in trees.items() if not t]
+    if empty:  # a moved or deleted upstream folder must never read as "delete every file"
+        raise RuntimeError(f"{repo} @ {ref}: no files at {', '.join(empty)}; update the path in config/kit.json")
+    return git(work, "rev-parse", "FETCH_HEAD"), trees
 
 
 def groups(skills):

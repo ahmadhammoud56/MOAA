@@ -56,6 +56,11 @@ class SyncSkillsTests(unittest.TestCase):
             git(up, "add", "-A")
             git(up, "commit", "-qm", "unrelated")
             self.assertEqual(sync_skills.main([]), 0)  # content unchanged: the recorded commit stays
+            kit["vendored_skills"]["demo"]["path"] = "skills/moved-away"
+            (kit_dir / "config" / "kit.json").write_text(json.dumps(dict(kit, vendored_skills={"demo": dict(
+                kit["vendored_skills"]["demo"], commit=v1)})))
+            with self.assertRaises(RuntimeError):  # a missing upstream folder never wipes the skill
+                sync_skills.main([])
         self.assertEqual((skill / "SKILL.md").read_text(), "v1\n")
         self.assertEqual((skill / "LICENSE").read_text(), "MOAA licence\n")
         self.assertFalse((skill / "old").exists())
@@ -75,6 +80,8 @@ class CatalogDriftTests(unittest.TestCase):
             {"name": "b2", "source": {"source": "git-subdir", "url": "https://github.com/o/b.git", "path": "y", "sha": sha("2")}}]}
         heads = {"https://github.com/o/a.git": sha("1"), "https://github.com/o/b.git": sha("3")}
         self.assertEqual(sync_catalog.upstream_drift(market, heads.get), [("o/b", sha("2"), sha("3"), 2)])
+        del heads["https://github.com/o/a.git"]  # unreachable is reported, never read as current
+        self.assertEqual(sync_catalog.upstream_drift(market, heads.get)[0], ("o/a", sha("1"), "", 1))
 
 
 if __name__ == "__main__":

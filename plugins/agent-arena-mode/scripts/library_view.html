@@ -133,7 +133,7 @@ $("foot").textContent = `${D.database} · generated ${new Date(D.generated * 100
 $("mcount").textContent = D.members.length ? `${D.members.length}` : "";
 $("members").innerHTML = D.members.length ? D.members.map(m => `<button type="button" class="item" data-agent="${esc(m.agent_id)}">
   <span class="t"><span class="sq" style="background:var(--${tier(m.model) || "dim"})"></span>${esc(m.slug)}</span>
-  <span class="m">${esc(m.status)} · ${esc((m.model || "").replace("claude-", ""))} / ${esc(m.effort)} · ${m.runs} runs · mean ${(+m.mean_score).toFixed(1)} · min ${(+m.min_score).toFixed(1)}</span></button>`).join("")
+  <span class="m">${esc(m.status)} · ${esc((m.model || "").replace("claude-", ""))} / ${esc(m.effort)} · ${+m.runs} runs · mean ${(+m.mean_score).toFixed(1)} · min ${(+m.min_score).toFixed(1)}</span></button>`).join("")
   : `<div class="empty">No forged members yet. An agent validated in two runs can be promoted with library.py promote.</div>`;
 
 function renderCohorts() {
@@ -145,7 +145,7 @@ function renderCohorts() {
         <span class="m">${c.entries} saved · ${ch ? `champion ${esc(ch.name)} (${(+ch.score).toFixed(0)})` : "no eligible champion"}${c.changes.length > 1 ? ` · ${c.changes.length} champion changes` : ""}</span></button>`; }).join("");
 }
 function spark(e) {
-  const pts = e.history.filter(h => h.total != null);
+  const pts = e.history.filter(h => typeof h.total === "number");
   if (!pts.length) return `<p class="mono">no assessments</p>`;
   const W = 300, H = 70, x = i => pts.length < 2 ? W / 2 : 8 + i * (W - 16) / (pts.length - 1), y = v => H - 6 - (v / 100) * (H - 12);
   const thr = e.threshold != null ? `<line x1="0" x2="${W}" y1="${y(e.threshold)}" y2="${y(e.threshold)}" stroke="var(--accent)" stroke-dasharray="3 3" stroke-width="1"/>` : "";

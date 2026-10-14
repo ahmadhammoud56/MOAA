@@ -122,8 +122,13 @@ def upstream_drift(market, ls_remote=None):
     """[(repo, pinned sha, upstream HEAD sha, plugin count)] for pinned repos whose default branch has moved on.
     Needs only the network, not an install, so CI can run it. A moved HEAD in a monorepo need not touch our plugins."""
     import subprocess
-    ls_remote = ls_remote or (lambda url: subprocess.run(["git", "ls-remote", url, "HEAD"], capture_output=True,
-                                                         text=True, timeout=60).stdout.split("\t")[0].strip())
+    def default(url):
+        try:
+            return subprocess.run(["git", "ls-remote", url, "HEAD"], capture_output=True, text=True,
+                                  timeout=60).stdout.split("\t")[0].strip()
+        except subprocess.TimeoutExpired:
+            return ""
+    ls_remote = ls_remote or default
     repos = {}
     for p in market["plugins"]:
         src = p["source"]
@@ -133,8 +138,8 @@ def upstream_drift(market, ls_remote=None):
             repos[url] = (pin, n + 1)
     out = []
     for url, (pin, n) in sorted(repos.items()):
-        head = ls_remote(url)
-        if head and head != pin:
+        head = ls_remote(url) or ""
+        if head != pin:  # "" = unreachable, reported as such
             out.append((url.removeprefix("https://github.com/").removesuffix(".git"), pin, head, n))
     return out
 
@@ -142,7 +147,7 @@ def upstream_drift(market, ls_remote=None):
 if __name__ == "__main__" and "--drift" in sys.argv:
     moved = upstream_drift(json.loads(MARKET.read_text(encoding="utf-8")))
     for repo, pin, head, n in moved:
-        print(f"  {repo:<45} pinned {pin[:7]}  upstream HEAD {head[:7]}  ({n} plugin{'s' if n > 1 else ''})")
+        print(f"  {repo:<45} pinned {pin[:7]}  upstream HEAD {head[:7] or 'UNREACHABLE'}  ({n} plugin{'s' if n > 1 else ''})")
     print(f"[sync_catalog] {len(moved)} pinned repo(s) have newer commits upstream" if moved else
           "[sync_catalog] every pinned repo is at its upstream HEAD")
     print("  To adopt: update the plugins locally (`claude plugin update ...`), test, then run scripts/sync_catalog.py"

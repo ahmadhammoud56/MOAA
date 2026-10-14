@@ -99,6 +99,9 @@ class SpendCap(Sandbox):
         self.assertTrue(stops and stops[-1].startswith("spend cap reached"))
         with self.assertRaises(SystemExit):  # still at the cap: refused without a new cap
             warroom.cmd_resume(warroom.argparse.Namespace(run=run, workers=[], max_cost=None))
+        for bad in (float("nan"), -1.0, 0.01):  # not a number, negative, already spent
+            with self.assertRaises(SystemExit):
+                warroom.cmd_resume(warroom.argparse.Namespace(run=run, workers=[], max_cost=bad))
         warroom.cmd_resume(warroom.argparse.Namespace(run=run, workers=[], max_cost=10.0))
         self.assertIsNone(bus.control("run"))
         self.assertEqual(json.loads(bus.control("budget"))["max_cost_usd"], 10.0)

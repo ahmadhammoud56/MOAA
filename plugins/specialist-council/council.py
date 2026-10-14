@@ -226,12 +226,16 @@ def render(profile):
 def base_profile(against):
     """The profile to compare with: a file path, or a git ref (default HEAD) of this plugin's profile.json."""
     if Path(against).is_file():
-        return load_profile(against)
+        profile = load_profile(against)
+        require(all(k in profile for k in ("models", "roles", "teams")), f"{against} is not a council profile")
+        return profile
     import subprocess
     out = subprocess.run(["git", "-C", str(ROOT), "show", f"{against}:./profile.json"], capture_output=True)
     require(out.returncode == 0, f"cannot read profile.json at {against!r}: "
             + (out.stderr.decode(errors="replace").strip() or "not a git checkout"))
-    return json.loads(out.stdout.decode("utf-8"))
+    profile = json.loads(out.stdout.decode("utf-8"))
+    require(all(k in profile for k in ("models", "roles", "teams")), f"profile.json at {against} lacks models, roles or teams")
+    return profile
 
 
 def diff(old, new):

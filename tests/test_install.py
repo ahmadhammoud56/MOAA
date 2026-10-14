@@ -162,6 +162,15 @@ class StatusTests(unittest.TestCase):
         self.assertTrue(any(k == "plugin" and v[0] == "missing" and k2 != "specialist-council@moaa"
                             for (k, k2), v in rows.items()))  # a full install was inferred, so other full plugins count
 
+    def test_status_reports_a_corrupt_file_instead_of_crashing(self):
+        import tempfile
+        kit = install.read_json(install.KIT / "config" / "kit.json", None)
+        home = Path(tempfile.mkdtemp()) / ".claude"
+        (home / "plugins").mkdir(parents=True)
+        (home / "plugins" / "installed_plugins.json").write_text("{not json")
+        rows = install.status_rows(home, kit)
+        self.assertIn(("file", "installed_plugins.json"), [(k, n) for k, n, s, _ in rows if s == "corrupt"])
+
     def test_doctor_covers_every_suite_and_plugin(self):
         labels = [label for label, _, _ in install.doctor_checks()]
         for name in ("installer tests", "war-room bus test", "public-release scan", "MODELS.md matches the plugins",

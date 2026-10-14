@@ -1003,9 +1003,21 @@ def resume_all(bus, names=None):
     return failed
 
 
+def check_new_cap(bus, cap):
+    """A cap given at resume: a finite number in the settings range, and above what the run already spent."""
+    lo, hi = SETTING_LIMITS["max_cost_usd"]
+    if not (isinstance(cap, (int, float)) and lo <= cap <= hi):  # also rejects nan
+        die(f"max cost must be between {lo} and {hi} USD (0 = no cap)")
+    spent = run_spend(bus)
+    if cap and cap <= spent:
+        die(f"the run has already spent ${spent:.2f}; give a higher cap, or 0 for none")
+    return float(cap)
+
+
 def cmd_resume(a):
     bus = open_bus(a.run)
     if a.max_cost is not None:  # a run stopped at its spend cap would stop again at once without a new cap
+        a.max_cost = check_new_cap(bus, a.max_cost)
         budget = json.loads(bus.control("budget") or "{}")
         budget["max_cost_usd"] = a.max_cost
         bus.control("budget", json.dumps(budget))
@@ -1150,7 +1162,10 @@ def watch_tick(bus, run, schedule, last_wake):
             at, ok = schedule_resume(run, when)
             bus.event("guard", f"resume scheduled with the OS for {at}" if ok else "OS resume task could not be registered")
     resume_at = bus.control("resume_at")
-    if stopped and resume_at and time.time() >= float(resume_at):
+    if stopped and resume_at and time.time() >= float(resume_at) and over_cap(bus, budget):
+        bus.control("resume_at", clear=True)  # never restart paid sessions only to stop them at the cap
+        bus.event("guard", "usage window reset, but the run stays stopped at its spend cap")
+    elif stopped and resume_at and time.time() >= float(resume_at):
         bus.control("run", clear=True)  # lets the resumed workers' Stop hooks park again
         failed = resume_all(bus)
         bus.control("resume_at", clear=True)
@@ -1991,7 +2006,7 @@ def cmd_hub(a):
                     threading.Thread(target=shutdown, args=(run, f"{action} from the app", False), daemon=True).start()
                 elif action == "resume":
                     cap = data.get("max_cost")
-                    ns = argparse.Namespace(run=run, workers=[], max_cost=None if cap is None else float(cap))
+                    ns = argparse.Namespace(run=run, workers=[], max_cost=None if cap is None else check_new_cap(bus, float(cap)))
                     if ns.max_cost is None and over_cap(bus, json.loads(bus.control("budget") or "{}")):
                         return self.send(409, {"error": "the run is at its spend cap; raise it to resume", "cap": True})
                     threading.Thread(target=cmd_resume, args=(ns,), daemon=True).start()
