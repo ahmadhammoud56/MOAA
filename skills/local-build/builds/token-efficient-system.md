@@ -70,11 +70,13 @@ outcome:
 **Ask:** Which agent types to move to a smaller model (offer custom agents found in `~/.claude/agents/` and the project `.claude/agents/`, plus "all read-only explorers").
 
 **Do:**
-- For chosen custom agents, set `model: haiku` (or `sonnet`) in their frontmatter.
-- Optionally set `CLAUDE_CODE_SUBAGENT_MODEL` in the `env` block of `~/.claude/settings.json` so default sub-agents use the smaller model.
+- For chosen custom agents, set `model: haiku` (or `sonnet`) in their frontmatter. For long-running ones, also set `autoCompactWindow` so they compact earlier than the main conversation.
+- Optionally set `CLAUDE_CODE_SUBAGENT_MODEL` in the `env` block of `~/.claude/settings.json`. It is only the default: an agent's own `model:` and a per-call model still win. Do not use `CLAUDE_CODE_SUBAGENT_MODEL_FORCE`; it also overrides agents that need a larger model.
+- If the user runs Workflow scripts, `CLAUDE_CODE_WORKFLOW_SUBAGENT_MODEL` puts every workflow agent on one model without touching other sub-agents.
+- Add a CLAUDE.md line: lookup and search sub-agents get a low `effort` on the Agent call (the Agent tool takes `effort` since 2.1.292).
 - Keep planning, review, and code-writing agents on the default model.
 
-**Verify:** Each chosen agent file has a `model:` line with the smaller model, or `settings.json` has the `CLAUDE_CODE_SUBAGENT_MODEL` env entry.
+**Verify:** Each chosen agent file has a `model:` line with the smaller model, or `settings.json` has the chosen env entry. If the user ran a sub-agent since restarting, `/tasks` shows it ran on the smaller model.
 
 ## Step 6: Script one repeated chore
 

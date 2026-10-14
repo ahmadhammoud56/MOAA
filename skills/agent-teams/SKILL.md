@@ -1,6 +1,6 @@
 ---
 name: agent-teams
-description: Coordinate parallel agent teams with a chosen worker count, mixed models, and per-worker thinking levels. Use when the user requests a team, parallel agents, or a configurable multi-agent workflow.
+description: Coordinate a team of parallel subagents with a chosen worker count, mixed models, and per-worker effort (thinking) levels, from plain language or a JSON roster. Use when the user asks for a team, N parallel agents or workers, a mixed-model roster such as "two Opus/high and three Sonnet/medium", or a plan of worker prompts. For separate parallel Claude Code sessions on one giant job, use War Room instead; for role-based specialist panels, the Specialist Council.
 ---
 
 # Agent teams
@@ -18,7 +18,12 @@ Extract the task, deliverable, worker count, concurrency limit, roles, models, t
 - "Two Opus at high and three Sonnet at medium" creates five worker entries. A roster must account for every requested worker.
 - Treat thinking level as a requested runtime effort setting, not a promise about an internal token budget or output length. Do not equate "thinking off," "ultrathink," or an arbitrary token count with a supported effort value.
 
-For JSON input, read [references/configuration.md](references/configuration.md). An editable example is [assets/team.example.json](assets/team.example.json). The example is illustrative, not an automatic default or a task to execute when this skill loads.
+For JSON input, read [references/configuration.md](references/configuration.md) and run `scripts/validate_team.py` on the roster before launch. An editable example is [assets/team.example.json](assets/team.example.json). The example is illustrative, not an automatic default or a task to execute when this skill loads.
+
+**Right tool for the size (MOAA).** Subagents share this session's turn, permissions and usage window. They fit most teams. Offer the alternatives in one line when they fit better; never switch without the user's say-so:
+
+- **War Room** (`/war-room`, plugin `war-room@moaa`): separate `claude` sessions with their own worktrees, a task board, review gates and a merge queue. Use it for a giant job with several long independent streams or audits between steps. It costs far more (a measured three-worker run used 3–4M tokens), so do not suggest it for a few hours of work.
+- **Specialist Council** (`/specialist-council`): when the user names roles rather than models, pick registered `specialist-council:council-<role>` agents. Their preset model and effort come from `council.py resolve --role ROLE` (see `MODELS.md`), so you do not have to guess a model per role.
 
 If the user specifies an exact lead model or effort, apply it only through a supported lead-session control. Otherwise explain the required user selection; a worker model setting cannot change the lead. Do not claim that describing a model in a prompt switches it.
 
@@ -30,7 +35,7 @@ Choose an execution mode:
 
 | Mode | Selection rule |
 | --- | --- |
-| `subagents` | Prefer for independent workers, particularly when different effort settings are required and supported. The lead integrates results and relays information. |
+| `subagents` | Prefer for independent workers, particularly when different effort settings are required; current Claude Code sets model and effort per Agent call. The lead integrates results and relays information. |
 | `native-team` | Use when peer messaging/shared coordination is requested and the host's team controls meet the roster's requirements. |
 | `plan-only` | Produce a reusable roster and worker assignments without starting agents. |
 | `sequential` | Only when the user accepts it; perform the assignments in this conversation and label them as sequential work. |
@@ -80,7 +85,8 @@ Keep the lead useful: resolve integration details, handle questions, and check r
 ## 5. Maintain control and finish
 
 - Respect the requested roster and concurrency limit, including retries and replacement workers. Workers must return proposed extra work to the lead instead of spawning nested teams.
-- On a transient failure, retry once within the existing settings and limits if appropriate. On repeated failure, preserve partial work and report the blocker. Never retry with a different model or effort without an authorized fallback.
+- A worker that is slow during overload (529) retries has not failed; do not launch a replacement. If overloads persist, lower concurrency.
+- On a transient failure, retry once within the existing settings and limits if appropriate. Resume the same worker by ID where supported rather than starting a fresh one. On repeated failure, preserve partial work and report the blocker. Never retry with a different model or effort without an authorized fallback.
 - Treat reported model or effort substitutions as mismatches. Stop assigning new work to affected workers and apply the fallback policy. Preserve completed work and identify which results used changed settings.
 - Honor explicit time or usage caps using actual available measurements. If a hard cost/token cap cannot be enforced, disclose that before launch. Do not invent usage totals.
 - Share short updates when work meaningfully changes. On cancellation, stop launching, request cancellation of running workers through supported controls, and report any workers that could not be stopped.
@@ -88,7 +94,7 @@ Keep the lead useful: resolve integration details, handle questions, and check r
 
 Inspect the workers' evidence and outputs, resolve material disagreements, and perform checks appropriate to the deliverable. Do not decide factual disagreements by majority vote. Use an existing worker for additional checking rather than silently adding a reviewer.
 
-Deliver the integrated result first. Add a concise run summary: launched/completed/failed workers, actual execution mode, model/effort settings confirmed by runtime evidence, any unverified settings, and unresolved limitations. Count configured workers separately from workers actually launched. Claim observed concurrency only when supported by execution evidence. End native teammates through supported lifecycle controls when their work is finished.
+Deliver the integrated result first. Add a concise run summary: launched/completed/failed workers, actual execution mode, model/effort settings confirmed by runtime evidence (in Claude Code, `/tasks` shows what each subagent ran on), any unverified settings, and unresolved limitations. Count configured workers separately from workers actually launched. Claim observed concurrency only when supported by execution evidence. End native teammates through supported lifecycle controls when their work is finished.
 
 ## Example requests
 

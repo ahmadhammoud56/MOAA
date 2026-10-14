@@ -449,7 +449,7 @@ Source: https://github.com/typesafe-ai/skills
    - `enabledPlugins` entries you already set are kept.
    - It adds allow rules so `council.py` runs without permission prompts, plus the env settings `ECC_GATEGUARD=off` and `CLAUDE_CODE_OVERLOADED_RETRY_MAX_DELAY_MS=60000` (Claude Code 2.1.296: retry an overloaded API for up to a minute instead of giving up early).
 6. Adds the MCP servers at user scope:
-   - `rea` (`npx rea-agents@6.3.0`).
+   - `rea` (`npx rea-agents@6.4.0`).
    - `ansys`: cloned at a pinned commit into `~/.claude/kit-tools/ansys-mcp-server`, with `vendor/ansys-mcp-server.patch` applied, inside its own venv.
 7. Runs `council.py check` and writes the manifest.
 

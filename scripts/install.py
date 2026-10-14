@@ -18,6 +18,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -222,8 +223,10 @@ def install(args):
     for name in kit["skills"]:
         target = skills_dir / name
         if target.exists() and name not in record["skills"]:
-            log(f"skill {name} already present and not kit-managed; leaving it")
-            continue
+            if not shipped_by_moaa(name, target):
+                log(f"skill {name} already present and not kit-managed; leaving it")
+                continue
+            log(f"skill {name}: an unmodified earlier MOAA copy; updating")
         log(f"skill {name}")
         if not args.dry_run:
             shutil.rmtree(target, ignore_errors=True)
@@ -274,11 +277,47 @@ def install(args):
     return 1 if failed or check.returncode else 0
 
 
+def tree_text(files):
+    """{relative posix path: content without CRs}, so a CRLF checkout and an LF copy compare equal."""
+    return {k: v.replace(b"\r\n", b"\n") for k, v in files.items()}
+
+
+def shipped_by_moaa(name, target):
+    """True when an installed skill is byte-identical (line endings aside) to a version this repo shipped: an
+    install made before the manifest tracked skills. A copy the user edited never matches, so it is left alone."""
+    installed = tree_text({p.relative_to(target).as_posix(): p.read_bytes() for p in target.rglob("*")
+                           if p.is_file() and "__pycache__" not in p.parts})
+    git = lambda *a: subprocess.run(["git", "-C", str(KIT), *a], capture_output=True)  # noqa: E731
+    log_ = git("log", "--format=%H", "--", f"skills/{name}")
+    for commit in (log_.stdout.decode().split() if log_.returncode == 0 else []):
+        paths = git("ls-tree", "-r", "--name-only", commit, f"skills/{name}/").stdout.decode().split("\n")
+        shipped = {p[len(f"skills/{name}/"):]: git("show", f"{commit}:{p}").stdout for p in paths if p}
+        if tree_text(shipped) == installed:
+            return True
+    return False
+
+
+def mcp_outdated(name, spec, record, home):
+    """True when MOAA added this MCP server (it is in the manifest) and its configured command or args differ from the
+    pinned spec. A server the user configured themselves is never touched."""
+    current = (read_json(home.parent / ".claude.json", {}) or {}).get("mcpServers", {}).get(name)
+    if not current or (current.get("command"), current.get("args")) == (spec.get("command"), spec.get("args")):
+        return False
+    if name in record.get("mcp", []):
+        return True
+    # Installed before the manifest tracked MCP servers: still ours when only the pinned version differs.
+    unpin = lambda c: (c.get("command"), [re.sub(r"@\d+(\.\d+)*$", "@*", str(a)) for a in c.get("args") or []])  # noqa: E731
+    return unpin(current) == unpin(spec)
+
+
 def install_mcp(r, mcp, record, home, skip_ansys, dry):
     def add(name, spec):
         if r.run(["claude", "mcp", "get", name]).returncode == 0 and not dry:
-            log(f"MCP {name} already configured; leaving it")
-            return
+            if not mcp_outdated(name, spec, record, home):
+                log(f"MCP {name} already configured; leaving it")
+                return
+            log(f"MCP {name}: MOAA installed it at an older pin; updating")  # e.g. rea-agents@6.3.0 -> 6.4.0
+            r.run(["claude", "mcp", "remove", "--scope", "user", name])
         log(f"MCP {name}")
         r.run(["claude", "mcp", "add-json", "--scope", "user", name, json.dumps(spec)], check=True)
         if name not in record["mcp"]:

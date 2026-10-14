@@ -17,7 +17,7 @@ Read this before you install, especially the `--full` profile.
   - The allow rules match only `python …specialist-council…council.py…`. `council.py` uses only the Python standard library and has no network access.
   - Every change is recorded in `~/.claude/.moaa-manifest.json`, and `--uninstall` reverses it.
 - **MCP servers:**
-  - `rea` runs via `npx rea-agents@6.3.0`, pinned.
+  - `rea` runs via `npx rea-agents@6.4.0`, pinned.
   - `ansys` (`--full` only) is cloned from GitHub at a pinned commit, with a patch applied and pinned dependencies installed in its own venv.
 - **No secrets are collected or sent anywhere.** The installer never reads or writes credentials or API keys. claude-mem (opt-in with `--with-claude-mem`) needs a model-provider key, which you set up through claude-mem's own setup.
 

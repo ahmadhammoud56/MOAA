@@ -1,160 +1,54 @@
 ---
 name: path-safety
-description: 服务端路径安全与文件访问编码规范。在编写文件下载路由、Agent 工具（文件读取/目录列出）、数据连接器/Loader、Workspace 路径操作、沙箱配置时使用。
+description: Prevent path traversal (arbitrary file read or write) in server and agent code. Use when writing or reviewing code that turns a client-, user- or LLM-supplied name into a filesystem path - download or upload routes, agent file tools (read, list, write), archive extraction, data loaders and connectors, workspace or sandbox setup. Ships a stdlib confine() helper with tests.
 ---
 
-# Path Safety — 服务端安全编码规范
+# Path safety
 
-> **来源**：`docs/dev-guides/8-path-safety.md`（正式开发规范）+ `design-docs/issues/002-arbitrary-file-read-audit.md`（安全审计复核）。
-> 本文档提炼了 6 条必须遵守的编码规范。违反任一条即可能引入路径穿越（LFI）漏洞。
+Any name that crosses a trust boundary (HTTP parameter, form field, archive entry, blob key, or an argument an LLM wrote for a tool call) is hostile until confined. One rule covers most of it: **resolve once inside a fixed root, check containment with a path-aware test, then use exactly that resolved path.**
 
----
+`scripts/confine.py` implements that rule with no dependencies. Copy `confine()` into the project or port it; run `python scripts/confine.py --self-check` to see it pass, and `python scripts/confine.py ROOT NAME` to test one name. If the project already has a confinement helper, use that one everywhere instead and check it against the cases below.
 
-## R1. 文件下载：用 `ConfinedDir.resolve()` + `send_file`，禁用 `send_from_directory`
+## Rules
 
-**原因**：`send_from_directory(dir, user_input)` 内部会对 `user_input` 二次解析路径，与前置安全检查形成 TOCTOU 不一致。
+1. **Confine before every filesystem call.** Never `Path(root) / name` or `os.path.join(root, name)` on raw input. Joining an absolute path discards the root (`Path("/srv") / "/etc/passwd"` is `/etc/passwd`), and `..` walks out.
+2. **Check containment on resolved paths, never with string prefixes.** `str(p).startswith(str(root))` accepts `/srv/ws_evil` for root `/srv/ws`. Use `resolved.is_relative_to(root.resolve())` (Python 3.9+); in Node, `path.relative(root, p)` must not start with `..` or be absolute.
+3. **Use the path you checked.** Pass the confined path to `open` or `send_file`. A helper that takes the raw name again, such as Flask's `send_from_directory(dir, name)`, parses it a second time with different rules, so your check and the real access can disagree.
+4. **LLM tool arguments are user input.** An agent's read, list or write tools get a confined root from the entry point and call `confine()` on every argument. Do not hand-roll a join and `relative_to` inside each tool.
+5. **Extract archives entry by entry.** Zip and tar names can be `../x` or absolute ("zip slip"), and tar members can be links. Confine each member name; for tar on Python 3.12+ (and patched older releases) also pass `filter="data"` to `extractall`.
+6. **Gate host-filesystem features by deployment.** A loader that reads any local path is fine in a single-user desktop app and is an open file-read on a shared server. Disable such features unless the deployment is single-user, and fail closed when the mode is unknown.
+7. **Path checks do not contain generated code.** If LLM-written code runs in the server process, it can open any file. Multi-user deployments need a real sandbox (container or separate user); default to it in deployment templates.
 
-```python
-# ❌ BAD — 安全检查用 resolved target，发送用原始 filename，两次解析不一致
-target = (scratch_dir / filename).resolve()
-target.relative_to(scratch_dir.resolve())  # 检查通过
-return send_from_directory(str(scratch_dir), filename)  # 再次解析
+## Failure modes the helper rejects
 
-# ✅ GOOD — 检查和发送用同一个 resolved path
-scratch_jail = workspace.confined_scratch
-target = scratch_jail.resolve(filename)
-return send_file(target)  # 直接用已验证的路径
-```
+| Input | Why it is dangerous |
+| --- | --- |
+| `../x`, `a/../../x`, `..\x` | Walks out of the root. Backslash is a separator on Windows. |
+| `/etc/passwd`, `C:\x`, `C:x`, `\\srv\share` | Absolute, drive or UNC path replaces the root. |
+| `f.txt:stream`, `f.txt::$DATA` | NTFS alternate data streams. |
+| `CON`, `nul.txt`, `COM1.log` | Windows device names, at any depth and with any extension. |
+| `a.`, `a ` | Windows strips trailing dots and spaces, so these alias another file and dodge extension checks. |
+| A symlink or junction inside the root that points out | Caught because the check runs after `resolve()`. |
+| NUL byte, empty string | Truncation tricks and "the root itself". |
 
-`send_file(Path)` 会根据扩展名自动推断 MIME type，无需额外处理。
+## Known limits
 
----
+- **Link races.** `confine()` checks, then you open. If an untrusted party can create symlinks inside the root, they can swap one in between. Do not let untrusted users create links in served directories; on POSIX, opening with `O_NOFOLLOW` closes the last component.
+- **Name policy is separate.** `confine()` decides *where* a file may live, not *which* names are allowed. Add an extension or name allow-list when serving only certain types.
 
-## R2. 路径安全检查：用 `ConfinedDir`，禁止 `str.startswith`
+## Quick review check
 
-**原因**：`str(path).startswith(str(root))` 存在前缀碰撞缺陷（如 `/workspace` vs `/workspace_evil`）。
-
-```python
-# ❌ BAD
-if not str(resolved).startswith(str(root_resolved) + os.sep):
-    raise ValueError("escape")
-
-# ✅ GOOD — 统一走 ConfinedDir，内部使用 Path.is_relative_to()
-jail = ConfinedDir(root_resolved, mkdir=False)
-target = jail.resolve(user_input)
-```
-
----
-
-## R3. Agent 工具复用 `Workspace.confined_*`
-
-**原因**：Agent 工具参数由 LLM 生成，必须视为间接用户输入。不要在工具内手写 `Path(root) / rel_path` 或 `resolve() + relative_to()`；入口处复用 Workspace 暴露的 `ConfinedDir`。
-
-```python
-# ❌ BAD — 手写路径拼接和校验
-def _tool_read_file(self, args, workspace_path):
-    target = (workspace_path / rel_path).resolve()
-    target.relative_to(workspace_path)
-
-# ✅ GOOD — 入口拿到 ConfinedDir，工具只调用 jail.resolve()
-def _execute_tool(self, name, args):
-    workspace_jail = self.workspace.confined_root
-    scratch_jail = self.workspace.confined_scratch
-    return self._tool_read_file(args, workspace_jail)
-
-def _tool_read_file(self, args, workspace_jail):
-    target = workspace_jail.resolve(args.get("path", ""))
-```
-
----
-
-## R4. 优先使用 `ConfinedDir`，禁止裸路径拼接
-
-**原因**：`Path(root) / user_input` 是路径穿越的高频入口。`ConfinedDir` 封装了三层防御（拒绝绝对路径 → 拒绝 `..` 段 → `resolve` + `is_relative_to`）。
-
-```python
-from data_formulator.security.path_safety import ConfinedDir
-
-# ❌ BAD — 手动拼接 + 手动校验，容易遗漏
-local_file = tmp_path / blob_relative_name
-local_file.parent.mkdir(parents=True, exist_ok=True)
-local_file.write_bytes(data)
-
-# ✅ GOOD — ConfinedDir 自动校验 + 创建父目录
-jail = ConfinedDir(tmp_path, mkdir=False)
-jail.write(blob_relative_name, data)  # 自动校验 + 写入
-```
-
-### 已有安全 API 的层次关系
+Search the change for risky patterns, then confirm each hit goes through the confinement helper:
 
 ```
-用户输入（filename / relative_path / blob key）
-    │
-    ▼
-safe_data_filename() / secure_filename()     ← 第一层：输入清洗
-    │
-    ▼
-ConfinedDir.resolve()                        ← 第二层：路径约束
-    │
-    ▼
-安全的 Path 对象
+rg -n "send_from_directory|startswith\(|os\.path\.join\(|extractall\(|Path\([^)]*\) */" <changed paths>
 ```
 
-使用 `Workspace.get_file_path()` 的场景不需要手动调用 `ConfinedDir`，因为它内部已包含等价的校验。
-
----
-
-## R5. 宿主文件系统访问必须设部署模式守卫
-
-**原因**：桌面单用户模式允许访问本机文件系统（预期行为），但多用户/云部署下等于开放服务器读权限。
-
-**规范**：任何新的 Loader / Connector 如果涉及直接读取宿主文件系统（不通过 Workspace API），必须：
-
-1. 在 `data_loader/__init__.py` 的 `_enforce_deployment_restrictions()` 中注册禁用规则
-2. 确保 `create_connector()` 会拒绝已禁用的类型
-
-```python
-# data_loader/__init__.py — 参考 local_folder 的处理方式
-def _enforce_deployment_restrictions():
-    backend = os.environ.get("WORKSPACE_BACKEND", "local")
-    if backend != "local":
-        for key in ("local_folder", "your_new_local_loader"):
-            if key in DATA_LOADERS:
-                del DATA_LOADERS[key]
-                DISABLED_LOADERS[key] = f"{key} disabled in multi-user mode"
-```
-
-**判断标准**：如果 Loader 的构造函数接受一个用户可控的本机路径（如 `root_dir`），它就需要部署守卫。
-
----
-
-## R6. 多用户部署必须启用沙箱
-
-**原因**：`not_a_sandbox` 模式下 LLM 生成的代码在宿主进程直接执行，可绕过所有路径检查。
-
-`app.py` 已在启动时检测此配置并输出 `logger.critical` 警告。新增的沙箱模式或部署脚本应确保：
-
-- `WORKSPACE_BACKEND != "local"` 时，`SANDBOX` 必须为 `docker` 或 `local`
-- CI/CD 部署模板中默认设置 `SANDBOX=docker`
-
----
-
-## 速查：新增代码时的安全检查清单
-
-| 场景 | 必须做的事 |
-|------|-----------|
-| 新增文件下载路由 | 用 `ConfinedDir.resolve()` 得到路径，再 `send_file(resolved_path)`；不用 `send_from_directory` |
-| 新增 Agent 工具（读文件/列目录） | 入口复用 `workspace.confined_root` / `workspace.confined_scratch`，工具内只调用 `jail.resolve()` |
-| 路径包含判断 | 用 `ConfinedDir.resolve()`，不要手写 `Path.is_relative_to()` 或 `str.startswith()` |
-| `Path(root) / variable` 模式 | 改用 `ConfinedDir` 或 `Workspace.get_file_path()` |
-| 新增本机文件系统 Loader | 在 `_enforce_deployment_restrictions()` 中注册多用户禁用 |
-| 部署配置 | 多用户模式必须 `SANDBOX=docker` 或 `SANDBOX=local` |
-
----
-
-## 参考文档
-
-- `docs/dev-guides/8-path-safety.md` — 服务端路径安全开发规范
-- `design-docs/6-path-safety-confined-dir.md` — 剩余未完成实现项状态页
-- `design-docs/issues/002-arbitrary-file-read-audit.md` — 安全审计复核报告
-- `py-src/data_formulator/security/path_safety.py` — ConfinedDir 源码
+| Writing | Must do |
+| --- | --- |
+| Download route | `confine()` then `send_file(confined)`. |
+| Upload or write | `confine()`, create parents under the confined path, set your own filename policy. |
+| Agent file tool | Confined root from the entry point; `confine()` per argument. |
+| Archive import | `confine()` per member; tar `filter="data"`. |
+| Local-folder loader | Deployment gate; off on shared servers. |
+| Deployment config | Sandbox on whenever more than one user shares the server. |

@@ -4,6 +4,43 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-10-14
+
+### Changed
+- **Vendored skills updated to upstream.**
+  - networkx, pyzotero, scientific-brainstorming and uncertainty-and-units are now K-Dense v1.4 (`a1043ef`; was v1.2). The update adds a `review.md` reference to networkx and uncertainty-and-units.
+  - reverse-engineer-anything is now rea skill v42 (`322506d`; was v37).
+  - paper2agent was already current.
+  - MOAA's LICENSE and NOTICE files are kept.
+  - THIRD_PARTY.md now records the upstream commit each skill was taken from.
+- **headroom** is re-checked against upstream `f1bc260`:
+  - `wrap vscode-claude` and the other wrappable agents;
+  - `wrap claude` side effects (MCP and Serena registration, `--1m`, `--memory`) and `unwrap --keep-mcp`;
+  - `headroom mcp install`, with HTTP MCP on port 8788 and `--direct` deprecated;
+  - output shaping and `headroom update`;
+  - deploy order and `install apply --env`;
+  - the Rust proxy, described as upstream's direction rather than a deprecation.
+- **The rea MCP server is pinned to `rea-agents@6.4.0`** (was 6.3.0).
+- **agent-teams:**
+  - Mixed-model rosters now set model and effort per Agent call (the per-call `effort` arrived in Claude Code 2.1.292) instead of writing agent files and restarting.
+  - New warnings about settings that silently break a mixed roster (`CLAUDE_CODE_SUBAGENT_MODEL_FORCE` and others), plus failure modes in wide fan-outs: 529 slowdowns, resuming a worker by ID, and the Workflow concurrency cap.
+  - Pointers to War Room for giant jobs and to council roles for models.
+  - New `scripts/validate_team.py` (standard library only, with a self-check) validates a team JSON: fields, IDs, dependency cycles and shared outputs.
+- **path-safety** is rewritten as a general skill. The old text was a coding standard for one other project (Data Formulator).
+  - It now covers 7 rules: resolve once, `is_relative_to` instead of `startswith`, no re-parsing by helpers, LLM tool arguments as user input, archive extraction ("zip slip"), deployment gating, and sandboxing generated code.
+  - New `scripts/confine.py` rejects `..`, absolute, drive and UNC paths, NUL bytes, NTFS streams, device names, and symlinks or junctions that escape the root.
+- **local-build:**
+  - `/local-build <slug> step N` resumes a build at a step, and the resume command is given before any restart.
+  - Blind verification stops and asks after two failed fixes.
+  - Hooks a build adds are tested by hand first; `onFailure: "block"` is reserved for safety gates.
+  - The token-efficient build is updated for the current subagent-model settings.
+
+### Fixed
+- **The installer now updates skills and MCP servers from earlier MOAA installs instead of skipping them.**
+  - A skill that is byte-identical to a version MOAA shipped (line endings aside) is updated; a copy you edited is still left alone.
+  - An MCP server MOAA installed, or one with MOAA's exact command at an older pinned version, is re-added at the current pin; your own MCP setups are left alone.
+  - Before this fix, skills and MCP servers installed before the manifest tracked them never received updates.
+
 ## [0.5.3] - 2026-10-13
 
 ### Changed
@@ -131,6 +168,7 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 ### Added
 - First one-command installer: plugins, council, arena, skills, MCP servers and settings merge, with uninstall.
 
+[0.5.4]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.3...v0.5.4
 [0.5.3]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/ahmadhammoud56/MOAA/compare/v0.5.0...v0.5.1

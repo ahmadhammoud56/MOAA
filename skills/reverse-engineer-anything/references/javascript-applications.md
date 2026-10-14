@@ -1,13 +1,55 @@
 # JavaScript and Electron application artifacts
 
+For captured or bundled JavaScript that needs readable source recovery, use
+`recover_javascript_sources` with an absolute `path` and absent
+`output_directory`. Supply related runtime/shared/lazy files in
+`additional_paths` when advertised, then analyze the returned `analysis_input`
+directory together. Each input retains its own snapshot, digest and byte-range
+provenance; inputs and recovered code are never executed. Recovery requires a
+caller-supplied Wakaru on Linux x64; see [the recovery guide](https://github.com/morluto/rea/blob/main/docs/javascript-recovery.md).
+
 Use `analyze_javascript_application` directly on the operator-supplied ASAR or
-extracted tree. When size is unknown or large and the connected schema advertises
+extracted tree. When the question concerns known source paths and the connected
+schema advertises `source_paths`, select exact inventoried paths such as
+`["package.json", "main.js", "preload.js"]`. Include supporting manifests or
+source maps explicitly; dependencies are not implicitly analyzed. REA retains
+the complete artifact inventory and identity but reads source text and analyzes
+only selected files. The result and summary record `source_selection`; files
+outside scope and their relationships remain unknown, so partial application
+coverage does not mean the selected source failed. Use repeated `--source-path`
+on either static application CLI route. Omit the selection when the question
+requires complete application analysis. `detail: "summary"` reduces delivery
+and does not by itself reduce analysis work.
+
+Exact `#alias` specifiers resolve through the importer's
+enclosing package `imports` map to package-local files; nested `node_modules`
+packages use their own map. Wildcard, recursive, and external-package import
+targets stay unresolved with that limitation. When size is unknown or large and the connected schema advertises
 `detail`, request `detail: "summary"`. This returns an `inspect_analysis_view`
 Evidence record with a distinct ID and a `normalized_result.parent_evidence_id`
 for the complete retained application analysis. Source-map contents are part of
 that static analysis. Read findings, coverage, limitations and unknowns, then
 follow a specific unanswered question. Older servers without `detail` return
 the complete application Evidence inline when it fits.
+
+When the connected schema advertises `max_heap_mb` and `analysis_timeout_ms`,
+these select the isolated source analyzer's old-space heap and per-source
+deadline. Defaults are 1024 MiB and 300000 ms. They do not change the MCP
+process heap. A Bun-hosted REA does not enforce the heap choice; on Windows it
+instead limits the analyzer's committed memory to that choice plus a 512 MiB
+runtime reserve.
+Resource-limited analyses preserve completed static facts and
+report partial semantic coverage with specific unknown scopes; this does not
+mean the source is malformed. Inspect those limits before retrying a source.
+When expanded relationships exceed the parent's available memory, inspect the
+file's modules item view for retained `static_analysis` and
+`semantic_module_analysis`. Their facts remain available even when graph links
+are unknown. Cumulative result exhaustion can stop analysis before every file
+is examined; the inventory and remaining unknown scopes distinguish that case.
+Timeout or cancellation after source analysis begins retains partial Evidence
+in the same session. A returned `error.details.partial_observation` reference
+can be supplied directly to `inspect_analysis_view`. If the SDK cancels locally, retrieve its recorded ID from
+the Evidence bundle before inspecting the partial analysis.
 
 ## Read a module without repeating analysis
 

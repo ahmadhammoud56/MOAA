@@ -1,6 +1,6 @@
 {
   "name": "moaa",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "marketplaces": {
     "ecc": "https://github.com/affaan-m/ECC.git",
     "karpathy-skills": "https://github.com/multica-ai/andrej-karpathy-skills.git",
@@ -638,7 +638,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "rea-agents@6.3.0",
+        "rea-agents@6.4.0",
         "mcp"
       ]
     },

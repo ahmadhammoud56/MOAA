@@ -27,6 +27,37 @@ class MergeTests(unittest.TestCase):
         restored["permissions"].pop("deny")
         self.assertEqual(restored, current)
 
+    def test_unmodified_old_skill_copies_are_adopted_edited_ones_kept(self):
+        import subprocess, tempfile
+        kit = Path(install.KIT)
+        files = subprocess.run(["git", "-C", str(kit), "ls-tree", "-r", "--name-only", "HEAD", "skills/path-safety/"],
+                               capture_output=True, text=True).stdout.split()
+        if not files:
+            self.skipTest("no git history")
+        target = Path(tempfile.mkdtemp()) / "path-safety"
+        for f in files:  # the copy an earlier install would have made: the skill as committed
+            out = target / f[len("skills/path-safety/"):]
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_bytes(subprocess.run(["git", "-C", str(kit), "show", f"HEAD:{f}"], capture_output=True).stdout)
+        self.assertTrue(install.shipped_by_moaa("path-safety", target))
+        (target / "SKILL.md").write_text("my own edits")
+        self.assertFalse(install.shipped_by_moaa("path-safety", target))
+
+    def test_mcp_repin_only_touches_moaa_servers(self):
+        import json, tempfile
+        home = Path(tempfile.mkdtemp()) / ".claude"
+        home.mkdir()
+        pin = {"command": "cmd", "args": ["/c", "npx", "-y", "rea-agents@6.4.0", "mcp"]}
+        def cfg(args):
+            (home.parent / ".claude.json").write_text(json.dumps({"mcpServers": {"rea": {"command": "cmd", "args": args}}}))
+        cfg(["/c", "npx", "-y", "rea-agents@6.3.0", "mcp"])
+        self.assertTrue(install.mcp_outdated("rea", pin, {"mcp": []}, home))   # MOAA's shape, older pin
+        cfg(pin["args"])
+        self.assertFalse(install.mcp_outdated("rea", pin, {"mcp": []}, home))  # already current
+        cfg(["/c", "node", "my-own-rea.js"])
+        self.assertFalse(install.mcp_outdated("rea", pin, {"mcp": []}, home))  # the user's own setup
+        self.assertTrue(install.mcp_outdated("rea", pin, {"mcp": ["rea"]}, home))  # unless MOAA recorded adding it
+
     def test_war_room_permissions_keep_launch_behind_a_prompt(self):
         rules = install.council_permissions(Path("/home/u/.claude"))
         self.assertIn("Bash(python *war-room*warroom.py* status*)", rules)

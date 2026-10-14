@@ -25,12 +25,14 @@ Worker fields:
 | `id` | Required unique lowercase name using letters, numbers, and hyphens; 1-48 characters, starting with a letter. |
 | `role` | Required short role description. |
 | `assignment` | Optional specific task; infer it from the overall task and role if omitted. |
-| `model` | Optional model family alias or exact runtime-supported model ID, or `inherit`. Overrides `defaults.model`. |
+| `model` | Optional model family alias or exact runtime-supported model ID, or `inherit`. Overrides `defaults.model`. In Claude Code a full ID needs an agent definition; the per-call Agent `model` accepts only aliases. |
 | `effort` | Optional `inherit`, `low`, `medium`, `high`, `xhigh`, or `max`. Overrides `defaults.effort`. These are request values, not a claim that every model/host supports them. |
 | `depends_on` | Array of other worker IDs; defaults to empty. |
 | `outputs` | Optional array of intended output locations. Respect the user's authorized workspace. |
 
 ## Resolve and validate
+
+Run `python scripts/validate_team.py <team.json>` (from this skill's folder) after applying the user's edits. It checks rules 2 and 3 below, warns on shared outputs, and prints each worker's resolved model and effort; exit 1 means fix the file first. `--self-check` tests the script. Rules 5 and 6 still need the live host.
 
 1. Apply the user's latest explicit changes to the JSON, then validate the resulting roster. A partial follow-up changes the named fields and preserves the rest.
 2. Reject malformed JSON, unknown fields, wrong types, blank IDs/models, duplicate IDs, non-positive counts, and inconsistent worker counts. An integer field must not accept a boolean.
