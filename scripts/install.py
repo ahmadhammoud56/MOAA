@@ -8,6 +8,8 @@
   python scripts/install.py --skip-ansys    keep rea, skip the ansys MCP server
   python scripts/install.py --dry-run       print what would run, change nothing
   python scripts/install.py --uninstall     reverse what the kit recorded in its manifest
+  python scripts/install.py --status        compare the install with this repo: versions, drift, edited copies
+  python scripts/install.py --doctor        run every pre-commit check (all test suites, scans, validation)
 
 The Claude config dir is $CLAUDE_CONFIG_DIR or ~/.claude. Existing settings are backed up and merged,
 never overwritten: lists are unioned, and env keys and other defaults are only added when absent.
@@ -285,9 +287,8 @@ def tree_text(files):
 def shipped_by_moaa(name, target):
     """True when an installed skill is byte-identical (line endings aside) to a version this repo shipped: an
     install made before the manifest tracked skills. A copy the user edited never matches, so it is left alone."""
-    installed = tree_text({p.relative_to(target).as_posix(): p.read_bytes() for p in target.rglob("*")
-                           if p.is_file() and "__pycache__" not in p.parts})
-    git = lambda *a: subprocess.run(["git", "-C", str(KIT), *a], capture_output=True)  # noqa: E731
+    installed = tree_of(target)
+    git =lambda *a: subprocess.run(["git", "-C", str(KIT), *a], capture_output=True)  # noqa: E731
     log_ = git("log", "--format=%H", "--", f"skills/{name}")
     for commit in (log_.stdout.decode().split() if log_.returncode == 0 else []):
         paths = git("ls-tree", "-r", "--name-only", commit, f"skills/{name}/").stdout.decode().split("\n")
@@ -310,6 +311,12 @@ def mcp_outdated(name, spec, record, home):
     return unpin(current) == unpin(spec)
 
 
+def rea_spec(mcp):
+    rea = mcp["rea"]
+    command, args = (("cmd", ["/c", rea["command"]] + rea["args"]) if WINDOWS else (rea["command"], rea["args"]))
+    return {"type": "stdio", "command": command, "args": args, "env": {}}
+
+
 def install_mcp(r, mcp, record, home, skip_ansys, dry):
     def add(name, spec):
         if r.run(["claude", "mcp", "get", name]).returncode == 0 and not dry:
@@ -323,9 +330,7 @@ def install_mcp(r, mcp, record, home, skip_ansys, dry):
         if name not in record["mcp"]:
             record["mcp"].append(name)
 
-    rea = mcp["rea"]
-    command, args = (("cmd", ["/c", rea["command"]] + rea["args"]) if WINDOWS else (rea["command"], rea["args"]))
-    add("rea", {"type": "stdio", "command": command, "args": args, "env": {}})
+    add("rea", rea_spec(mcp))
     if skip_ansys:
         return
     spec = mcp["ansys"]
@@ -350,6 +355,150 @@ def install_mcp(r, mcp, record, home, skip_ansys, dry):
     else:
         python = root / ".venv" / ("Scripts/python.exe" if WINDOWS else "bin/python")
     add("ansys", {"type": "stdio", "command": python.as_posix(), "args": ["-m", spec["module"]], "env": {}})
+
+
+def tree_of(root):
+    return tree_text({p.relative_to(root).as_posix(): p.read_bytes() for p in root.rglob("*")
+                      if p.is_file() and "__pycache__" not in p.parts})
+
+
+def copy_state(name, repo_path, target, recorded, is_skill):
+    """State of an installed skill or agent against this repo's copy, and what the installer would do with it."""
+    if not target.exists():
+        return "missing", "rerun the installer"
+    same = tree_of(target) == tree_of(repo_path) if is_skill else \
+        target.read_bytes().replace(b"\r\n", b"\n") == repo_path.read_bytes().replace(b"\r\n", b"\n")
+    if same:
+        return "ok", ""
+    if is_skill and shipped_by_moaa(name, target):
+        return "outdated", "an unmodified older MOAA copy; rerun the installer"
+    if recorded:
+        return "modified", "edited; MOAA recorded it, so the installer will overwrite it"
+    return "modified", "edited or your own; the installer leaves it alone"
+
+
+def status_rows(home, kit):
+    """[(kind, name, state, detail)] comparing the install in `home` with this repo. States: ok, outdated (a MOAA
+    item older than the repo; rerun the installer), drift (a third-party plugin at another version than the tested
+    one), modified (edited after install), missing, info."""
+    rows = []
+    record = read_json(home / MANIFEST, None) or read_json(home / LEGACY_MANIFEST, {})
+    if record.get("kit_version") and record["kit_version"] != kit["version"]:
+        rows.append(("moaa", "kit", "outdated", f"installed from {record['kit_version']}; repo is {kit['version']}"))
+    elif record:
+        rows.append(("moaa", "kit", "ok", kit["version"]))
+    else:
+        rows.append(("moaa", "kit", "missing", f"no {MANIFEST}; the installer has not run for this Claude home"))
+
+    installed = read_json(home / "plugins" / "installed_plugins.json", {}).get("plugins", {})
+    by_name = {}
+    for p in kit["plugins"]:
+        name, market = p["id"].split("@")
+        for key in (p["id"], f"{ALIASES.get(name, name)}@{kit['name']}"):
+            if key in installed:
+                by_name[p["id"]] = (key, (installed[key] or [{}])[0])
+                break
+    # The profile is not recorded, so a full install is inferred from any full-profile plugin being present.
+    full = any(p.get("profile") == "full" and p["id"] in by_name for p in kit["plugins"])
+    for p in kit["plugins"]:
+        if p["id"] not in by_name:
+            if (p.get("profile") == "core" or full) and not p.get("optional"):
+                rows.append(("plugin", p["id"], "missing", "rerun the installer"))
+            continue
+        key, entry = by_name[p["id"]]
+        have = entry.get("version", "?")
+        if p["id"].endswith("@" + kit["name"]):
+            want = read_json(KIT / "plugins" / p["id"].split("@")[0] / ".claude-plugin" / "plugin.json", {}).get("version")
+            rows.append(("plugin", key, "ok" if have == want else "outdated",
+                         have if have == want else f"installed {have}; repo has {want}"))
+            cache = home / "plugins" / "cache" / kit["name"] / p["id"].split("@")[0]
+            stale = sorted(d.name for d in cache.iterdir() if d.is_dir() and d.name != have) if cache.is_dir() else []
+            if stale:
+                rows.append(("cache", key, "info", "old versions left for Claude Code to prune: " + ", ".join(stale)))
+        elif have != p["tested_version"]:
+            rows.append(("plugin", key, "drift", f"installed {have}; tested {p['tested_version']}"))
+        else:
+            rows.append(("plugin", key, "ok", have))
+
+    for name in kit["skills"]:
+        state, detail = copy_state(name, KIT / "skills" / name, home / "skills" / name, name in record.get("skills", []), True)
+        rows.append(("skill", name, state, detail))
+    for name in kit["agents"]:
+        state, detail = copy_state(name, KIT / "agents" / name, home / "agents" / name, name in record.get("agents", []), False)
+        rows.append(("agent", name, state, detail))
+
+    servers = (read_json(home.parent / ".claude.json", {}) or {}).get("mcpServers", {})
+    spec = rea_spec(kit["mcp"])
+    current = servers.get("rea")
+    if not current:
+        rows.append(("mcp", "rea", "missing", "rerun the installer (or it was skipped with --skip-mcp)"))
+    elif (current.get("command"), current.get("args")) == (spec["command"], spec["args"]):
+        rows.append(("mcp", "rea", "ok", kit["mcp"]["rea"]["args"][1]))
+    elif mcp_outdated("rea", spec, record, home):
+        rows.append(("mcp", "rea", "outdated", f"MOAA's setup at another pin; repo pins {kit['mcp']['rea']['args'][1]}"))
+    else:
+        rows.append(("mcp", "rea", "modified", "your own setup; the installer leaves it alone"))
+    if "ansys" in servers:
+        ours = str(home / "kit-tools" / "ansys-mcp-server").replace("\\", "/") in servers["ansys"].get("command", "")
+        rows.append(("mcp", "ansys", "ok" if ours else "modified",
+                     "" if ours else "configured outside MOAA; the installer leaves it alone"))
+    return rows
+
+
+def status(args):
+    home = claude_home()
+    kit = read_json(KIT / "config" / "kit.json", None)
+    rows = status_rows(home, kit)
+    counts = {}
+    for kind, name, state, detail in rows:
+        counts[state] = counts.get(state, 0) + 1
+        if state != "ok" or kind != "plugin" or name.endswith("@" + kit["name"]) or args.verbose:
+            print(f"  {state:<9} {kind:<7} {name:<45} {detail}".rstrip())
+    print(f"[moaa] {home}: " + ", ".join(f"{n} {s}" for s, n in sorted(counts.items())))
+    if counts.get("drift"):
+        print("[moaa] drift is informational: upstream-installed plugins move on their own; "
+              "`python scripts/sync_catalog.py` re-pins the catalog to what is installed")
+    return 1 if counts.get("missing") or counts.get("outdated") else 0
+
+
+def doctor_checks():
+    """(label, argv, cwd) for every check the release routine runs before a commit."""
+    py = sys.executable
+    plugins = KIT / "plugins"
+    checks = [("installer tests", [py, "-m", "unittest", "discover", "-s", "tests"], KIT)]
+    for name in ("specialist-council", "agent-arena-mode", "war-room"):
+        checks.append((f"{name} tests", [py, "-m", "unittest", "discover", "-s", "tests"], plugins / name))
+    checks += [
+        ("war-room bus test", [py, "tests/test_bus.py"], plugins / "war-room"),
+        ("MODELS.md matches the plugins", [py, "scripts/models_doc.py", "--check"], KIT),
+        ("catalog matches installed plugins", [py, "scripts/sync_catalog.py", "--check"], KIT),
+        ("public-release scan", [py, "scripts/scan.py", "--public"], KIT),
+        ("validate marketplace", ["claude", "plugin", "validate", "."], KIT),
+    ]
+    checks += [(f"validate {d.name}", ["claude", "plugin", "validate", str(d)], KIT)
+               for d in sorted(plugins.iterdir()) if (d / ".claude-plugin" / "plugin.json").is_file()]
+    return checks
+
+
+def doctor(args):
+    failed = []
+    claude = shutil.which("claude")
+    for label, argv, cwd in doctor_checks():
+        if argv[0] == "claude":
+            if not claude:
+                print(f"  SKIP  {label} (claude not on PATH)")
+                continue
+            argv = [claude] + argv[1:]
+        started = time.time()
+        result = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        ok = result.returncode == 0
+        print(f"  {'PASS' if ok else 'FAIL'}  {label} ({time.time() - started:.1f}s)", flush=True)
+        if not ok:
+            failed.append(label)
+            tail = (result.stdout + result.stderr).strip().splitlines()[-15:]
+            print("        " + "\n        ".join(tail))
+    print(f"[moaa] doctor: {'all checks pass' if not failed else 'failed: ' + ', '.join(failed)}")
+    return 1 if failed else 0
 
 
 def uninstall(args):
@@ -400,7 +549,15 @@ def main(argv=None):
     p.add_argument("--skip-ansys", action="store_true")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--uninstall", action="store_true")
+    p.add_argument("--status", action="store_true",
+                   help="compare what is installed with this repo (changes nothing; exit 1 if anything is missing or outdated)")
+    p.add_argument("--verbose", action="store_true", help="with --status: also list third-party plugins that match")
+    p.add_argument("--doctor", action="store_true", help="run every pre-commit check of the release routine")
     a = p.parse_args(argv)
+    if a.status:
+        return status(a)
+    if a.doctor:
+        return doctor(a)
     return uninstall(a) if a.uninstall else install(a)
 
 

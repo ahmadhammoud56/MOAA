@@ -74,6 +74,41 @@ class Demo(Sandbox):
         self.assertTrue(all(w["status"] == "busy" for w in warroom.state(run)["workers"]))
 
 
+class SpendCap(Sandbox):
+    def test_spend_banks_restarted_session_counters(self):
+        run = warroom.make_demo(drive=False)
+        bus = warroom.open_bus(run)
+        rows = [("lead", 1, .5), ("lead", 2, 1.0), ("lead", 3, .2), ("scout", 1, .1)]  # lead resumed after $1.00
+        bus.db.executemany("INSERT INTO meter_log(agent, ts, cost_usd) VALUES (?,?,?)", rows)
+        self.assertAlmostEqual(warroom.run_spend(bus), 1.0 + .2 + .1)
+        self.assertIsNone(warroom.over_cap(bus, {"max_cost_usd": 0}))
+        self.assertIsNone(warroom.over_cap(bus, {"max_cost_usd": 5}))
+        self.assertIn("spend cap reached", warroom.over_cap(bus, {"max_cost_usd": 1.2}))
+
+    def test_demo_stops_at_its_cap_and_resume_needs_a_new_one(self):
+        run = warroom.make_demo(drive=False, max_cost=0.05)
+        bus, mem, rng = warroom.open_bus(run, "conductor"), {}, random.Random(7)
+        with mock.patch.object(warroom.time, "time", side_effect=Demo.clock()):
+            for _ in range(600):
+                if warroom.demo_tick(bus, mem, rng) == "stopped":
+                    break
+        self.assertEqual(bus.control("run"), "stop")
+        self.assertFalse(bus.control("finished"))
+        self.assertGreaterEqual(warroom.run_spend(bus), 0.05)
+        stops = [e["detail"] for e in warroom.state(run)["events"] if e["kind"] == "stop"]
+        self.assertTrue(stops and stops[-1].startswith("spend cap reached"))
+        with self.assertRaises(SystemExit):  # still at the cap: refused without a new cap
+            warroom.cmd_resume(warroom.argparse.Namespace(run=run, workers=[], max_cost=None))
+        warroom.cmd_resume(warroom.argparse.Namespace(run=run, workers=[], max_cost=10.0))
+        self.assertIsNone(bus.control("run"))
+        self.assertEqual(json.loads(bus.control("budget"))["max_cost_usd"], 10.0)
+
+    def test_cap_is_a_validated_setting(self):
+        self.assertEqual(warroom.validate_settings({"max_cost_usd": "25"}), {"max_cost_usd": 25.0})
+        with self.assertRaises(ValueError):
+            warroom.validate_settings({"max_cost_usd": -1})
+
+
 class Consoles(unittest.TestCase):
     def test_console_status(self):
         cs = warroom.console_status

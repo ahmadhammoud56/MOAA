@@ -439,16 +439,22 @@ const SVGNS = "http://www.w3.org/2000/svg";
 let last = null, fetchedAt = 0, serverSkew = 0, lastMsgId = null, lastEventTs = 0, prevStatus = {}, packets = [], edgePaths = {};
 let view = "flow", knownWorkers = null, booting = {}, tokPos = {}, prevSession = {};
 
-async function post(action, confirmText) {
+async function post(action, confirmText, body = {}) {
   if (confirmText && !confirm(confirmText)) return null;
-  const r = await fetch(`${API}/${action}`, {method: "POST", headers: {"X-War-Room-Token": TOKEN, "Content-Type": "application/json"}, body: "{}"});
+  const r = await fetch(`${API}/${action}`, {method: "POST", headers: {"X-War-Room-Token": TOKEN, "Content-Type": "application/json"}, body: JSON.stringify(body)});
   const out = await r.json().catch(() => ({}));
-  if (!r.ok) alert(`${action}: ${out.error || r.status}`);
+  if (!r.ok && !out.cap) alert(`${action}: ${out.error || r.status}`);
   tick(); return out;
 }
 $("stop").onclick = () => post("stop", "Stop every worker in this run? Conversations are kept and can be resumed.");
 $("pause").onclick = () => post(last?.control?.claims === "paused" ? "unpause" : "pause");
-$("resume").onclick = () => post("resume", "Resume every worker with its conversation?");
+$("resume").onclick = async () => {
+  const out = await post("resume", "Resume every worker with its conversation?");
+  if (!out || !out.cap) return;  /* stopped at the spend cap: resuming needs a higher cap */
+  const v = prompt(`${out.error}.
+New spend cap in USD (0 = no cap):`);
+  if (v != null && v.trim() !== "" && isFinite(+v) && +v >= 0) post("resume", null, {max_cost: +v});
+};
 $("shutdown").onclick = () => post("finish", "Finish the run now? Workers stop, the cost is recorded, sessions and fully merged worktrees are cleaned up.");
 $("integrate").onclick = async () => {
   const out = await post("integrate", "Merge the run's branch into the project's current branch? (--no-ff, nothing is pushed)");
@@ -924,14 +930,14 @@ function drawCost(st, fresh) {
   const hoursTo = thr => ended || cur == null ? null : cur >= thr ? 0 : rate > 0.05 ? (thr - cur) / rate : null;
   const spend = u.workers.map(w => { const s = u.series[w.name] || [], last_ = s.filter(p => p[3] != null).pop(), past = s.filter(p => p[3] != null && p[0] <= u.now - 300).pop() || s.find(p => p[3] != null && p[0] <= u.now - 60);
     return {...w, cost: last_ ? last_[3] : 0, ctx: last_ ? last_[2] : null, burn: last_ && past ? (last_[3] - past[3]) / Math.max(1, (last_[0] - past[0]) / 60) : null}; });
-  const total = spend.reduce((a, w) => a + (w.cost || 0), 0);
+  const total = REPLAY || u.spent == null ? spend.reduce((a, w) => a + (w.cost || 0), 0) : u.spent;  /* spent counts resumed sessions too */
   const x0 = u.started, tStop = hoursTo(stopAt), x1 = Math.max(st.control.finished ? Math.min(u.now, +st.control.finished) : u.now, x0 + 300);
   const projEnd = tStop != null && tStop > 0 && tStop < 6 ? Math.min(u.now + tStop * 3600, x1 + (x1 - x0)) : null;
   const xr = projEnd ? Math.max(x1, projEnd) : x1;
   const cal = u.calibration || [], cmax = Math.max(1, ...cal.map(r => r.per_worker_task || 0));
   const med = cal.length ? [...cal.map(r => r.per_worker_task)].sort((a, z) => a - z)[Math.floor(cal.length / 2)] : null;
   setHTML($("pane"), `<div class="cost">
-    <div class="tiles"><div>Spend<b>${money(total)}</b><small>statusline estimate, all workers</small></div>
+    <div class="tiles"><div>Spend<b>${money(total)}</b><small>${b.max_cost_usd ? `of ${money(b.max_cost_usd)} cap · ` : ""}statusline estimate, all workers</small></div>
       <div>5-hour window<b>${cur == null ? "--" : Math.round(cur) + "%"}</b><small>${ended || (rate == null ? "burn rate unknown" : `${rate >= 0 ? "+" : ""}${rate.toFixed(1)} pts / hour`)}</small></div>
       <div>Pause claims<b>${esc(ended || eta(hoursTo(pauseAt)))}</b><small>at ${pauseAt}% of the window</small></div>
       <div>Stop all<b>${esc(ended || eta(tStop))}</b><small>at ${stopAt}% · conversations kept</small></div></div>

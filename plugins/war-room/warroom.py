@@ -55,9 +55,10 @@ FALLBACK_MODELS = {"haiku": "claude-haiku-5-5", "sonnet": "claude-sonnet-5-5", "
 EFFORTS = ("low", "medium", "high", "xhigh", "max")
 THEMES = ("dark", "light", "system")
 HARD_DEFAULTS = {"max_workers": 3, "pause_at": 85, "stop_at": 95, "max_hours": 4, "wait_seconds": 570,
-                 "gates": True, "gate_score": 85, "max_fails": 2, "auto_finish": True, "auto_integrate": False}
+                 "gates": True, "gate_score": 85, "max_fails": 2, "auto_finish": True, "auto_integrate": False,
+                 "max_cost_usd": 0.0}
 SETTING_LIMITS = {"max_workers": (1, 8), "pause_at": (10, 99), "stop_at": (11, 100), "max_hours": (0.25, 72),
-                  "wait_seconds": (60, 7200), "gate_score": (50, 100), "max_fails": (1, 5)}
+                  "wait_seconds": (60, 7200), "gate_score": (50, 100), "max_fails": (1, 5), "max_cost_usd": (0, 100000)}
 DEFAULT_PER_WORKER_TASK = 12 * 70_000  # tokens processed per worker per task before any run is measured
 IS_WIN = os.name == "nt"
 NL = "\n"
@@ -428,7 +429,8 @@ def cmd_plan(a):
               f"{'yes' if w['write'] else 'no':<7}{extras}")
     b = resolved["budget"]
     print(f"\ntasks seeded: {len(resolved['tasks'])}   budget: pause claims at {b['pause_at']}% / stop at {b['stop_at']}% "
-          f"of the 5-hour window, max {b['max_hours']} h")
+          f"of the 5-hour window, max {b['max_hours']} h, "
+          + (f"spend cap ${b['max_cost_usd']:.2f}" if b.get("max_cost_usd") else "no spend cap"))
     basis = f"calibrated on {n_runs} measured run(s)" if n_runs else "uncalibrated: no measured runs yet"
     print(f"estimated tokens processed: {lo/1e6:.1f}M - {hi/1e6:.1f}M (mostly cache reads; {basis})")
     print(f"review gates: {'on' if b['gates'] else 'off'} (pass score {b['gate_score']}, arbitration after "
@@ -480,6 +482,63 @@ splitting work), gate 1 (or omitted) for work that must be reviewed.
 - Keep the team as small as the job allows: every worker costs real usage.
 
 Specialist Council roles: {roles}"""
+
+
+# Starting plans for common team shapes: the app's New run editor and `warroom.py template` fill a draft from these at
+# no token cost. Three workers each, so they fit the default max_workers; the editor can add more.
+TEMPLATES = {
+    "feature-team": {
+        "label": "Feature team", "summary": "plan, build, test-review one feature",
+        "workers": [{"name": "lead", "role": "project-planner", "brief": "Split the goal into reviewable tasks and keep the board moving."},
+                    {"name": "forge", "role": "builder", "brief": "Implement the tasks in your worktree, with tests."},
+                    {"name": "judge", "role": "test-engineer", "model": "opus", "brief": "Review each commit: run the tests, check edge cases, score it."}],
+        "tasks": [{"title": "Break the goal into tasks and assign them", "assignee": "lead", "gate": 0},
+                  {"title": "Implement the core change with tests", "assignee": "forge"}]},
+    "bug-hunt": {
+        "label": "Bug hunt", "summary": "reproduce, fix and verify a defect",
+        "workers": [{"name": "hunter", "role": "debugger", "brief": "Reproduce the defect, find the root cause, fix it with a regression test."},
+                    {"name": "scout", "role": "scout", "brief": "Gather logs, recent changes and similar reports for the hunter."},
+                    {"name": "judge", "role": "challenger", "model": "opus", "brief": "Try to break each fix; reject symptom patches."}],
+        "tasks": [{"title": "Collect evidence: logs, recent commits, reproduction steps", "assignee": "scout", "gate": 0},
+                  {"title": "Reproduce the defect and fix its root cause with a regression test", "assignee": "hunter"}]},
+    "review-swarm": {
+        "label": "Review swarm", "summary": "three read-only reviewers audit the code",
+        "workers": [{"name": "sec", "role": "security-reviewer", "brief": "Audit trust boundaries, secrets and injection risks."},
+                    {"name": "perf", "role": "reliability-engineer", "brief": "Audit failure handling, retries, resource use and recovery."},
+                    {"name": "tests", "role": "test-engineer", "brief": "Find untested behaviour and risky gaps in coverage."}],
+        "tasks": [{"title": "Security review: report findings with file:line and severity", "assignee": "sec", "gate": 0},
+                  {"title": "Reliability review: report findings with file:line and severity", "assignee": "perf", "gate": 0},
+                  {"title": "Coverage review: report findings with file:line and severity", "assignee": "tests", "gate": 0}]},
+    "research-fanout": {
+        "label": "Research fan-out", "summary": "a researcher, a writer, a fact-checker",
+        "workers": [{"name": "reader", "role": "literature-reviewer", "brief": "Find and read primary sources; post claims, evidence and disagreements."},
+                    {"name": "writer", "role": "editor", "brief": "Write the synthesis into the repo as Markdown, citing every source."},
+                    {"name": "checker", "role": "peer-reviewer", "model": "opus", "brief": "Check every claim in the synthesis against its source; score it."}],
+        "tasks": [{"title": "Collect and summarise sources, noting where they disagree", "assignee": "reader", "gate": 0},
+                  {"title": "Write the synthesis document", "assignee": "writer"}]},
+    "refactor": {
+        "label": "Refactor", "summary": "behaviour-preserving restructure under test",
+        "workers": [{"name": "shaper", "role": "refactoring-engineer", "brief": "Restructure in small commits that keep behaviour identical."},
+                    {"name": "guard", "role": "test-engineer", "brief": "Pin current behaviour with characterisation tests before changes land."},
+                    {"name": "judge", "role": "challenger", "model": "opus", "brief": "Reject any commit that changes behaviour or weakens tests."}],
+        "tasks": [{"title": "Add characterisation tests for the code to be refactored", "assignee": "guard"},
+                  {"title": "Refactor in small, behaviour-preserving steps", "assignee": "shaper"}]},
+}
+
+
+def template_plan(name, project="", goal=""):
+    """A draft plan from a template, shaped like the planner's output (run it through clean_plan to save it)."""
+    t = TEMPLATES.get(name) or die(f"unknown template {name!r}; one of: {', '.join(TEMPLATES)}")
+    return {"name": name, "goal": goal, "project": project,
+            "workers": [dict(w) for w in t["workers"]], "tasks": [dict(x) for x in t["tasks"]]}
+
+
+def cmd_template(a):
+    if not a.name:
+        for k, t in TEMPLATES.items():
+            print(f"{k:<16} {len(t['workers'])} workers  {t['summary']}")
+        return
+    print(json.dumps(template_plan(a.name, a.project or ".", a.goal or ""), indent=2))
 
 
 def _text(v, n):
@@ -946,6 +1005,13 @@ def resume_all(bus, names=None):
 
 def cmd_resume(a):
     bus = open_bus(a.run)
+    if a.max_cost is not None:  # a run stopped at its spend cap would stop again at once without a new cap
+        budget = json.loads(bus.control("budget") or "{}")
+        budget["max_cost_usd"] = a.max_cost
+        bus.control("budget", json.dumps(budget))
+        bus.event("budget", f"spend cap set to ${a.max_cost:.2f}" if a.max_cost else "spend cap removed")
+    elif over_cap(bus, json.loads(bus.control("budget") or "{}")):
+        die("the run is at its spend cap; resume with --max-cost USD (a higher cap, or 0 for none)")
     bus.control("run", clear=True)
     resume_all(bus, a.workers)
 
@@ -990,6 +1056,29 @@ def decide(five_pct, budget, paused, stopped, limit_hit, paused_by_guard=True):
     if paused and paused_by_guard and five_pct is not None and five_pct < budget["pause_at"] - 10:
         return "unpause"
     return None
+
+
+def run_spend(bus):
+    """API-equivalent USD the run has spent: each worker's statusline cost, summed over its sessions. A resumed session's
+    counter restarts at zero, so a drop banks the previous peak."""
+    # ponytail: meter_log samples every 20 s, so up to 20 s of spend before a restart is missed; log every sample if
+    # caps ever need to be exact.
+    banked, last = 0.0, {}
+    for r in bus.db.execute("SELECT agent, cost_usd FROM meter_log WHERE cost_usd IS NOT NULL ORDER BY ts, id"):
+        if r["cost_usd"] < last.get(r["agent"], 0.0):
+            banked += last[r["agent"]]
+        last[r["agent"]] = r["cost_usd"]
+    for r in bus.db.execute("SELECT agent, cost_usd FROM meter WHERE cost_usd IS NOT NULL"):  # newer than the log
+        if r["cost_usd"] >= last.get(r["agent"], 0.0):
+            last[r["agent"]] = r["cost_usd"]
+    return banked + sum(last.values())
+
+
+def over_cap(bus, budget):
+    """The stop reason when the run has spent its max_cost_usd (0 or absent: no cap), else None."""
+    cap = float(budget.get("max_cost_usd") or 0)
+    spent = run_spend(bus) if cap else 0
+    return f"spend cap reached: ${spent:.2f} of ${cap:.2f}" if cap and spent >= cap else None
 
 
 LIMIT_RE = re.compile(r"You've hit your (session|weekly|Opus|Sonnet|Fable)? ?limit")
@@ -1039,6 +1128,10 @@ def watch_tick(bus, run, schedule, last_wake):
     if not stopped and time.time() - started > budget["max_hours"] * 3600:
         stop_all(bus, f"max_hours={budget['max_hours']} reached")
         return "max hours reached: stopped"
+    capped = None if stopped else over_cap(bus, budget)
+    if capped:  # no resume is scheduled: raising the cap is the user's call (warroom.py resume RUN --max-cost USD)
+        stop_all(bus, capped)
+        return capped
     if action == "pause":
         bus.control("claims", "paused")
         bus.control("paused_by", "guard")
@@ -1532,7 +1625,7 @@ def usage(run):
         series.setdefault(r["agent"], []).append([r["t"], r["f"], r["c"], r["d"]])
     cal = (load_json(CALIBRATION, {}) or {}).get("runs", {})
     return {"now": time.time(), "started": started, "step": step, "series": series,
-            "budget": json.loads(bus.control("budget") or "{}"),
+            "budget": json.loads(bus.control("budget") or "{}"), "spent": run_spend(bus),
             "workers": [{"name": w["name"], "model": w["model"]} for w in bus.workers()],
             "calibration": sorted(({"run": k, **{f: v.get(f) for f in ("total", "api_calls", "workers", "tasks",
                                                                       "per_worker_task", "measured")}}
@@ -1747,7 +1840,7 @@ def cmd_hub(a):
                 shipped = load_json(os.path.join(HERE, "profiles.json"))["kinds"]
                 return self.send(200, {"war_mode": bool(cfg.get("enabled")), "settings": settings(),
                                        "defaults": HARD_DEFAULTS, "limits": SETTING_LIMITS, "runs": runs_summary(),
-                                       "meter": last_meter(), "warning": WARNING, "now": time.time(), "ui": ui_prefs(),
+                                       "meter": last_meter(), "warning": WARNING, "now": time.time(), "ui": ui_prefs(), "templates": TEMPLATES,
                                        "calibration": dict(zip(("per_worker_task", "runs"),
                                                                per_worker_task(load_json(CALIBRATION, {})))),
                                        "kinds": {k: {"plugins": v["plugins"], "shipped": shipped[k]["plugins"],
@@ -1897,7 +1990,11 @@ def cmd_hub(a):
                 elif action in ("finish", "shutdown"):
                     threading.Thread(target=shutdown, args=(run, f"{action} from the app", False), daemon=True).start()
                 elif action == "resume":
-                    threading.Thread(target=cmd_resume, args=(argparse.Namespace(run=run, workers=[]),), daemon=True).start()
+                    cap = data.get("max_cost")
+                    ns = argparse.Namespace(run=run, workers=[], max_cost=None if cap is None else float(cap))
+                    if ns.max_cost is None and over_cap(bus, json.loads(bus.control("budget") or "{}")):
+                        return self.send(409, {"error": "the run is at its spend cap; raise it to resume", "cap": True})
+                    threading.Thread(target=cmd_resume, args=(ns,), daemon=True).start()
                 else:
                     return self.send(404, {"error": f"unknown action {action}"})
                 return self.send(200, {"ok": True})
@@ -2200,8 +2297,9 @@ DEMO_TOOLS = {"planner": ["Read src/api/middleware.py", "Grep RateLimit", "Glob 
 DEMO_COST = {"haiku": .004, "sonnet": .018, "opus": .06, "fable": .05}
 
 
-def make_demo(drive=True, speed=1.0):
+def make_demo(drive=True, speed=1.0, max_cost=None):
     """Create a demo run (it looks live in the app) and start its driver in the background unless drive=False."""
+    budget = dict(settings(), **({} if max_cost is None else {"max_cost_usd": max_cost}))
     run = f"demo-{time.strftime('%Y%m%d-%H%M%S')}"
     while os.path.exists(os.path.join(RUNS, run)):
         run += "x"
@@ -2209,10 +2307,10 @@ def make_demo(drive=True, speed=1.0):
     workers = [{"name": n, "role": r, "kind": k, "model": models.get(t, FALLBACK_MODELS[t]), "effort": e, "write": k == "builder",
                 "brief": "", "plugins": kinds[k]["plugins"], "plugin_dirs": [], "mcp": []} for n, r, k, t, e in DEMO_ROSTER]
     save_json(os.path.join(RUNS, run, "plan.json"), {"name": "demo", "goal": DEMO_GOAL, "project": "(simulated project)",
-                                                     "worktrees": "", "workers": workers, "tasks": [], "budget": settings(), "demo": True})
+                                                     "worktrees": "", "workers": workers, "tasks": [], "budget": budget, "demo": True})
     bus = open_bus(run)
     for k, v in (("demo", 1), ("started", time.time()), ("run_id", run), ("project", "(simulated project)"),
-                 ("budget", json.dumps(settings())),
+                 ("budget", json.dumps(budget)),
                  ("integration", json.dumps({"path": "", "branch": f"war-room/{run}", "base": secrets.token_hex(20)}))):
         bus.control(k, v)
     for w in workers:
@@ -2265,6 +2363,10 @@ def demo_tick(bus, mem, rng):
                 wb.inbox()
         wb.put_meter(five_pct=round(five, 1), five_reset=time.time() + 3 * 3600, week_pct=round(34 + step * .05, 1),
                      context_pct=round(me["ctx"], 1), cost_usd=round(me["cost"], 4))
+    capped = over_cap(bus, json.loads(bus.control("budget") or "{}"))
+    if capped:  # the demo honours the spend cap like the real conductor
+        stop_all(bus, capped)
+        return "stopped"
     if step == 30:
         lead = mem["lead"]["bus"]
         for title, who in DEMO_LATER:
@@ -2324,7 +2426,7 @@ def demo_report(bus):
 
 
 def cmd_demo(a):
-    run = make_demo(speed=a.speed)
+    run = make_demo(speed=a.speed, max_cost=a.max_cost)
     url = ensure_hub() + f"run/{run}"
     if not a.no_open:
         open_app(url)
@@ -2386,7 +2488,9 @@ def main(argv=None):
     s = sub.add_parser("pause"); s.add_argument("run"); s.set_defaults(f=lambda a: cmd_pause(a, True))
     s = sub.add_parser("unpause"); s.add_argument("run"); s.set_defaults(f=lambda a: cmd_pause(a, False))
     s = sub.add_parser("stop"); s.add_argument("run"); s.set_defaults(f=cmd_stop)
-    s = sub.add_parser("resume"); s.add_argument("run"); s.add_argument("workers", nargs="*"); s.set_defaults(f=cmd_resume)
+    s = sub.add_parser("resume"); s.add_argument("run"); s.add_argument("workers", nargs="*")
+    s.add_argument("--max-cost", type=float, help="new spend cap in USD (0 = none), for a run stopped at its cap")
+    s.set_defaults(f=cmd_resume)
     s = sub.add_parser("watch"); s.add_argument("run"); s.add_argument("--schedule", action="store_true")
     s.add_argument("--interval", type=int, default=15); s.add_argument("--once", action="store_true"); s.set_defaults(f=cmd_watch)
     s = sub.add_parser("tile"); s.add_argument("run"); s.set_defaults(f=cmd_tile)
@@ -2395,6 +2499,8 @@ def main(argv=None):
                                                                         help="use the default browser, not an app window")
     s.set_defaults(f=cmd_serve)
     s = sub.add_parser("list"); s.set_defaults(f=cmd_list)
+    s = sub.add_parser("template", help="list team templates, or print one as a plan file for `plan`")
+    s.add_argument("name", nargs="?"); s.add_argument("--project"); s.add_argument("--goal"); s.set_defaults(f=cmd_template)
     s = sub.add_parser("approve"); s.add_argument("run"); s.add_argument("task", type=int)
     s.add_argument("--reject", metavar="NOTES"); s.set_defaults(f=cmd_approve)
     s = sub.add_parser("merge"); s.add_argument("run"); s.set_defaults(f=cmd_merge)
@@ -2412,7 +2518,9 @@ def main(argv=None):
     s.set_defaults(f=cmd_app)
     s = sub.add_parser("hub"); s.add_argument("--port", type=int, default=0); s.set_defaults(f=cmd_hub)
     s = sub.add_parser("demo", help="a simulated run in the app: no Claude sessions, no tokens")
-    s.add_argument("--speed", type=float, default=1.0); s.add_argument("--no-open", action="store_true"); s.set_defaults(f=cmd_demo)
+    s.add_argument("--speed", type=float, default=1.0); s.add_argument("--no-open", action="store_true")
+    s.add_argument("--max-cost", type=float, help="spend cap in USD for this demo (a full demo simulates about $2-3; try 1)")
+    s.set_defaults(f=cmd_demo)
     s = sub.add_parser("demo-drive"); s.add_argument("run"); s.add_argument("--speed", type=float, default=1.0)
     s.add_argument("--seed", type=int); s.set_defaults(f=cmd_demo_drive)
     a = p.parse_args(argv)

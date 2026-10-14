@@ -133,6 +133,42 @@ class ReadmePluginListTests(unittest.TestCase):
         self.assertEqual(readme.count("@moaa` |"), len(market["plugins"]))
 
 
+class StatusTests(unittest.TestCase):
+    def test_status_tells_outdated_drift_modified_and_missing_apart(self):
+        import json, shutil, tempfile
+        kit = install.read_json(install.KIT / "config" / "kit.json", None)
+        home = Path(tempfile.mkdtemp()) / ".claude"
+        (home / "plugins" / "cache" / "moaa" / "war-room" / "0.0.9").mkdir(parents=True)
+        third = next(p for p in kit["plugins"] if p["profile"] == "full" and not p["id"].endswith("@moaa"))
+        (home / "plugins" / "installed_plugins.json").write_text(json.dumps({"plugins": {
+            "war-room@moaa": [{"version": "0.0.1"}], third["id"]: [{"version": "0.0.0-other"}]}}))
+        (home / ".moaa-manifest.json").write_text(json.dumps({"kit_version": "0.0.1", "skills": ["agent-teams"]}))
+        shutil.copytree(install.KIT / "skills" / "path-safety", home / "skills" / "path-safety")
+        shutil.copytree(install.KIT / "skills" / "agent-teams", home / "skills" / "agent-teams")
+        (home / "skills" / "agent-teams" / "SKILL.md").write_text("my edits")
+        old = install.rea_spec(kit["mcp"])
+        old["args"] = [a.replace(kit["mcp"]["rea"]["args"][1], "rea-agents@1.0.0") for a in old["args"]]
+        (home.parent / ".claude.json").write_text(json.dumps({"mcpServers": {"rea": old}}))
+        rows = {(kind, name): (state, detail) for kind, name, state, detail in install.status_rows(home, kit)}
+        self.assertEqual(rows[("moaa", "kit")][0], "outdated")
+        self.assertEqual(rows[("plugin", "war-room@moaa")][0], "outdated")
+        self.assertIn("0.0.9", rows[("cache", "war-room@moaa")][1])
+        self.assertEqual(rows[("plugin", third["id"])][0], "drift")
+        self.assertEqual(rows[("plugin", "specialist-council@moaa")][0], "missing")  # core, absent
+        self.assertEqual(rows[("skill", "path-safety")][0], "ok")
+        self.assertEqual(rows[("skill", "agent-teams")], ("modified", "edited; MOAA recorded it, so the installer will overwrite it"))
+        self.assertEqual(rows[("skill", "networkx")][0], "missing")
+        self.assertEqual(rows[("mcp", "rea")][0], "outdated")
+        self.assertTrue(any(k == "plugin" and v[0] == "missing" and k2 != "specialist-council@moaa"
+                            for (k, k2), v in rows.items()))  # a full install was inferred, so other full plugins count
+
+    def test_doctor_covers_every_suite_and_plugin(self):
+        labels = [label for label, _, _ in install.doctor_checks()]
+        for name in ("installer tests", "war-room bus test", "public-release scan", "MODELS.md matches the plugins",
+                     "catalog matches installed plugins", "validate marketplace", "validate war-room"):
+            self.assertIn(name, labels)
+
+
 class ProfileTests(unittest.TestCase):
     def test_core_profile_is_small_and_contains_the_moaa_loop(self):
         kit = install.read_json(install.KIT / "config" / "kit.json", None)

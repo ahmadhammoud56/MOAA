@@ -101,6 +101,24 @@ class Plan(unittest.TestCase):
                 warroom.resolve_plan({"workers": workers}, PROFILES, idx, {})
 
 
+class Templates(unittest.TestCase):
+    def test_every_template_resolves_with_real_roles(self):
+        council = json.load(open(os.path.join(os.path.dirname(HERE), "specialist-council", "profile.json"), encoding="utf-8"))
+        idx = {"specialist-council@moaa": "/c", "agent-arena-mode@moaa": "/a"}
+        for name in warroom.TEMPLATES:
+            with self.subTest(template=name):
+                plan = warroom.clean_plan(warroom.template_plan(name, ".", "goal"), ".")
+                roles = {w["role"]: {"tier": "sonnet", "effort": "medium"} for w in plan["workers"]}
+                self.assertTrue(set(roles) <= set(council["roles"]), set(roles) - set(council["roles"]))
+                r = warroom.resolve_plan(plan, PROFILES, idx, {}, role_models=roles)
+                names = {w["name"] for w in r["workers"]}
+                self.assertTrue(all(t["assignee"] in names for t in plan["tasks"]))
+                if any(w["write"] for w in r["workers"]):  # whenever a worker writes, someone reviews
+                    self.assertTrue(any(w["kind"] == "reviewer" for w in r["workers"]))
+        with self.assertRaises(SystemExit):
+            warroom.template_plan("nope")
+
+
 class Hooks(unittest.TestCase):
     def setUp(self):
         self.db = os.path.join(tempfile.mkdtemp(), "bus.sqlite3")
