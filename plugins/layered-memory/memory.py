@@ -69,7 +69,12 @@ SECRETS = [  # redacted before anything is stored
     re.compile(r"\bxox[abpr]-[A-Za-z0-9\-]{10,}"),
     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----"),
     re.compile(r"(?i)\b(bearer)\s+[A-Za-z0-9._\-]{20,}"),
-    re.compile(r"(?i)\b(password|passwd|secret|api[_-]?key|token)\s*[:=]\s*\S{6,}"),
+    re.compile(r"(?i)[\"']?[\w.\-]*?(password|passwd|pwd|passphrase|secret|client[_-]?secret|api[_-]?key|access[_-]?key|"
+               r"secret[_-]?access[_-]?key|access[_-]?token|auth[_-]?token|refresh[_-]?token|token)[\"']?\s*[:=]\s*"
+               r"[\"']?[^\s\"',}]{6,}"),
+    re.compile(r"(?i)\b(password|passphrase)\s+(is|was|=)\s+\S{4,}"),
+    re.compile(r"\beyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{5,}"),  # JWT
+    re.compile(r"(?i)\b([a-z][a-z0-9+.\-]*://)[^/\s:@]+:[^/\s@]+@"),  # credentials inside a URL
 ]
 TAGS = re.compile(r"<(system-reminder|command-[a-z]+|local-command-[a-z]+)>[\s\S]*?</\1>")
 
@@ -89,6 +94,8 @@ def connect():
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA journal_mode=WAL")
     db.executescript(SCHEMA)
+    if "consolidated_chars" not in {r[1] for r in db.execute("PRAGMA table_info(sessions)")}:
+        db.execute("ALTER TABLE sessions ADD COLUMN consolidated_chars INTEGER")  # schema of 0.1.0 before review
     return db
 
 
@@ -235,15 +242,14 @@ def context(db, project, budget):
 # ---------------------------------------------------------------- L1-L3: consolidation
 PROMPT = """You maintain a layered long-term memory for a coding assistant. From the new conversation below, extract only \
 what will still matter in later sessions. Reply with one JSON object and nothing else:
-{{"atoms": [{{"kind": "fact|preference|constraint|event", "text": "one self-contained sentence", "global": false, \
+{{"atoms": [{{"kind": "fact|preference|constraint|event", "text": "one self-contained sentence", \
 "supersedes": [ids of existing notes this replaces]}}],
  "scenes": [{{"title": "short topic name", "body": "the whole current state of that topic, max 120 words"}}],
  "profile": [{{"key": "short trait name", "text": "stable trait or way of working of the user"}}]}}
 
 Rules:
 - atoms: decisions, requirements, conventions, preferences, open problems, notable events. Not chit-chat, not code, \
-not anything already in the existing notes unless it changed (then supersede the old id). "global": true only for \
-things true across all projects. At most 12.
+not anything already in the existing notes unless it changed (then supersede the old id). At most 12.
 - scenes: rewrite a scene by reusing its exact title; add one only for a real ongoing topic of this project. At most 4.
 - profile: only traits stated or clearly shown by the user, never guesses. At most 3. Reuse a key to update it.
 - Never store secrets, credentials or personal data beyond what the user chose to share about how they work.
@@ -299,17 +305,20 @@ def clip(v, n):
     return redact(" ".join(str(v or "").split()))[:n]
 
 
-def apply(db, session, project, data):
-    """Write validated extraction results. Model output is untrusted: types, sizes and ids are all checked."""
+def apply(db, session, project, data, allow_global=False):
+    """Write validated extraction results. Model output is untrusted: types, sizes and ids are all checked, a note
+    can only supersede a live note of the same project, and only the user (`remember --global`) makes global notes,
+    so text in one project's transcript cannot plant notes that show up in every project."""
     now, added = time.time(), {"atoms": 0, "scenes": 0, "profile": 0, "superseded": 0}
-    live = {r[0] for r in db.execute("SELECT id FROM atoms WHERE (project=? OR project='') AND superseded_by IS NULL",
-                                     (project,))}
     with db:
+        db.execute("BEGIN IMMEDIATE")  # read the live set and write under one lock: two sessions may end at once
+        live = {r[0] for r in db.execute("SELECT id FROM atoms WHERE project=? AND superseded_by IS NULL", (project,))}
         for a in (data.get("atoms") or [])[:12]:
             if not isinstance(a, dict) or a.get("kind") not in KINDS or not clip(a.get("text"), 400):
                 continue
             cur = db.execute("INSERT INTO atoms(project, kind, text, session, created) VALUES (?,?,?,?,?)",
-                             ("" if a.get("global") is True else project, a["kind"], clip(a["text"], 400), session, now))
+                             ("" if allow_global and a.get("global") is True else project, a["kind"],
+                              clip(a["text"], 400), session, now))
             added["atoms"] += 1
             for old in a.get("supersedes") or []:
                 if isinstance(old, int) and old in live:
@@ -326,7 +335,7 @@ def apply(db, session, project, data):
                 db.execute("INSERT INTO profile(key, text, updated) VALUES (?,?,?) ON CONFLICT(key) DO UPDATE SET "
                            "text=excluded.text, updated=excluded.updated", (clip(p["key"], 60), clip(p["text"], 300), now))
                 added["profile"] += 1
-        db.execute("UPDATE sessions SET consolidated=? WHERE id=?", (now, session))
+        db.execute("UPDATE sessions SET consolidated=?, consolidated_chars=chars WHERE id=?", (now, session))
     return added
 
 
@@ -374,7 +383,8 @@ def hook(event, stdin=None):
         if not session or not transcript:
             return ""
         _, chars = ingest(db, session, project, transcript)
-        if cfg["auto"] and cfg["engine"] != "none" and chars >= cfg["min_chars"]:
+        done = db.execute("SELECT COALESCE(consolidated_chars, 0) FROM sessions WHERE id=?", (session,)).fetchone()[0]
+        if cfg["auto"] and cfg["engine"] != "none" and chars - done >= cfg["min_chars"]:  # a resume adds only its growth
             spawn([sys.executable, str(HERE / "memory.py"), "consolidate", "--session", session])
         return ""
     raise SystemExit(f"memory: unknown hook {event}")
@@ -383,9 +393,17 @@ def hook(event, stdin=None):
 def spawn(argv):
     """Detached background process: the session that ended does not wait for extraction."""
     log = open(data_dir() / "consolidate.log", "a", encoding="utf-8")
-    kw = {"creationflags": 0x08000000 | 0x00000200} if os.name == "nt" else {"start_new_session": True}
-    subprocess.Popen(argv, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
-                     env={**os.environ, CHILD: "1"}, **kw)
+    env = {**os.environ, CHILD: "1"}
+    if os.name != "nt":
+        subprocess.Popen(argv, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, env=env,
+                         start_new_session=True)
+        return
+    flags = 0x08000000 | 0x00000200  # CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP
+    try:  # outlive a job object that kills Claude Code's children on exit, where the job allows breaking away
+        subprocess.Popen(argv, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, env=env,
+                         creationflags=flags | 0x01000000)
+    except OSError:
+        subprocess.Popen(argv, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, env=env, creationflags=flags)
 
 
 # ---------------------------------------------------------------- CLI
@@ -427,7 +445,7 @@ def main(argv=None):
                              ("" if a.glob else proj(), a.kind, clip(a.text, 400), "manual", time.time()))
         print(f"remembered #{cur.lastrowid}")
     elif a.cmd == "scene":
-        apply(db, "manual", proj(), {"scenes": [{"title": a.title, "body": a.body}]})
+        apply(db, "manual", proj(), {"scenes": [{"title": a.title, "body": a.body}]}, allow_global=True)
         print("scene saved")
     elif a.cmd == "profile":
         apply(db, "manual", proj(), {"profile": [{"key": a.key, "text": a.text}]})
@@ -435,6 +453,7 @@ def main(argv=None):
     elif a.cmd == "forget":
         with db:
             if a.atom is not None:
+                db.execute("UPDATE atoms SET superseded_by=NULL WHERE superseded_by=?", (a.atom,))  # older ones return
                 n = db.execute("DELETE FROM atoms WHERE id=?", (a.atom,)).rowcount
             elif a.session:
                 n = db.execute("DELETE FROM l0 WHERE session=?", (a.session,)).rowcount

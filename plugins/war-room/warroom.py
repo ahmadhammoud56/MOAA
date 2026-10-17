@@ -895,11 +895,18 @@ def parse_verdict(answer):
 
 
 def crew_tick(bus, run):
-    """Give every idle crew worker its next task. Each task runs in a thread so the conductor keeps ticking."""
+    """Give every idle crew worker its next task. Each task runs in a thread so the conductor keeps ticking. A task a
+    crew worker holds with no live job here (its conductor died or was restarted) is reclaimed: the old member
+    process is killed and the task goes back on the board."""
     started = 0
     for w in bus.workers():
         if not is_crew(w) or (CREW_JOBS.get(w["name"]) and CREW_JOBS[w["name"]].is_alive()):
             continue
+        held = [r["id"] for r in bus.db.execute("SELECT id FROM tasks WHERE status='claimed' AND owner=?", (w["name"],))]
+        if held:
+            kill_crew_job(bus, w)
+            for tid in held:
+                requeue_crew_task(bus, w["name"], tid, "reclaimed: its job was no longer running")
         wb = bus_as(bus, w["name"])
         got = wb.claim_task()
         if not got.get("task"):
@@ -913,8 +920,28 @@ def crew_tick(bus, run):
     return started
 
 
-def reopen_crew_task(bus, task_id, why):
-    """Put a task a crew worker could not finish back on the board once; the second time, block it for the human."""
+def kill_crew_job(bus, w):
+    """Kill a crew worker's running member process, recorded in the bus so a stop from another process finds it."""
+    job = json.loads(bus.control(f"crew_job_{w['name']}") or "null")
+    if job and job.get("member_pid"):
+        kill_pid(job["member_pid"], must_contain=job.get("hint") or "node")  # never a reused pid of another program
+    bus.control(f"crew_job_{w['name']}", clear=True)
+
+
+def requeue_crew_task(bus, worker_name, task_id, why):
+    """Back on the board without counting as a failure (a stop or a lost job), if this worker still holds it."""
+    n = bus.db.execute("UPDATE tasks SET status='open', owner=NULL, updated=? WHERE id=? AND status='claimed' AND owner=?",
+                       (time.time(), task_id, worker_name)).rowcount
+    if n:
+        bus.event("crew", f"#{task_id} {why}")
+
+
+def reopen_crew_task(bus, worker_name, task_id, why):
+    """A task the crew worker could not finish goes back on the board once; the second time it is blocked for the
+    human. Only while this worker still holds it: finished work is never reopened."""
+    held = bus.db.execute("SELECT 1 FROM tasks WHERE id=? AND status='claimed' AND owner=?", (task_id, worker_name)).fetchone()
+    if not held:
+        return
     key = f"crew_retry_{task_id}"
     if bus.control(key):
         bus.db.execute("UPDATE tasks SET status='blocked', updated=? WHERE id=?", (time.time(), task_id))
@@ -927,14 +954,20 @@ def reopen_crew_task(bus, task_id, why):
 
 def crew_job(run, w, task_id):
     """Do one claimed task with the worker's crew engine, then report it through the bus like any worker."""
-    bus = open_bus(run, w["name"])
+    bus, name = open_bus(run, w["name"]), w["name"]
+    key = f"crew_job_{name}"
     try:
         crew = crew_mod()
         plan = load_json(os.path.join(run_dir(run), "plan.json"), {}) or {}
-        pw = next((x for x in plan.get("workers", []) if x["name"] == w["name"]), {})
+        pw = next((x for x in plan.get("workers", []) if x["name"] == name), {})
         engine, task = pw.get("engine") or w["model"].split(":", 1)[1], bus._task(task_id)
+        spec = crew.load_members().get(engine) or {}
+        hint = "claude" if spec.get("bin") == "claude" else engine  # what the member's command line contains
+
+        def started(pid):
+            bus.control(key, json.dumps({"conductor": os.getpid(), "task": task_id, "member_pid": pid, "hint": hint}))
         notes = "\n".join(f"- from {m['sender']}: {m['body']}" for m in bus.inbox()["messages"])
-        head = (f"You are {w['name']} (Specialist Council role {w['role']}) in a War Room team run by Claude Code.\n"
+        head = (f"You are {name} (Specialist Council role {w['role']}) in a War Room team run by Claude Code.\n"
                 f"Run goal: {plan.get('goal', '')}\nYour brief: {pw.get('brief') or 'Take tasks that fit your role.'}\n"
                 + (f"Messages for you:\n{notes}\n" if notes else ""))
         if task["kind"] == "review":
@@ -943,32 +976,40 @@ def crew_job(run, w, task_id):
             brief = (head + f"\nREVIEW TASK:\n{task['detail']}\n\nInspect the commit and run its tests if you can. "
                      "Do not modify anything. End your reply with exactly one line:\n"
                      'VERDICT {"decision": "pass" or "fail", "score": 0-100, "notes": "what to fix"}')
-            meta = crew.run(engine, brief, cwd=author.get("cwd") or plan.get("project") or ".", write=False)
-            answer = Path(meta["answer"]).read_text(encoding="utf-8") if meta.get("answer") else ""
-            v = parse_verdict(answer)
-            try:
-                decision, score = v.get("decision"), int(v.get("score"))
-            except (ValueError, TypeError):
-                decision, score = None, None
-            if decision not in ("pass", "fail") or score is None:
-                return reopen_crew_task(bus, task_id, f"{engine} gave no verdict")
-            out = bus.verdict(task_id, decision, max(0, min(100, score)), str(v.get("notes", ""))[:1500])
+            meta = crew.run(engine, brief, cwd=author.get("cwd") or plan.get("project") or ".", write=False,
+                            on_start=started)
         else:
             brief = head + f"\nTASK #{task_id}: {task['title']}\n{task['detail'] or ''}"
             meta = crew.run(engine, brief, cwd=w["cwd"], write=bool(pw.get("write")),
-                            workdir=w["cwd"] if pw.get("write") else None)
-            answer = Path(meta["answer"]).read_text(encoding="utf-8").strip() if meta.get("answer") else ""
+                            workdir=w["cwd"] if pw.get("write") else None, on_start=started)
+        if bus.control("run") == "stop":  # stopped while the member worked: the result is not reported
+            return requeue_crew_task(bus, name, task_id, "run stopped while the crew member worked")
+        answer = Path(meta["answer"]).read_text(encoding="utf-8").strip() if meta.get("answer") else ""
+        if task["kind"] == "review":
+            v = parse_verdict(answer)
+            try:
+                decision, score = str(v.get("decision", "")).strip().lower(), int(v.get("score"))
+            except (ValueError, TypeError):
+                decision, score = None, None
+            if decision not in ("pass", "fail") or score is None:
+                return reopen_crew_task(bus, name, task_id, f"{engine} gave no verdict")
+            out = bus.verdict(task_id, decision, max(0, min(100, score)), str(v.get("notes", ""))[:1500])
+        else:
             if not meta.get("ok"):
-                return reopen_crew_task(bus, task_id, f"{engine} failed (exit {meta.get('exit')})")
-            commit = meta.get("head") if pw.get("write") and meta.get("commits") not in (None, "0") else None
-            out = bus.complete_task(task_id, answer[-1500:] or "done", commit=commit)
+                return reopen_crew_task(bus, name, task_id, f"{engine} failed (exit {meta.get('exit')})")
+            # A writer always reports its worktree HEAD: with no new commit that is the base, and the review judges it.
+            out = bus.complete_task(task_id, answer[-1500:] or "done", commit=meta.get("head") if pw.get("write") else None)
             if not out.get("ok"):
-                return reopen_crew_task(bus, task_id, out.get("error", "complete_task refused"))
-        bus.checkpoint(f"crew {engine}: #{task_id} {task['title'][:80]} -> {out.get('status') or out}")
+                return reopen_crew_task(bus, name, task_id, out.get("error", "complete_task refused"))
+        try:
+            bus.checkpoint(f"crew {engine}: #{task_id} {task['title'][:80]} -> {out.get('status') or out}")
+        except Exception:  # the task is already reported; a failed checkpoint must not reopen it
+            pass
     except (Exception, SystemExit) as e:  # never let a crew failure (crew raises SystemExit) take the conductor down
-        bus.event("conductor-error", f"crew {w['name']}: {str(e)[:200]}")
-        reopen_crew_task(bus, task_id, f"error: {str(e)[:100]}")
+        bus.event("conductor-error", f"crew {name}: {str(e)[:200]}")
+        reopen_crew_task(bus, name, task_id, f"error: {str(e)[:100]}")
     finally:
+        bus.control(key, clear=True)
         bus.heartbeat("parked: waiting for inbox")
         bus.db.close()
 
@@ -1193,6 +1234,8 @@ def stop_all(bus, reason):
     demo = bool(bus.control("demo"))
     for w in bus.workers():
         if demo or is_crew(w):  # a demo or crew worker has no session of its own
+            if is_crew(w):
+                kill_crew_job(bus, w)  # the member process may belong to the conductor, another process
             bus_as(bus, w["name"]).heartbeat("stopped by conductor")
         ok = demo or is_crew(w) or stop_session(w["session_id"])
         bus.update_worker(w["name"], state="stopped" if ok else "stop-failed")

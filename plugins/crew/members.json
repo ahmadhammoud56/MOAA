@@ -1,5 +1,5 @@
 {
-  "_doc": "Each member is an agent CLI run headless. read: argv for read-only work; write: argv for work in a crew worktree. {prompt} is replaced by the prompt (or the prompt is sent on stdin when stdin is true), {out} by the file the final answer is written to, {model} by --model. env values starting with $ are read from the environment and the member is unavailable when one is missing. Claude-format members run Claude Code with --bare, so it never reads your Claude login.",
+  "_doc": "Each member is an agent CLI run headless. read: argv for read-only work; write: argv for work in a crew worktree. {prompt} is replaced by the prompt (or the prompt is sent on stdin when stdin is true), {out} by the file the final answer is written to, {model} by --model. env values starting with $ are read from the environment and the member is unavailable when one is missing. Claude-format members run Claude Code with --bare, so it never reads your Claude login. pass_env is a regex of credential-like variable names this member may see; every other credential (Claude, cloud, other providers) is removed from its environment.",
   "members": {
     "codex": {
       "label": "OpenAI Codex CLI",
@@ -42,7 +42,8 @@
         "review",
         "debug",
         "bulk"
-      ]
+      ],
+      "pass_env": "^(OPENAI_|CODEX_)"
     },
     "gemini": {
       "label": "Google Gemini CLI",
@@ -77,7 +78,8 @@
         "long-context",
         "review",
         "bulk"
-      ]
+      ],
+      "pass_env": "^(GEMINI_|GOOGLE_)"
     },
     "kimi": {
       "label": "Moonshot Kimi Code CLI",
@@ -107,7 +109,8 @@
         "code",
         "research",
         "bulk"
-      ]
+      ],
+      "pass_env": "^(KIMI_|MOONSHOT_)"
     },
     "deepseek": {
       "label": "DeepSeek through Claude Code (Anthropic-format API)",

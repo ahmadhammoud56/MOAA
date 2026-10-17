@@ -69,35 +69,50 @@ class MergeTests(unittest.TestCase):
         self.assertFalse(install.mcp_outdated("rea", pin, {"mcp": []}, home))  # the user's own setup
         self.assertTrue(install.mcp_outdated("rea", pin, {"mcp": ["rea"]}, home))  # unless MOAA recorded adding it
 
-    def test_war_room_permissions_keep_launch_behind_a_prompt(self):
+    def installed_home(self):
+        import json, tempfile
+        home = Path(tempfile.mkdtemp()) / "Some User" / ".claude"
+        cache = home / "plugins" / "cache" / "moaa"
+        record = {p: [{"installPath": str(cache / p / v)}] for p, v in
+                  (("war-room", "0.5.0"), ("crew", "0.1.0"), ("layered-memory", "0.1.0"), ("specialist-council", "1.4.0"))}
+        (home / "plugins").mkdir(parents=True)
+        (home / "plugins" / "installed_plugins.json").write_text(json.dumps({"plugins": {f"{k}@moaa": v for k, v in record.items()}}))
+        return home, cache.as_posix()
+
+    def allowed(self, rules):
         import fnmatch
-        rules = install.council_permissions(Path("/home/u/.claude"))
-        self.assertIn('Bash(python *war-room*warroom.py" status *)', rules)
-        self.assertIn("PowerShell(python *war-room*warroom.py stop *)", rules)
-        allowed = lambda cmd: any(fnmatch.fnmatchcase(cmd, r[5:-1]) for r in rules if r.startswith("Bash("))  # noqa: E731
-        wr = 'python "C:/u/.claude/plugins/cache/moaa/war-room/0.4.0/warroom.py"'
-        self.assertTrue(allowed(f"{wr} status run-1 --json"))
-        self.assertTrue(allowed(f"{wr} app"))
-        for gated in ("toggle on", "launch r --confirm abc", "integrate r --apply", "finish r", "shutdown r",
-                      'approve r 3 --reject "status is wrong"'):
+        return lambda cmd: any(fnmatch.fnmatchcase(cmd, r[r.index("(") + 1:-1]) for r in rules)
+
+    def test_war_room_permissions_keep_launch_behind_a_prompt(self):
+        home, cache = self.installed_home()
+        allowed = self.allowed(install.council_permissions(home))
+        wr = f'python "{cache}/war-room/0.5.0/warroom.py"'
+        for ok in ("status run-1 --json", "app", "list", "stop r"):
+            self.assertTrue(allowed(f"{wr} {ok}"), ok)
+        for gated in ("toggle on", "launch r --confirm abc", "integrate r --apply", "finish r", "shutdown r", "approve r 3",
+                      'approve r 3 --reject "status is wrong"', "applist"):
             self.assertFalse(allowed(f"{wr} {gated}"), gated)
+        for crafted in (f'python -c "import os" {wr} list', f'python "{cache}/war-room/0.5.0/x.py" -c 1 "/warroom.py" list',
+                        f"python {cache}/war-room/0.5.0/warroom.py list"):  # unquoted path with a space: not ours
+            self.assertFalse(allowed(crafted), crafted)
 
     def test_crew_and_memory_rules_allow_only_reading(self):
-        import fnmatch
-        rules = install.reader_permissions()
-        allowed = lambda cmd: any(fnmatch.fnmatchcase(cmd, r[5:-1]) for r in rules if r.startswith("Bash("))  # noqa: E731
-        base = 'py "C:/u/.claude/plugins/cache/moaa/{p}/0.1.0/{s}"'
-        crew, mem = base.format(p="crew", s="crew.py"), base.format(p="layered-memory", s="memory.py")
-        for ok in (f"{crew} doctor", f"{crew} runs --limit 5", f"{mem} search \"tests\"", f"{mem} stats"):
+        home, cache = self.installed_home()
+        allowed = self.allowed(install.council_permissions(home))
+        crew, mem = f'py "{cache}/crew/0.1.0/crew.py"', f'py "{cache}/layered-memory/0.1.0/memory.py"'
+        for ok in (f"{crew} doctor", f"{crew} runs --limit 5", f'{mem} search "tests"', f"{mem} stats"):
             self.assertTrue(allowed(ok), ok)
-        for gated in (f'{crew} run codex --task "list runs"', f'{crew} ask codex --task "doctor this"',
-                      f'{mem} remember "search the logs"', f"{mem} forget 3", f"{mem} consolidate --pending"):
+        for gated in (f'{crew} run codex --task "list runs"', f'{crew} run codex --write --task "x {crew} doctor"',
+                      f'{crew} ask codex --task "doctor this"', f'{mem} remember "search the logs"', f"{mem} forget 3",
+                      f"{mem} consolidate --pending"):
             self.assertFalse(allowed(gated), gated)
 
-    def test_council_permissions_cover_home_spelling(self):
-        rules = install.council_permissions(Path("/home/u/.claude"))
-        self.assertIn("Bash(python *specialist-council*council.py*)", rules)
-        self.assertIn("PowerShell(python *specialist-council*council.py*)", rules)
+    def test_council_rules_follow_the_installed_path_and_need_an_install(self):
+        home, cache = self.installed_home()
+        rules = install.council_permissions(home)
+        self.assertIn(f'Bash(python "{cache}/specialist-council/1.4.0/council.py" *)', rules)
+        self.assertIn(f'PowerShell(py "{cache}/specialist-council/1.4.0/council.py" *)', rules)
+        self.assertEqual(install.council_permissions(Path("/nowhere/.claude")), [])  # nothing installed: no rules
 
     def test_kit_config_is_consistent(self):
         kit = install.read_json(install.KIT / "config" / "kit.json", None)

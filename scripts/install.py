@@ -60,49 +60,43 @@ class Runner:
         return result
 
 
-def council_permissions(home):
-    """Allow rules for the council plugin's council.py. Its cache path carries a version, hence the wildcards; no space
-    after `council.py` because the quoted path ends in `council.py"`."""
-    rules = [f"Bash({py} *specialist-council*council.py*)" for py in ("python", "python3", "py")]
-    rules.append("PowerShell(python *specialist-council*council.py*)")
-    return rules + war_room_permissions() + reader_permissions()
-
-
-# Crew and layered-memory subcommands that only read. crew `run`/`ask` (which spend other services' quotas and can
-# write) and memory `remember`/`forget`/`consolidate` stay behind a permission prompt.
-READ_ONLY = {"crew": ("crew.py", ("doctor", "runs", "show", "pick")),
-             "layered-memory": ("memory.py", ("search", "show", "stats"))}
-
-
-def reader_permissions():
-    """The subcommand must follow the script path directly (quoted or not): a wildcard between them would also match
-    e.g. `crew.py run ... --task "list runs"`."""
-    rules = []
-    for plugin, (script, subs) in READ_ONLY.items():
-        for sub in subs:
-            for end in ('"', ""):
-                for tail in ((" *", "") if sub in BARE else (" *",)):
-                    rules += [f"Bash({py} *{plugin}*{script}{end} {sub}{tail})" for py in ("python", "python3", "py")]
-                    rules.append(f"PowerShell(python *{plugin}*{script}{end} {sub}{tail})")
-    return rules
-
-
-# War Room subcommands that only read, message, or stop. toggle, launch, integrate, finish, shutdown and approve are
-# left out on purpose: they stay behind a permission prompt so arming and launching remain the user's own decision.
-WAR_ROOM_SAFE = ("plan", "status", "post", "send", "wake", "app", "list", "measure", "tile", "merge",
-                 "pause", "unpause", "stop", "resume", "demo", "template")
-
-
+# Subcommands that run without a permission prompt. War Room's toggle, launch, integrate, finish, shutdown and approve,
+# crew's run/ask (they spend other services' quotas and can write) and memory's remember/forget/consolidate are left
+# out on purpose: those stay the user's own decision. "*" means every subcommand (the council's resolve/check/...).
+ALLOWED = {"specialist-council": ("council.py", ("*",)),
+           "war-room": ("warroom.py", ("plan", "status", "post", "send", "wake", "app", "list", "measure", "tile",
+                                       "merge", "pause", "unpause", "stop", "resume", "demo", "template")),
+           "crew": ("crew.py", ("doctor", "runs", "show", "pick")),
+           "layered-memory": ("memory.py", ("search", "show", "stats"))}
 BARE = {"app", "list", "demo", "template", "doctor", "runs", "stats", "show"}  # also run with no arguments
 
 
-def war_room_permissions():
+def plugin_root(home, plugin):
+    """The installed moaa plugin's folder, from Claude Code's own record, or None."""
+    entries = (read_json(home / "plugins" / "installed_plugins.json", {}) or {}).get("plugins", {}).get(f"{plugin}@moaa")
+    path = (entries or [{}])[0].get("installPath")
+    return Path(path) if path else None
+
+
+def council_permissions(home):
+    """Allow rules pinned to each installed script's exact path, as Claude calls it (forward slashes, quoted), with the
+    subcommand right after it and only arguments after that. No wildcard comes before the subcommand, so
+    `python -c ... warroom.py list` or `crew.py run --task "... crew.py doctor"` never match. When Claude Code updates a
+    plugin outside the installer, the path changes and the rules simply stop matching (prompts come back) until the
+    installer runs again and replaces them."""
     rules = []
-    for sub in WAR_ROOM_SAFE:  # subcommand right after the script: see reader_permissions
-        for end in ('"', ""):
-            for tail in ((" *", "") if sub in BARE else (" *",)):  # never `app*`: it also matches `approve`
-                rules += [f"Bash({py} *war-room*warroom.py{end} {sub}{tail})" for py in ("python", "python3", "py")]
-                rules.append(f"PowerShell(python *war-room*warroom.py{end} {sub}{tail})")
+    for plugin, (script, subs) in ALLOWED.items():
+        root = plugin_root(home, plugin)
+        if not root:
+            continue
+        path = (root / script).as_posix()
+        spellings = [f'"{path}"'] + ([path] if " " not in path else [])
+        for spelled in spellings:
+            for sub in subs:
+                tails = [" *"] if sub == "*" else [f" {sub} *"] + ([f" {sub}"] if sub in BARE else [])
+                for tail in tails:
+                    rules += [f"Bash({py} {spelled}{tail})" for py in ("python", "python3", "py")]
+                    rules += [f"PowerShell({py} {spelled}{tail})" for py in ("python", "py")]
     return rules
 
 
@@ -560,10 +554,14 @@ def install_omniroute(r, spec, record):
         log("omniroute: npm not found; skipped")
         return
     pkg = f"{spec['npm']}@{spec['version']}"
+    npm = ["npm"] if not WINDOWS else ["cmd", "/c", "npm"]
+    had = r.run(npm + ["ls", "-g", spec["npm"], "--depth=0"]).returncode == 0 and "omniroute" not in record["tools"]
     log(f"omniroute: npm install -g {pkg} (start it with crew.py omniroute start)")
     result = r.run(["npm", "install", "-g", pkg] if not WINDOWS else ["cmd", "/c", "npm", "install", "-g", pkg])
     if result.returncode:
         log("  omniroute install failed: " + (result.stderr or result.stdout).strip()[-300:])
+    elif had:
+        log("  omniroute was already installed before MOAA; --uninstall will leave it")
     elif "omniroute" not in record["tools"]:
         record["tools"].append("omniroute")
 

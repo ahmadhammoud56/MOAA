@@ -75,6 +75,70 @@ def which(name):
     return None
 
 
+SHIM_RE = re.compile(r'"%dp0%\\([^"]+\.(?:js|mjs|cjs))"', re.I)
+CMD_META = re.compile(r'[\r\n"%&|<>^!]')
+MODEL_RE = re.compile(r"^[A-Za-z0-9][\w.:/@-]{0,80}$")
+SECRETISH = re.compile(r"(KEY|TOKEN|SECRET|PASSW|CREDENTIAL|^ANTHROPIC_|^CLAUDE|^AWS_|^AZURE_|^GOOGLE_|^GEMINI_|^OPENAI_|"
+                       r"^DEEPSEEK_|^OMNIROUTE_|^MOONSHOT_|^KIMI_|^CODEX_)", re.I)
+
+
+def launcher(exe):
+    """argv prefix for a CLI. An npm .cmd shim is bypassed: its node script is run directly, because cmd.exe would
+    re-parse the arguments (task text included) and could run commands hidden in them (the BatBadBut issue)."""
+    if not (IS_WIN and exe.lower().endswith((".cmd", ".bat"))):
+        return [exe], False
+    try:
+        m = SHIM_RE.search(Path(exe).read_text(encoding="utf-8", errors="replace"))
+    except OSError:
+        m = None
+    if m:
+        script = Path(exe).parent / m.group(1)
+        node = Path(exe).parent / "node.exe"
+        node = str(node) if node.is_file() else shutil.which("node")
+        if node and script.is_file():
+            return [node, str(script)], False
+    return [exe], True  # still a shim: the caller must refuse arguments cmd.exe could misread
+
+
+def child_env(spec, overrides):
+    """The environment a member runs with: yours, minus credentials for anything else (Claude, cloud, other
+    providers), plus what this member needs. A member only sees its own keys."""
+    keep = re.compile(spec["pass_env"]) if spec.get("pass_env") else None
+    env = {k: v for k, v in os.environ.items() if not SECRETISH.search(k) or (keep and keep.match(k))}
+    env.pop("CLAUDECODE", None)  # a nested headless Claude Code must not think it runs inside this session
+    return {**env, **overrides}
+
+
+def kill_tree(proc):
+    if IS_WIN:
+        subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True)
+    else:
+        try:
+            os.killpg(proc.pid, 9)
+        except OSError:
+            proc.kill()
+
+
+def run_proc(argv, stdin, cwd, env, timeout, on_start=None):
+    """Run a member in its own process group; on timeout kill the whole tree (node children included)."""
+    kw = {"creationflags": 0x00000200} if IS_WIN else {"start_new_session": True}
+    proc = subprocess.Popen(argv, stdin=subprocess.PIPE if stdin is not None else subprocess.DEVNULL,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, env=env, text=True,
+                            encoding="utf-8", errors="replace", **kw)
+    if on_start:
+        on_start(proc.pid)
+    try:
+        out, err = proc.communicate(stdin, timeout=timeout)
+        return proc.returncode, out, err
+    except subprocess.TimeoutExpired:
+        kill_tree(proc)
+        try:
+            out, err = proc.communicate(timeout=30)
+        except subprocess.TimeoutExpired:
+            out, err = "", ""
+        return "timeout", out or "", err or ""
+
+
 def member_env(spec):
     """(env overrides, missing variable names). '$NAME' values come from the environment or the crew env file."""
     out, missing = {}, []
@@ -119,7 +183,10 @@ def signed_in(name):
         exe = which("codex")
         if not exe:
             return False
-        out = subprocess.run([exe, "login", "status"], capture_output=True, text=True, timeout=30)
+        try:
+            out = subprocess.run(launcher(exe)[0] + ["login", "status"], capture_output=True, text=True, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            return None
         return out.returncode == 0 and "logged in" in (out.stdout + out.stderr).lower()
     if name == "gemini":
         return bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
@@ -137,7 +204,7 @@ def doctor():
         row = {"member": name, "label": spec["label"], "installed": bool(exe), "missing_env": missing}
         if exe and spec["bin"] != "claude":
             try:
-                v = subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=30)
+                v = subprocess.run(launcher(exe)[0] + ["--version"], capture_output=True, text=True, timeout=30)
                 row["version"] = (v.stdout or v.stderr).strip().splitlines()[0][:60] if (v.stdout or v.stderr).strip() else "?"
             except (OSError, subprocess.SubprocessError):
                 row["version"] = "?"
@@ -190,7 +257,7 @@ def commit_worktree(wt, member, task, base):
     if git(wt, "status", "--porcelain").stdout.strip():
         git(wt, "add", "-A")
         title = " ".join(task.split())[:60]
-        git(wt, "-c", "user.name=MOAA crew", "-c", "user.email=crew@localhost", "commit", "-q", "-m",
+        git(wt, "-c", "user.name=MOAA crew", "-c", "user.email=crew@localhost", "commit", "-q", "--no-verify", "-m",
             f"crew({member}): {title}", "-m", "Made by a crew member; review before merging.")
     return {"commits": git(wt, "rev-list", "--count", f"{base}..HEAD").stdout.strip(),
             "diffstat": git(wt, "diff", "--stat", f"{base}..HEAD").stdout.strip(),
@@ -209,7 +276,7 @@ def new_run_id():
     return time.strftime("%Y%m%d-%H%M%S") + "-" + secrets.token_hex(2)
 
 
-def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=None, workdir=None):
+def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=None, workdir=None, on_start=None):
     """Run one member. With write, it works in a fresh worktree, or in `workdir` (an existing worktree the caller
     owns, such as a War Room writer's); either way crew commits what it leaves behind."""
     members = load_members()
@@ -222,6 +289,8 @@ def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=Non
     env_over, missing = member_env(spec)
     if missing:
         raise SystemExit(f"crew: {member} needs {', '.join(missing)} ({spec['login']})")
+    if model and not MODEL_RE.match(model):
+        raise SystemExit(f"crew: not a model name: {model!r}")
     if spec.get("needs_url") and not reachable(spec["needs_url"]):
         raise SystemExit(f"crew: {member} is not reachable ({spec['login']})")
     run_id = run_id or new_run_id()
@@ -244,19 +313,14 @@ def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=Non
     prompt = BRIEF.format(mode=WRITE_NOTE if write else READ_NOTE, task=task.strip())
     (rdir / "task.md").write_text(prompt, encoding="utf-8")
     out_file = rdir / f"{member}.answer.md"
-    argv = build_argv(spec, exe, write, model, prompt if not spec.get("stdin") else "", out_file)
-    env = {**os.environ, **env_over}
-    if spec["bin"] == "claude":
-        env.pop("CLAUDECODE", None)  # a nested headless Claude Code must not think it runs inside this session
+    prefix, via_cmd = launcher(exe)
+    argv = prefix + build_argv(spec, exe, write, model, prompt if not spec.get("stdin") else "", out_file)[1:]
+    if via_cmd and any(CMD_META.search(a) for a in argv[1:]):
+        raise SystemExit(f"crew: {member} is a .cmd shim crew could not unwrap, and the task has characters cmd.exe "
+                         "would interpret; give it on stdin or simplify it")
+    env = child_env(spec, env_over)
     t0 = time.time()
-    try:
-        proc = subprocess.run(argv, input=prompt if spec.get("stdin") else None, cwd=str(cwd), env=env,
-                              capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
-        code, stdout, stderr = proc.returncode, proc.stdout, proc.stderr
-    except subprocess.TimeoutExpired as e:
-        code, stdout, stderr = "timeout", (e.stdout or ""), (e.stderr or "")
-        stdout = stdout.decode("utf-8", "replace") if isinstance(stdout, bytes) else stdout
-        stderr = stderr.decode("utf-8", "replace") if isinstance(stderr, bytes) else stderr
+    code, stdout, stderr = run_proc(argv, prompt if spec.get("stdin") else None, str(cwd), env, timeout, on_start)
     answer = out_file.read_text(encoding="utf-8", errors="replace").strip() if out_file.is_file() else ""
     answer = answer or stdout.strip()
     out_file.write_text(answer + "\n", encoding="utf-8")
@@ -277,7 +341,7 @@ def ask(members, task, cwd=".", model=None, timeout=1200):
     for m, f in futures.items():
         try:
             out.append(f.result())
-        except SystemExit as e:
+        except (SystemExit, OSError) as e:
             out.append({"id": run_id, "member": m, "ok": False, "error": str(e)})
     return out
 
@@ -293,6 +357,19 @@ def list_runs(limit=20):
     return items[:limit]
 
 
+def cmdline(pid):
+    """A process's command line, or '' (used to check a stored pid before killing it)."""
+    try:
+        if IS_WIN:
+            out = subprocess.run(["powershell", "-NoProfile", "-Command",
+                                  f"(Get-CimInstance Win32_Process -Filter 'ProcessId={int(pid)}').CommandLine"],
+                                 capture_output=True, text=True, timeout=20)
+            return out.stdout.strip()
+        return Path(f"/proc/{int(pid)}/cmdline").read_bytes().replace(b"\0", b" ").decode(errors="replace")
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return ""
+
+
 # ---------------------------------------------------------------- OmniRoute
 def omni_env():
     path = crew_home() / "omniroute.env"
@@ -300,10 +377,10 @@ def omni_env():
     if not saved.get("INITIAL_PASSWORD") or not saved.get("JWT_SECRET"):
         saved.update(INITIAL_PASSWORD=secrets.token_urlsafe(18), JWT_SECRET=secrets.token_urlsafe(48))
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("# Generated by MOAA crew. INITIAL_PASSWORD is the OmniRoute dashboard password on first boot.\n"
-                        + "".join(f"{k}={v}\n" for k, v in saved.items()), encoding="utf-8")
-        if not IS_WIN:
-            path.chmod(0o600)
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)  # owner-only from the start (POSIX)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write("# Generated by MOAA crew. INITIAL_PASSWORD is the OmniRoute dashboard password on first boot.\n"
+                    + "".join(f"{k}={v}\n" for k, v in saved.items()))
     return {**saved, **OMNI_SAFE_ENV}
 
 
@@ -314,10 +391,11 @@ def omniroute(action):
         return {"running": reachable(url), "dashboard": f"http://127.0.0.1:{OMNI_PORT}", "secrets": str(crew_home() / "omniroute.env")}
     if action == "stop":
         pid = pid_file.read_text().strip() if pid_file.is_file() else ""
-        if pid:
+        ok = pid.isdigit() and "omniroute" in cmdline(int(pid)).lower()  # never a reused pid of another program
+        if ok:
             subprocess.run(["taskkill", "/PID", pid, "/T", "/F"] if IS_WIN else ["kill", pid], capture_output=True)
-            pid_file.unlink(missing_ok=True)
-        return {"stopped": bool(pid)}
+        pid_file.unlink(missing_ok=True)
+        return {"stopped": ok}
     exe = which("omniroute")
     if not exe:
         raise SystemExit("crew: omniroute is not installed (python scripts/install.py --with-omniroute)")
@@ -326,7 +404,7 @@ def omniroute(action):
     log = open(crew_home() / "omniroute.log", "a", encoding="utf-8")
     kw = {"creationflags": 0x08000000 | 0x00000200} if IS_WIN else {"start_new_session": True}
     argv = [exe]
-    proc = subprocess.Popen(argv, env={**os.environ, **omni_env()}, stdout=log, stderr=subprocess.STDOUT,
+    proc = subprocess.Popen(argv, env=child_env({}, omni_env()), stdout=log, stderr=subprocess.STDOUT,
                             stdin=subprocess.DEVNULL, cwd=str(crew_home()), **kw)
     pid_file.write_text(str(proc.pid))
     for _ in range(60):

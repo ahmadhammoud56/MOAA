@@ -45,17 +45,47 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
   - `crew.py omniroute start` runs it on 127.0.0.1 only, with an API key required, conversation tracking,
     browser-cookie providers and paid-credit fallback off, and a generated password and JWT secret instead of
     `CHANGEME`.
-- Crew and layered-memory join the core profile (13 plugins). The installer allows their read-only subcommands
-  without prompts.
+- Crew and layered-memory join the core profile (13 plugins). Their read-only subcommands run without prompts.
 
 ### Fixed
-- **War Room allow rules were too broad (security).**
-  - The rules had a wildcard between `warroom.py` and the subcommand and after it. As a result, `app*` also matched
-    `approve`, and a subcommand word inside any argument matched too (`approve r 3 --reject "status ..."`).
-  - Human gates such as `approve` could therefore run without a prompt.
-  - Rules now require the subcommand directly after the script, followed by a space or the end of the command.
-  - Reinstalling removes the rules an earlier MOAA install added and no longer ships (recorded in its manifest);
-    rules you added yourself are kept.
+- **Allow rules were too broad (security).** MOAA's no-prompt rules for `council.py` and `warroom.py` used
+  wildcards around the script and the subcommand. Three consequences:
+  - `app*` also matched `approve`, so War Room's human gate could run without a prompt.
+  - A subcommand word anywhere in the arguments matched too.
+  - A crafted command such as `python -c "..." war-room warroom.py list` ran without a prompt.
+
+  Rules are now pinned to each installed script's exact path, the way Claude calls it, with the subcommand right
+  after the path. After a plugin update outside the installer the rules simply stop matching, and you get prompts
+  again until you rerun the installer. Reinstalling removes the rules an earlier MOAA install added (recorded in its
+  manifest); rules you added yourself are kept.
+
+### Security
+Hardening from an independent review before release:
+- **Crew:**
+  - npm `.cmd` shims are bypassed: crew runs the node script directly, because `cmd.exe` would re-parse task text
+    (BatBadBut).
+  - Model names are validated.
+  - Each member sees only its own credentials. Claude, cloud and other providers' keys are removed from its
+    environment.
+  - A timeout kills the member's whole process tree.
+  - `omniroute stop` checks the pid's command line before killing it.
+  - The secrets file is created owner-only.
+  - Crew's commits skip repository hooks.
+- **War Room crew workers:**
+  - A stop kills the running member process and does not report its result.
+  - A task held by a job that no longer runs (for example after the conductor restarts) is reclaimed.
+  - Finished work is never reopened.
+  - A writer with no new commit reports its HEAD for review.
+  - Verdicts are case-insensitive.
+- **Layered memory:**
+  - Redaction also catches JSON and quoted secrets, "password is ...", JWTs, credentials in URLs and AWS secret keys.
+  - Extraction can no longer create global notes or supersede notes of other projects, so a transcript cannot plant
+    notes in every project. Only `remember --global` makes global notes.
+  - The supersede check and the write happen under one lock.
+  - A resumed session is consolidated again only when it grew.
+  - Forgetting a note brings back the notes it had superseded.
+  - On Windows the background extraction breaks away from Claude Code's job object where allowed.
+- `--uninstall` no longer removes an `omniroute` that was installed before MOAA.
 
 ## [0.6.0] - 2026-10-14
 

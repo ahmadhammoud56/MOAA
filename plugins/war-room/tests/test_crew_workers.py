@@ -27,12 +27,16 @@ def git(cwd, *args):
 class FakeCrew:
     """Stands in for crew.py: a writer commits a file in its worktree; a reviewer answers with a scripted verdict."""
     def __init__(self, tmp, verdicts):
-        self.tmp, self.verdicts, self.calls = Path(tmp), list(verdicts), []
+        self.tmp, self.verdicts, self.calls, self.before = Path(tmp), list(verdicts), [], None
 
     def load_members(self):
         return {"codex": {}, "gemini": {}}
 
-    def run(self, member, task, cwd=".", write=False, model=None, timeout=1200, run_id=None, workdir=None):
+    def run(self, member, task, cwd=".", write=False, model=None, timeout=1200, run_id=None, workdir=None, on_start=None):
+        if on_start:
+            on_start(999999)  # a pid no real process has
+        if self.before:
+            self.before()
         self.calls.append({"member": member, "task": task, "cwd": str(cwd), "write": write, "workdir": workdir})
         answer = self.tmp / f"answer-{len(self.calls)}.md"
         if write:
@@ -120,6 +124,31 @@ class CrewWorkers(Sandbox):
         self.assertEqual(review["status"], "blocked")
         last = bus.db.execute("SELECT body FROM messages WHERE recipient='orchestrator' ORDER BY id DESC").fetchone()
         self.assertIn("failed twice", last["body"])
+
+    def test_uppercase_verdicts_count_and_a_stop_mid_job_requeues_without_reporting(self):
+        self.fake.verdicts = ['VERDICT {"decision": "PASS", "score": 88, "notes": ""}']
+        run, bus, _ = self.launch()
+        self.drain(bus, run)
+        self.assertEqual(bus.db.execute("SELECT status FROM tasks WHERE title='Add a feature'").fetchone()[0], "approved")
+        bus.post_task("Second feature", "", "forge")
+        self.fake.before = lambda: bus.control("run", "stop")  # the user stops the run while the member works
+        warroom.crew_tick(bus, run)
+        for t in list(warroom.CREW_JOBS.values()):
+            t.join(30)
+        row = bus.db.execute("SELECT status, owner FROM tasks WHERE title='Second feature'").fetchone()
+        self.assertEqual((row["status"], row["owner"]), ("open", None))
+        self.assertIsNone(bus.control("crew_retry_" + str(bus.db.execute("SELECT id FROM tasks WHERE title='Second feature'").fetchone()[0])))
+
+    def test_a_task_held_by_a_dead_job_is_reclaimed_and_its_process_killed(self):
+        run, bus, _ = self.launch()
+        tid = warroom.bus_as(bus, "forge").claim_task()["task"]["id"]
+        bus.control("crew_job_forge", '{"member_pid": 4242, "hint": "codex"}')  # left by a conductor that died
+        warroom.CREW_JOBS.pop("forge", None)
+        with mock.patch.object(warroom, "kill_pid") as kill, mock.patch.object(warroom, "crew_job"):
+            warroom.crew_tick(bus, run)
+        kill.assert_called_once_with(4242, must_contain="codex")
+        self.assertEqual(bus.db.execute("SELECT owner FROM tasks WHERE id=?", (tid,)).fetchone()[0], "forge")  # re-claimed
+        self.assertIsNone(bus.control("crew_job_forge"))
 
     def test_stop_and_resume_never_touch_claude_sessions(self):
         run, bus, _ = self.launch()

@@ -65,7 +65,17 @@ class Layers(Sandbox):
         self.assertEqual(out, {"atoms": 2, "scenes": 1, "profile": 1, "superseded": 1})
         self.assertIsNotNone(self.db.execute("SELECT superseded_by FROM atoms WHERE id=?", (old,)).fetchone()[0])
         self.assertIsNone(self.db.execute("SELECT superseded_by FROM atoms WHERE id=?", (foreign,)).fetchone()[0])
-        self.assertEqual(self.db.execute("SELECT project FROM atoms WHERE text='Works on Windows'").fetchone()[0], "")
+        # extraction never makes global notes: a transcript cannot plant notes for every project
+        self.assertEqual(self.db.execute("SELECT project FROM atoms WHERE text='Works on Windows'").fetchone()[0], self.proj)
+        memory.apply(self.db, "m", self.proj, {"atoms": [{"kind": "fact", "text": "Global one", "global": True}]},
+                     allow_global=True)
+        glob = self.db.execute("SELECT id, project FROM atoms WHERE text='Global one'").fetchone()
+        self.assertEqual(glob["project"], "")
+        memory.apply(self.db, "s3", self.proj, {"atoms": [{"kind": "fact", "text": "x", "supersedes": [glob["id"]]}]})
+        self.assertIsNone(self.db.execute("SELECT superseded_by FROM atoms WHERE id=?", (glob["id"],)).fetchone()[0])
+        new = self.db.execute("SELECT superseded_by FROM atoms WHERE id=?", (old,)).fetchone()[0]
+        self.assertEqual(memory.main(["forget", str(new)]), 0)  # forgetting the newer note brings the older one back
+        self.assertIsNone(self.db.execute("SELECT superseded_by FROM atoms WHERE id=?", (old,)).fetchone()[0])
         memory.apply(self.db, "s2", self.proj, {"scenes": [{"title": "Testing", "body": "pytest only"}]})
         self.assertEqual([r[0] for r in self.db.execute("SELECT body FROM scenes")], ["pytest only"])
 
@@ -86,6 +96,14 @@ class Layers(Sandbox):
         self.assertEqual(memory.search(self.db, 'unicode" OR *', self.proj)[0]["layer"], "L1")  # FTS syntax neutralised
         self.assertEqual(memory.search(self.db, "parser", "another")[0:1], [])
 
+    def test_redaction_covers_common_secret_shapes(self):
+        token = "eyJ" + "a" * 20 + "." + "b" * 20 + "." + "c" * 10
+        for text in ('{"api_key": "abcd1234efgh"}', "password is hunter22", "token=" + "z9" * 8, token,
+                     "git clone https://user:pa55word@example.com/r.git", "aws_secret_access_key = " + "Q" * 40):
+            with self.subTest(text=text[:20]):
+                self.assertIn("[redacted]", memory.redact(text))
+        self.assertEqual(memory.redact("use pytest and keep tokens short"), "use pytest and keep tokens short")
+
     def test_parse_reply_finds_the_json_object(self):
         self.assertEqual(memory.parse_reply('Sure! {"atoms": [{"text": "a } b"}]} done'), {"atoms": [{"text": "a } b"}]})
         self.assertEqual(memory.parse_reply("no json here"), {})
@@ -101,6 +119,9 @@ class Hooks(Sandbox):
             spawn.assert_not_called()
             memory.hook("session-end", json.dumps({"session_id": "b", "transcript_path": big, "cwd": self.dir}))
             self.assertEqual(spawn.call_args[0][0][-2:], ["--session", "b"])
+            memory.apply(self.db, "b", self.proj, {})  # consolidated; a resume that adds nothing new is not redone
+            memory.hook("session-end", json.dumps({"session_id": "b", "transcript_path": big, "cwd": self.dir}))
+            self.assertEqual(spawn.call_count, 1)
             with mock.patch.dict(os.environ, {memory.CHILD: "1"}):  # the consolidation call never feeds itself back
                 memory.hook("session-end", json.dumps({"session_id": "c", "transcript_path": big, "cwd": self.dir}))
             self.assertEqual(spawn.call_count, 1)

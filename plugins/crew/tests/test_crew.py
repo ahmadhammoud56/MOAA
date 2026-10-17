@@ -134,6 +134,37 @@ class Runs(Sandbox):
         self.assertNotEqual(first["INITIAL_PASSWORD"], "CHANGEME")
 
 
+class Hardening(Sandbox):
+    def test_cmd_shims_are_unwrapped_and_otherwise_guarded(self):
+        shim = self.tmp / "tool.cmd"
+        (self.tmp / "node_modules" / "tool").mkdir(parents=True)
+        (self.tmp / "node_modules" / "tool" / "cli.js").write_text("")
+        shim.write_text('@ECHO off\r\n"%_prog%"  "%dp0%\\node_modules\\tool\\cli.js" %*\r\n')
+        with mock.patch.object(crew, "IS_WIN", True), mock.patch.object(crew.shutil, "which", lambda n: "node.exe"):
+            argv, via_cmd = crew.launcher(str(shim))
+            self.assertEqual((argv, via_cmd), (["node.exe", str(self.tmp / "node_modules" / "tool" / "cli.js")], False))
+            shim.write_text("@echo off\r\nsomething else %*\r\n")
+            self.assertEqual(crew.launcher(str(shim)), ([str(shim)], True))
+        self.assertTrue(crew.CMD_META.search('fix "& calc &"'))
+        with self.assertRaises(SystemExit):
+            crew.run("alpha", "x", cwd=self.tmp, model="--dangerous-flag")
+
+    def test_members_only_see_their_own_credentials(self):
+        with mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "a", "CLAUDE_CODE_OAUTH_TOKEN": "b", "GITHUB_TOKEN": "c",
+                                          "OPENAI_API_KEY": "d", "AWS_SECRET_ACCESS_KEY": "e", "PATH": "p"}):
+            env = crew.child_env({"pass_env": "^OPENAI_"}, {"X": "1"})
+        self.assertEqual({k for k in ("ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "GITHUB_TOKEN", "AWS_SECRET_ACCESS_KEY",
+                                      "OPENAI_API_KEY", "PATH", "X") if k in env}, {"OPENAI_API_KEY", "PATH", "X"})
+
+    def test_timeout_kills_the_process_tree(self):
+        code = ("import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)']);"
+                " print('started', flush=True); time.sleep(60)")
+        t0 = __import__("time").time()
+        rc, out, _ = crew.run_proc([sys.executable, "-c", code], None, str(self.tmp), dict(os.environ), 3)
+        self.assertEqual(rc, "timeout")
+        self.assertLess(__import__("time").time() - t0, 40)  # communicate did not hang on the grandchild's pipes
+
+
 class ShippedMembers(unittest.TestCase):
     def test_members_file_is_well_formed_and_claude_members_never_use_the_users_login(self):
         members = json.loads((Path(crew.__file__).parent / "members.json").read_text(encoding="utf-8"))["members"]
