@@ -45,6 +45,8 @@ TIERS = ("haiku", "sonnet", "opus", "fable")
 
 
 def tier(model):
+    if (model or "").startswith("crew:"):  # a crew worker (codex, gemini, ...) is its own model family
+        return model
     return next((t for t in TIERS if t in (model or "")), "opus")
 
 

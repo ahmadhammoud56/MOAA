@@ -27,6 +27,17 @@ class MergeTests(unittest.TestCase):
         restored["permissions"].pop("deny")
         self.assertEqual(restored, current)
 
+    def test_retired_rules_are_removed_but_the_users_own_are_kept(self):
+        old = 'Bash(python *war-room*warroom.py* app*)'
+        current = {"permissions": {"allow": [old, "Bash(ls)", "Bash(mine *warroom.py* app*)"]}}
+        added = {"allow": [old, "Bash(ls)"]}
+        out, stale = install.retire_rules(current, added, ["Bash(ls)"])
+        self.assertEqual(stale, [old])
+        self.assertEqual(out["permissions"]["allow"], ["Bash(ls)", "Bash(mine *warroom.py* app*)"])
+        self.assertEqual(added["allow"], ["Bash(ls)"])
+        self.assertEqual(current["permissions"]["allow"][0], old)  # input untouched
+        self.assertEqual(install.retire_rules(out, added, ["Bash(ls)"])[1], [])
+
     def test_unmodified_old_skill_copies_are_adopted_edited_ones_kept(self):
         import subprocess, tempfile
         kit = Path(install.KIT)
@@ -59,11 +70,29 @@ class MergeTests(unittest.TestCase):
         self.assertTrue(install.mcp_outdated("rea", pin, {"mcp": ["rea"]}, home))  # unless MOAA recorded adding it
 
     def test_war_room_permissions_keep_launch_behind_a_prompt(self):
+        import fnmatch
         rules = install.council_permissions(Path("/home/u/.claude"))
-        self.assertIn("Bash(python *war-room*warroom.py* status*)", rules)
-        self.assertIn("PowerShell(python *war-room*warroom.py* stop*)", rules)
-        for gated in ("toggle", "launch", "integrate", "finish", "shutdown", "approve"):
-            self.assertFalse(any(f"warroom.py* {gated}" in r for r in rules), gated)
+        self.assertIn('Bash(python *war-room*warroom.py" status *)', rules)
+        self.assertIn("PowerShell(python *war-room*warroom.py stop *)", rules)
+        allowed = lambda cmd: any(fnmatch.fnmatchcase(cmd, r[5:-1]) for r in rules if r.startswith("Bash("))  # noqa: E731
+        wr = 'python "C:/u/.claude/plugins/cache/moaa/war-room/0.4.0/warroom.py"'
+        self.assertTrue(allowed(f"{wr} status run-1 --json"))
+        self.assertTrue(allowed(f"{wr} app"))
+        for gated in ("toggle on", "launch r --confirm abc", "integrate r --apply", "finish r", "shutdown r",
+                      'approve r 3 --reject "status is wrong"'):
+            self.assertFalse(allowed(f"{wr} {gated}"), gated)
+
+    def test_crew_and_memory_rules_allow_only_reading(self):
+        import fnmatch
+        rules = install.reader_permissions()
+        allowed = lambda cmd: any(fnmatch.fnmatchcase(cmd, r[5:-1]) for r in rules if r.startswith("Bash("))  # noqa: E731
+        base = 'py "C:/u/.claude/plugins/cache/moaa/{p}/0.1.0/{s}"'
+        crew, mem = base.format(p="crew", s="crew.py"), base.format(p="layered-memory", s="memory.py")
+        for ok in (f"{crew} doctor", f"{crew} runs --limit 5", f"{mem} search \"tests\"", f"{mem} stats"):
+            self.assertTrue(allowed(ok), ok)
+        for gated in (f'{crew} run codex --task "list runs"', f'{crew} ask codex --task "doctor this"',
+                      f'{mem} remember "search the logs"', f"{mem} forget 3", f"{mem} consolidate --pending"):
+            self.assertFalse(allowed(gated), gated)
 
     def test_council_permissions_cover_home_spelling(self):
         rules = install.council_permissions(Path("/home/u/.claude"))
@@ -183,6 +212,6 @@ class ProfileTests(unittest.TestCase):
         kit = install.read_json(install.KIT / "config" / "kit.json", None)
         core = {p["id"] for p in kit["plugins"] if p.get("profile") == "core"}
         self.assertTrue({"specialist-council@moaa", "agent-arena-mode@moaa"} <= core)
-        self.assertLessEqual(len(core), 12)
+        self.assertLessEqual(len(core), 13)
         self.assertTrue(all(p.get("profile") in ("core", "full") for p in kit["plugins"]))
         self.assertFalse(any(p.get("optional") for p in kit["plugins"] if p["id"] in core))

@@ -1,0 +1,195 @@
+{
+  "_doc": "Each member is an agent CLI run headless. read: argv for read-only work; write: argv for work in a crew worktree. {prompt} is replaced by the prompt (or the prompt is sent on stdin when stdin is true), {out} by the file the final answer is written to, {model} by --model. env values starting with $ are read from the environment and the member is unavailable when one is missing. Claude-format members run Claude Code with --bare, so it never reads your Claude login.",
+  "members": {
+    "codex": {
+      "label": "OpenAI Codex CLI",
+      "bin": "codex",
+      "install": "npm install -g @openai/codex",
+      "login": "codex login",
+      "stdin": true,
+      "read": [
+        "exec",
+        "-c",
+        "shell_environment_policy.inherit=all",
+        "--skip-git-repo-check",
+        "--sandbox",
+        "read-only",
+        "--color",
+        "never",
+        "--output-last-message",
+        "{out}",
+        "-"
+      ],
+      "write": [
+        "exec",
+        "-c",
+        "shell_environment_policy.inherit=all",
+        "--skip-git-repo-check",
+        "--sandbox",
+        "workspace-write",
+        "--color",
+        "never",
+        "--output-last-message",
+        "{out}",
+        "-"
+      ],
+      "model": [
+        "--model",
+        "{model}"
+      ],
+      "good_for": [
+        "code",
+        "review",
+        "debug",
+        "bulk"
+      ]
+    },
+    "gemini": {
+      "label": "Google Gemini CLI",
+      "bin": "gemini",
+      "install": "npm install -g @google/gemini-cli",
+      "login": "run `gemini` once and sign in with Google (free tier), or set GEMINI_API_KEY",
+      "stdin": true,
+      "read": [
+        "--approval-mode",
+        "plan",
+        "--skip-trust",
+        "--output-format",
+        "text",
+        "-p",
+        "Follow the instructions given on stdin."
+      ],
+      "write": [
+        "--approval-mode",
+        "auto_edit",
+        "--skip-trust",
+        "--output-format",
+        "text",
+        "-p",
+        "Follow the instructions given on stdin."
+      ],
+      "model": [
+        "--model",
+        "{model}"
+      ],
+      "good_for": [
+        "research",
+        "long-context",
+        "review",
+        "bulk"
+      ]
+    },
+    "kimi": {
+      "label": "Moonshot Kimi Code CLI",
+      "bin": "kimi",
+      "install": "npm install -g @moonshot-ai/kimi-code",
+      "login": "run `kimi` once and use /login",
+      "stdin": false,
+      "read": [
+        "--plan",
+        "--output-format",
+        "text",
+        "-p",
+        "{prompt}"
+      ],
+      "write": [
+        "--yolo",
+        "--output-format",
+        "text",
+        "-p",
+        "{prompt}"
+      ],
+      "model": [
+        "--model",
+        "{model}"
+      ],
+      "good_for": [
+        "code",
+        "research",
+        "bulk"
+      ]
+    },
+    "deepseek": {
+      "label": "DeepSeek through Claude Code (Anthropic-format API)",
+      "bin": "claude",
+      "install": "Claude Code is already installed; get an API key at platform.deepseek.com",
+      "login": "set the environment variable DEEPSEEK_API_KEY",
+      "stdin": true,
+      "env": {
+        "ANTHROPIC_BASE_URL": "https://api.deepseek.com/anthropic",
+        "ANTHROPIC_API_KEY": "$DEEPSEEK_API_KEY"
+      },
+      "read": [
+        "--bare",
+        "-p",
+        "--no-session-persistence",
+        "--permission-mode",
+        "plan",
+        "--output-format",
+        "text"
+      ],
+      "write": [
+        "--bare",
+        "-p",
+        "--no-session-persistence",
+        "--permission-mode",
+        "acceptEdits",
+        "--allowedTools",
+        "Read,Edit,Write,Glob,Grep",
+        "--output-format",
+        "text"
+      ],
+      "model": [
+        "--model",
+        "{model}"
+      ],
+      "default_model": "deepseek-v4-pro",
+      "good_for": [
+        "code",
+        "debug",
+        "bulk"
+      ]
+    },
+    "omniroute": {
+      "label": "Claude Code through a local OmniRoute gateway (free-tier fallback)",
+      "bin": "claude",
+      "install": "python scripts/install.py --with-omniroute, then `crew.py omniroute start`",
+      "login": "start it with `crew.py omniroute start`; connect providers in its dashboard",
+      "stdin": true,
+      "needs_url": "http://127.0.0.1:20128/v1/models",
+      "env": {
+        "ANTHROPIC_BASE_URL": "http://127.0.0.1:20128",
+        "ANTHROPIC_API_KEY": "$OMNIROUTE_API_KEY"
+      },
+      "read": [
+        "--bare",
+        "-p",
+        "--no-session-persistence",
+        "--permission-mode",
+        "plan",
+        "--output-format",
+        "text"
+      ],
+      "write": [
+        "--bare",
+        "-p",
+        "--no-session-persistence",
+        "--permission-mode",
+        "acceptEdits",
+        "--allowedTools",
+        "Read,Edit,Write,Glob,Grep",
+        "--output-format",
+        "text"
+      ],
+      "model": [
+        "--model",
+        "{model}"
+      ],
+      "default_model": "auto",
+      "good_for": [
+        "bulk",
+        "research"
+      ]
+    }
+  }
+}

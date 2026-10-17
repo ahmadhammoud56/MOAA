@@ -272,6 +272,12 @@
       "profile": "full"
     },
     {
+      "id": "crew@moaa",
+      "enabled": true,
+      "tested_version": "0.1.0",
+      "profile": "core"
+    },
+    {
       "id": "discernment-nudge@anthropic-agent-skills",
       "enabled": true,
       "tested_version": "dbd4588f9e10",
@@ -299,6 +305,12 @@
       "id": "flightdeck@moaa",
       "enabled": true,
       "tested_version": "0.3.2",
+      "profile": "core"
+    },
+    {
+      "id": "layered-memory@moaa",
+      "enabled": true,
+      "tested_version": "0.1.0",
       "profile": "core"
     },
     {
@@ -682,14 +694,22 @@
       "lock": "vendor/ansys-requirements.lock"
     }
   },
+  "tools": {
+    "omniroute": {
+      "npm": "omniroute",
+      "version": "3.8.51"
+    }
+  },
   "own_work": [
+    "agents/code-improver.md",
     "plugins/agent-arena-mode",
+    "plugins/crew",
+    "plugins/layered-memory",
     "plugins/specialist-council",
     "plugins/war-room",
     "skills/agent-teams",
     "skills/local-build",
-    "skills/path-safety",
-    "agents/code-improver.md"
+    "skills/path-safety"
   ],
   "redistribution_permission": {
     "plugins/plot-deck": "approved by author Kyryl Shtefiienko; see plugins/plot-deck/PERMISSION.md"

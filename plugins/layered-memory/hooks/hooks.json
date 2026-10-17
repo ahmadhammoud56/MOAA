@@ -1,0 +1,30 @@
+{
+  "description": "Layered memory: recall at session start, capture and consolidate at session end",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 && $p -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2>/dev/null && exec $p \"${CLAUDE_PLUGIN_ROOT}/memory.py\" hook session-start; done; exit 0",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 && $p -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2>/dev/null && exec $p \"${CLAUDE_PLUGIN_ROOT}/memory.py\" hook session-end; done; exit 0",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

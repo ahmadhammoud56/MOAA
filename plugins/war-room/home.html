@@ -325,7 +325,7 @@ textarea:focus { outline: none; border-color: var(--accent); }
 const TOKEN = "__TOKEN__";
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[c]);
-const tier = m => /haiku/.test(m) ? "haiku" : /sonnet/.test(m) ? "sonnet" : /fable/.test(m) ? "fable" : "opus";
+const tier = m => /^crew:/.test(m) ? "info" : /haiku/.test(m) ? "haiku" : /sonnet/.test(m) ? "sonnet" : /fable/.test(m) ? "fable" : "opus";
 const ago = t => { const s = Date.now() / 1000 - t; return s < 60 ? "just now" : s < 3600 ? `${Math.floor(s / 60)} min ago` : s < 86400 ? `${Math.floor(s / 3600)} h ago` : `${Math.floor(s / 86400)} d ago`; };
 const NUMS = ["max_workers", "pause_at", "stop_at", "max_hours", "max_cost_usd", "gate_score", "max_fails", "wait_seconds"];
 const TOGS = ["gates", "auto_finish", "auto_integrate"];
@@ -592,7 +592,7 @@ function editDraft(d) {
       <label class="fl">Workers</label><table class="rm" id="ed-w"><thead><tr><th>Name</th><th>Council role</th><th>Model</th><th>Effort</th><th></th></tr></thead>
       ${d.workers.map((w, i) => `<tbody data-i="${i}"><tr><td><input type="text" data-f="name" maxlength="24" value="${esc(w.name)}" aria-label="Worker name"></td>
         <td><select data-f="role" aria-label="Council role">${optList(roles, w.role)}</select></td>
-        <td><select data-f="model" aria-label="Model">${optList(home?.tiers || [], w.model ? tier(w.model) : "", "default")}</select></td>
+        <td><select data-f="model" aria-label="Model">${optList([...(home?.tiers || []), ...(home?.engines || []).map(e => "crew:" + e)], w.engine ? "crew:" + w.engine : w.model ? tier(w.model) : "", "default")}</select></td>
         <td><select data-f="effort" aria-label="Effort">${optList(home?.efforts || [], w.effort || "", "default")}</select></td>
         <td class="x" rowspan="2"><button type="button" data-delw="${i}" aria-label="Remove worker">✕</button></td></tr>
         <tr class="sub"><td colspan="4"><input type="text" data-f="brief" maxlength="1000" value="${esc(w.brief)}" placeholder="brief: what this worker does" aria-label="Brief"></td></tr></tbody>`).join("")}</table>
@@ -609,7 +609,8 @@ function editDraft(d) {
 function readDraft() {
   const rows = id => [...$(id).querySelectorAll("tbody[data-i]")].map(tb => Object.fromEntries([...tb.querySelectorAll("[data-f]")].map(el => [el.dataset.f, el.type === "checkbox" ? (el.checked ? 1 : 0) : el.value.trim()])));
   return {...draft, name: $("ed-name").value.trim(), goal: $("ed-goal").value.trim(), project: $("nr-proj").value.trim(),
-    workers: rows("ed-w").map(w => ({name: w.name, role: w.role, brief: w.brief, ...(w.model ? {model: w.model} : {}), ...(w.effort ? {effort: w.effort} : {})})), tasks: rows("ed-t")};
+    workers: rows("ed-w").map(w => ({name: w.name, role: w.role, brief: w.brief,
+      ...(/^crew:/.test(w.model) ? {engine: w.model.slice(5)} : {...(w.model ? {model: w.model} : {}), ...(w.effort ? {effort: w.effort} : {})})})), tasks: rows("ed-t")};
 }
 $("nr-ed").addEventListener("input", () => { if (draft) store(readDraft()); });
 $("nr-proj").addEventListener("input", () => { if (draft) store(readDraft()); });

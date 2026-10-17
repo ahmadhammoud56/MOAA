@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """MOAA (Mother of All Agents) installer. Standard library only; safe to rerun.
 
-  python scripts/install.py                 core profile: 10 plugins, council, arena, skills, rea MCP
-  python scripts/install.py --full          everything: 93 plugins (95 with --with-claude-mem) + ansys MCP
+  python scripts/install.py                 core profile: 13 plugins, council, arena, crew, memory, skills, rea MCP
+  python scripts/install.py --full          everything: 96 plugins (98 with --with-claude-mem) + ansys MCP
+  python scripts/install.py --with-omniroute  also the OmniRoute gateway (npm), for crew's free-tier fallback
   python scripts/install.py --with-claude-mem
   python scripts/install.py --skip-mcp      no rea/ansys MCP servers
   python scripts/install.py --skip-ansys    keep rea, skip the ansys MCP server
@@ -64,7 +65,26 @@ def council_permissions(home):
     after `council.py` because the quoted path ends in `council.py"`."""
     rules = [f"Bash({py} *specialist-council*council.py*)" for py in ("python", "python3", "py")]
     rules.append("PowerShell(python *specialist-council*council.py*)")
-    return rules + war_room_permissions()
+    return rules + war_room_permissions() + reader_permissions()
+
+
+# Crew and layered-memory subcommands that only read. crew `run`/`ask` (which spend other services' quotas and can
+# write) and memory `remember`/`forget`/`consolidate` stay behind a permission prompt.
+READ_ONLY = {"crew": ("crew.py", ("doctor", "runs", "show", "pick")),
+             "layered-memory": ("memory.py", ("search", "show", "stats"))}
+
+
+def reader_permissions():
+    """The subcommand must follow the script path directly (quoted or not): a wildcard between them would also match
+    e.g. `crew.py run ... --task "list runs"`."""
+    rules = []
+    for plugin, (script, subs) in READ_ONLY.items():
+        for sub in subs:
+            for end in ('"', ""):
+                for tail in ((" *", "") if sub in BARE else (" *",)):
+                    rules += [f"Bash({py} *{plugin}*{script}{end} {sub}{tail})" for py in ("python", "python3", "py")]
+                    rules.append(f"PowerShell(python *{plugin}*{script}{end} {sub}{tail})")
+    return rules
 
 
 # War Room subcommands that only read, message, or stop. toggle, launch, integrate, finish, shutdown and approve are
@@ -73,11 +93,16 @@ WAR_ROOM_SAFE = ("plan", "status", "post", "send", "wake", "app", "list", "measu
                  "pause", "unpause", "stop", "resume", "demo", "template")
 
 
+BARE = {"app", "list", "demo", "template", "doctor", "runs", "stats", "show"}  # also run with no arguments
+
+
 def war_room_permissions():
     rules = []
-    for sub in WAR_ROOM_SAFE:
-        rules += [f"Bash({py} *war-room*warroom.py* {sub}*)" for py in ("python", "python3", "py")]
-        rules.append(f"PowerShell(python *war-room*warroom.py* {sub}*)")
+    for sub in WAR_ROOM_SAFE:  # subcommand right after the script: see reader_permissions
+        for end in ('"', ""):
+            for tail in ((" *", "") if sub in BARE else (" *",)):  # never `app*`: it also matches `approve`
+                rules += [f"Bash({py} *war-room*warroom.py{end} {sub}{tail})" for py in ("python", "python3", "py")]
+                rules.append(f"PowerShell(python *war-room*warroom.py{end} {sub}{tail})")
     return rules
 
 
@@ -107,6 +132,19 @@ def merge_settings(current, kit_settings, allow, plugins):
             enabled[pid] = on
             added["enabledPlugins"].append(pid)
     return merged, added
+
+
+def retire_rules(current, added, allow):
+    """Drop allow rules MOAA added in an earlier install (recorded in the manifest) that it no longer ships, e.g. the
+    pre-0.7 War Room rules whose `app*` also matched `approve`. Rules the user added themselves are never touched."""
+    stale = [r for r in added.get("allow", []) if r not in allow]
+    if not stale:
+        return current, []
+    out = copy.deepcopy(current)
+    perms = out.get("permissions", {})
+    perms["allow"] = [r for r in perms.get("allow", []) if r not in stale]
+    added["allow"] = [r for r in added.get("allow", []) if r not in stale]
+    return out, stale
 
 
 def unmerge_settings(current, added):
@@ -171,7 +209,8 @@ def install(args):
     record = {"kit_version": kit["version"], "kit_dir": str(KIT), "installed": time.time(),
               "marketplaces": manifest.get("marketplaces", []), "plugins": manifest.get("plugins", []),
               "skills": manifest.get("skills", []), "agents": manifest.get("agents", []),
-              "mcp": manifest.get("mcp", []), "settings_added": manifest.get("settings_added", {})}
+              "mcp": manifest.get("mcp", []), "tools": manifest.get("tools", []),
+              "settings_added": manifest.get("settings_added", {})}
     plugins = [p for p in kit["plugins"]
                if (args.full or p.get("profile") == "core")
                and (not p.get("optional") or (args.with_claude_mem and p["optional"] == "claude-mem"))]
@@ -257,8 +296,11 @@ def install(args):
     current = read_json(settings_path, {})
     if settings_path.is_file() and not args.dry_run:
         shutil.copy2(settings_path, settings_path.with_name(f"settings.json.bak-{time.strftime('%Y%m%d-%H%M%S')}"))
-    merged, added = merge_settings(current, kit["settings"], council_permissions(home),
-                                   {p["target"]: p["enabled"] for p in plugins})
+    allow = council_permissions(home)
+    current, retired = retire_rules(current, record["settings_added"], allow)
+    if retired:
+        log(f"removed {len(retired)} allow rule(s) an earlier MOAA install added and no longer uses")
+    merged, added = merge_settings(current, kit["settings"], allow, {p["target"]: p["enabled"] for p in plugins})
     for key, values in added.items():
         prior = record["settings_added"].setdefault(key, [])
         prior += [v for v in values if v not in prior]
@@ -267,6 +309,8 @@ def install(args):
 
     if not args.skip_mcp:
         install_mcp(r, kit["mcp"], record, home, skip_ansys=args.skip_ansys or not args.full, dry=args.dry_run)
+    if args.with_omniroute:
+        install_omniroute(r, kit["tools"]["omniroute"], record)
 
     write_json(home / MANIFEST, record, args.dry_run)
     if not args.dry_run:
@@ -508,6 +552,21 @@ def doctor(args):
     return 1 if failed else 0
 
 
+def install_omniroute(r, spec, record):
+    """npm install of the pinned OmniRoute. It is not started: `crew.py omniroute start` runs it with locked-down
+    settings (loopback only, API key required, generated dashboard password)."""
+    if not shutil.which("npm"):
+        log("omniroute: npm not found; skipped")
+        return
+    pkg = f"{spec['npm']}@{spec['version']}"
+    log(f"omniroute: npm install -g {pkg} (start it with crew.py omniroute start)")
+    result = r.run(["npm", "install", "-g", pkg] if not WINDOWS else ["cmd", "/c", "npm", "install", "-g", pkg])
+    if result.returncode:
+        log("  omniroute install failed: " + (result.stderr or result.stdout).strip()[-300:])
+    elif "omniroute" not in record["tools"]:
+        record["tools"].append("omniroute")
+
+
 def uninstall(args):
     home = claude_home()
     r = Runner(args.dry_run)
@@ -516,6 +575,8 @@ def uninstall(args):
         raise SystemExit(f"[moaa] no manifest at {home / MANIFEST}; nothing recorded to undo")
     for name in record.get("mcp", []):
         r.run(["claude", "mcp", "remove", name, "--scope", "user"])
+    for name in record.get("tools", []):  # npm tools MOAA installed (omniroute)
+        r.run(["npm", "uninstall", "-g", name] if not WINDOWS else ["cmd", "/c", "npm", "uninstall", "-g", name])
     for pid in record.get("plugins", []):
         log(f"uninstalling {pid}")
         r.run(["claude", "plugin", "uninstall", pid, "--scope", "user"])
@@ -548,8 +609,10 @@ def uninstall(args):
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--with-claude-mem", action="store_true")
+    p.add_argument("--with-omniroute", action="store_true",
+                   help="also install the OmniRoute gateway (npm) used by crew for free-tier fallback; not started")
     p.add_argument("--full", action="store_true",
-                   help="install all 95 plugins and the ansys MCP server (default: the 10-plugin core profile)")
+                   help="install all 96 plugins and the ansys MCP server (default: the 13-plugin core profile)")
     p.add_argument("--upstream", action="store_true",
                    help="install third-party plugins from their own marketplaces (latest) instead of the pinned moaa catalog")
     p.add_argument("--skip-mcp", action="store_true")

@@ -40,6 +40,16 @@
       "description": "War Room: a team of real, parallel Claude Code workers with council roles, review gates, a merge queue, usage-limit failsafes and a live local app."
     },
     {
+      "name": "crew",
+      "source": "./plugins/crew",
+      "description": "Crew: hand bounded tasks from Claude Code to Codex, Gemini, Kimi, DeepSeek or a local OmniRoute gateway, each with its own account; read-only by default, writes land on their own branch."
+    },
+    {
+      "name": "layered-memory",
+      "source": "./plugins/layered-memory",
+      "description": "Layered long-term memory (raw sessions, extracted notes, project scenes, user profile) in local SQLite with full-text search; recall at session start, consolidation at session end."
+    },
+    {
       "name": "academy-guide",
       "source": {
         "source": "github",
@@ -1914,7 +1924,7 @@
       "source": {
         "source": "github",
         "repo": "obra/superpowers",
-        "sha": "5bf4e78011075bcfc0dc295f0724994cd123ee71"
+        "sha": "bb92a77741419a4ab5f06e711a283343f1ada0c3"
       },
       "description": "Superpowers teaches Claude brainstorming, subagent driven development with built in code review, systematic debugging, and red/green TDD. Additionally, it teaches Claude how to author and test new skills.",
       "category": "development",
