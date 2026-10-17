@@ -299,7 +299,8 @@ def install(args):
     allow = council_permissions(home)
     current, retired = retire_rules(current, record["settings_added"], allow)
     if retired:
-        log(f"removed {len(retired)} allow rule(s) an earlier MOAA install added and no longer uses")
+        log(f"{'would remove' if args.dry_run else 'removed'} {len(retired)} allow rule(s) an earlier MOAA install "
+            "added and no longer uses")
     merged, added = merge_settings(current, kit["settings"], allow, {p["target"]: p["enabled"] for p in plugins})
     for key, values in added.items():
         prior = record["settings_added"].setdefault(key, [])
@@ -517,7 +518,7 @@ def doctor_checks():
     py = sys.executable
     plugins = KIT / "plugins"
     checks = [("installer tests", [py, "-m", "unittest", "discover", "-s", "tests"], KIT)]
-    for name in ("specialist-council", "agent-arena-mode", "war-room"):
+    for name in ("specialist-council", "agent-arena-mode", "war-room", "crew", "layered-memory"):
         checks.append((f"{name} tests", [py, "-m", "unittest", "discover", "-s", "tests"], plugins / name))
     checks += [
         ("war-room bus test", [py, "tests/test_bus.py"], plugins / "war-room"),

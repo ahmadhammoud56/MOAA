@@ -4,6 +4,59 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-17
+
+### Added
+- **Crew 0.1.0 (new plugin): other agent CLIs on call.**
+  - Claude Code hands a bounded brief to OpenAI Codex, Google Gemini, Moonshot Kimi Code, DeepSeek (Claude Code with
+    `--bare` on DeepSeek's Anthropic-format API) or a local OmniRoute gateway. It then reads and checks the answer.
+  - Each member uses its own account, so the work spends that service's quota rather than Claude usage.
+  - `crew.py doctor` shows what is installed and signed in. `run` gives one member a read-only task, and `ask` sends
+    the same brief to several members in parallel.
+  - `run --write` works in a separate git worktree. Crew commits the result on branch `crew/<member>-<id>` and never
+    touches your checkout.
+  - Every run is kept under `~/.claude/crew/runs/`.
+  - The Claude-format members never read your Claude login.
+  - A `crew` skill covers briefing, verification, stretching Claude limits, and what never to send.
+  - Verified live with Codex: a read-only question (correct answer, no files changed) and a write task (bug fixed
+    with a test, committed on its own branch).
+- **Layered memory 0.1.0 (new plugin): long-term memory across sessions.**
+  - Four layers, after the design of TencentDB Agent Memory: raw sessions, extracted notes with supersession,
+    per-project scenes and a user profile.
+  - Stored in local SQLite with FTS5, using standard-library Python.
+  - The SessionStart hook injects the profile, scenes and recent notes, labelled as data.
+  - The SessionEnd hook stores the session and starts one background Haiku extraction. That call has all tools
+    denied and saves no session, so it cannot recurse.
+  - Secrets are redacted on the way in, and model output is validated before it is stored.
+  - The `memory` skill searches, shows, remembers, corrects and forgets.
+  - Verified on a real transcript: one Haiku call (71 s) produced 11 accurate notes, a project scene and a profile
+    entry.
+- **War Room 0.5.0: crew workers.**
+  - A plan worker can set `"engine": "codex"` (or gemini, kimi, deepseek, omniroute).
+  - The conductor claims that worker's tasks, runs them through crew in the worker's own worktree and completes them
+    with the commit. As a reviewer, the worker returns a parsed verdict.
+  - Review gates and the merge queue are unchanged, so model families can review each other.
+  - A reviewer without a verdict is retried once, then blocked for the human.
+  - Crew workers have no console, and stop and resume skip them.
+  - The plan editor offers the engines in its model list.
+  - New template: `mixed-crew` (Claude plans, Codex builds, Gemini reviews).
+- **`install.py --with-omniroute`:** installs a pinned `omniroute` from npm and records it, so `--uninstall`
+  removes it.
+  - `crew.py omniroute start` runs it on 127.0.0.1 only, with an API key required, conversation tracking,
+    browser-cookie providers and paid-credit fallback off, and a generated password and JWT secret instead of
+    `CHANGEME`.
+- Crew and layered-memory join the core profile (13 plugins). The installer allows their read-only subcommands
+  without prompts.
+
+### Fixed
+- **War Room allow rules were too broad (security).**
+  - The rules had a wildcard between `warroom.py` and the subcommand and after it. As a result, `app*` also matched
+    `approve`, and a subcommand word inside any argument matched too (`approve r 3 --reject "status ..."`).
+  - Human gates such as `approve` could therefore run without a prompt.
+  - Rules now require the subcommand directly after the script, followed by a space or the end of the command.
+  - Reinstalling removes the rules an earlier MOAA install added and no longer ships (recorded in its manifest);
+    rules you added yourself are kept.
+
 ## [0.6.0] - 2026-10-14
 
 ### Added
