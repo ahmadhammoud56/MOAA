@@ -50,6 +50,12 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
   - New template: `mixed-allies` (Claude plans, Codex builds, Gemini reviews).
   - Verified live through the War Room bus. Codex fixed a function and added four tests in its worktree (58 s).
     Gemini reviewed the commit and passed it at 100 (41 s). The bus then approved the task and queued the merge.
+- **OmniRoute checked live:** pinned 3.8.51 started through allies.
+  - It listens only on 127.0.0.1 (all three ports).
+  - The API and management endpoints refuse requests without a key (401).
+  - The traffic inspector, TLS interception and cloud sync are off, and allies forces them off at every start.
+  - The `omniroute` member reaches the gateway with your key. With no provider connected it fails at once with a
+    clear message.
 - **`install.py --with-omniroute`:** installs a pinned `omniroute` from npm and records it, so `--uninstall`
   removes it.
   - `allies.py omniroute start` runs it on 127.0.0.1 only, with an API key required, conversation tracking,

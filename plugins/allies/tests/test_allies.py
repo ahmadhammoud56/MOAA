@@ -129,7 +129,8 @@ class Runs(Sandbox):
         self.assertEqual(first["INITIAL_PASSWORD"], second["INITIAL_PASSWORD"])
         self.assertGreater(len(first["JWT_SECRET"]), 40)
         for k, v in (("HOST", "127.0.0.1"), ("REQUIRE_API_KEY", "true"), ("WEB_COOKIE_USE_BROWSER", "0"),
-                     ("OMNIROUTE_DISABLE_CONVERSATION_TRACKING", "1")):
+                     ("OMNIROUTE_DISABLE_CONVERSATION_TRACKING", "1"), ("INSPECTOR_TLS_INTERCEPT", "false"),
+                     ("INSPECTOR_HTTP_PROXY_AUTOSTART", "false"), ("CLOUD_URL", "")):
             self.assertEqual(first[k], v)
         self.assertNotEqual(first["INITIAL_PASSWORD"], "CHANGEME")
 

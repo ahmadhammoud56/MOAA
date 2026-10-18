@@ -33,7 +33,11 @@ OMNI_PORT = 20128
 # browser-cookie providers, no paid-credit fallback. Secrets are generated once and kept in the allies folder.
 OMNI_SAFE_ENV = {"PORT": str(OMNI_PORT), "HOST": "127.0.0.1", "HOSTNAME": "127.0.0.1", "OMNIROUTE_SERVER_HOST": "127.0.0.1",
                  "APP_BIND_HOST": "127.0.0.1", "REQUIRE_API_KEY": "true", "OMNIROUTE_DISABLE_CONVERSATION_TRACKING": "1",
-                 "WEB_COOKIE_USE_BROWSER": "0", "ANTIGRAVITY_CREDITS": "off", "ALLOW_API_KEY_REVEAL": "false"}
+                 "WEB_COOKIE_USE_BROWSER": "0", "ANTIGRAVITY_CREDITS": "off", "ALLOW_API_KEY_REVEAL": "false",
+                 # pinned so a package update cannot turn them on: no traffic-inspecting proxy, no TLS interception,
+                 # no cloud sync, WebSocket only for this machine
+                 "INSPECTOR_HTTP_PROXY_AUTOSTART": "false", "INSPECTOR_TLS_INTERCEPT": "false", "CLOUD_URL": "",
+                 "NEXT_PUBLIC_CLOUD_URL": "", "LIVE_WS_HOST": "127.0.0.1"}
 BRIEF = """You are an ally working for Claude Code, which will check your answer before anyone relies on \
 it. Work only on the task below, inside the current working directory. Do not push, publish, delete files outside \
 your working directory, spend money, or change system settings. If you cannot finish, say exactly what is missing. \

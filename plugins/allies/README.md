@@ -56,12 +56,19 @@ starts it with OmniRoute's defaults. `allies.py omniroute start` runs it with:
 - conversation tracking off, browser-cookie providers off, and paid-credit fallback off;
 - a generated dashboard password and JWT secret in `~/.claude/allies/omniroute.env` (never `CHANGEME`).
 
+Then log in to its dashboard (password in `~/.claude/allies/omniroute.env`), create an API key and put it in
+`~/.claude/allies/keys.env` as `OMNIROUTE_API_KEY=...`. Connect at least one provider whose models support tool
+calling, because Claude Code sends tools with every request. Without one, the gateway answers at once with
+`No target in combo auto supports tool calling`.
+
 In its dashboard, connect only API-key and free-tier providers. Do not connect subscription logins or web cookies
 of other services; providers may ban accounts used that way, and OmniRoute itself marks such providers "avoid".
 Never connect your Claude account.
 
 ## Known limits
 
+- Codex's Windows sandbox cannot enter the user Temp folder or short (8.3) paths; allies expands short paths, so keep
+  projects in normal folders.
 - Codex's Windows sandbox may not see your Python install, so it cannot run Python tests. Allies reports what the
   member says it could not check; run the tests yourself before merging.
 - Sign-in checks are best effort; Kimi reports `unverified` until its first run. `doctor` reports `blocked` when a
