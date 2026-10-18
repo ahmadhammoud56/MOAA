@@ -586,7 +586,7 @@
     {
       "id": "superpowers@claude-plugins-official",
       "enabled": true,
-      "tested_version": "6.4.1",
+      "tested_version": "7.0.0",
       "profile": "core"
     },
     {

@@ -63,6 +63,9 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
     `CHANGEME`.
 - Allies and strata join the core profile (13 plugins). Their read-only subcommands run without prompts.
 
+### Changed
+- superpowers is tested at 7.0.0 (the catalog already pinned it; `tested_version` said 6.4.1).
+
 ### Fixed
 - **Allow rules were too broad (security).** MOAA's no-prompt rules for `council.py` and `warroom.py` used
   wildcards around the script and the subcommand. Three consequences:
