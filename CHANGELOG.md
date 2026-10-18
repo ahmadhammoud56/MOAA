@@ -4,6 +4,14 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-18
+
+### Fixed
+- **War Room 0.6.1:** the hub no longer does a reverse DNS lookup of the machine when it starts.
+  - Python's HTTP server does this by default (`socket.getfqdn()`).
+  - On macOS the lookup can stall for 30 seconds or more, so the app could be slow to open or never open.
+  - The new hub tests caught it on macOS CI. The hub tests now also wait up to 30 seconds and report a crash clearly.
+
 ## [0.8.0] - 2026-10-18
 
 ### Changed
