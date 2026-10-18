@@ -5,149 +5,103 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>War Room · History</title>
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/ui.css">
 <style>
-@font-face { font-family: "Plex Sans"; src: url(/fonts/IBMPlexSans-Variable.woff2) format("woff2"); font-weight: 100 700; }
-@font-face { font-family: "Plex Mono"; src: url(/fonts/IBMPlexMono-Regular.woff2) format("woff2"); font-weight: 400; }
-@font-face { font-family: "Plex Mono"; src: url(/fonts/IBMPlexMono-Medium.woff2) format("woff2"); font-weight: 500; }
-:root {
-  --bg: #0b0d10; --panel: #121519; --raise: #171b20; --sunk: #0e1013; --line: #232830; --line-strong: #343b45;
-  --text: #d7dce2; --dim: #8a939e; --faint: #5c6570; --accent: #c8a24a; --accent-soft: rgba(200,162,74,.14);
-  --danger: #c4544a; --ok: #6f9e7a; --info: #5f86b0;
-  --haiku: #6f9e7a; --sonnet: #5f86b0; --opus: #b08a4f; --fable: #8c78b0;
-  --sans: "Plex Sans", "Segoe UI", system-ui, sans-serif; --mono: "Plex Mono", Consolas, monospace;
-  --danger-ink: #f0d6d3; --danger-bg: #2a1715; --danger-bg2: #241413; --ok-ink: #b9d8c0; --ok-bg: #13201a;
-  --info-ink: #a9c3de; --accent-ink: #f0e2bc; --accent-bg: #2a2414; --hz1: #1d1a12; --hz2: #15130e; color-scheme: dark;
-}
-:root[data-theme="light"] {
-  --bg: #eef0f3; --panel: #f8f9fa; --raise: #ffffff; --sunk: #e4e7eb; --line: #d5dae0; --line-strong: #b4bcc6;
-  --text: #14181d; --dim: #4d5661; --faint: #77818c; --accent: #8f6a12; --accent-soft: rgba(143,106,18,.12);
-  --danger: #b03d33; --ok: #3a7549; --info: #3a6796;
-  --haiku: #4a8a5a; --sonnet: #3f6fa3; --opus: #96703a; --fable: #6f5a9f;
-  --danger-ink: #8a2b23; --danger-bg: #f6e3e1; --danger-bg2: #f0d4d0; --ok-ink: #2f6a3e; --ok-bg: #e2efe5;
-  --info-ink: #2f5a87; --accent-ink: #5e4508; --accent-bg: #f3ead3; --hz1: #efe4c4; --hz2: #e5d6ab; color-scheme: light;
-}
-@media (prefers-color-scheme: light) { :root[data-theme="system"] {
-  --bg: #eef0f3; --panel: #f8f9fa; --raise: #ffffff; --sunk: #e4e7eb; --line: #d5dae0; --line-strong: #b4bcc6;
-  --text: #14181d; --dim: #4d5661; --faint: #77818c; --accent: #8f6a12; --accent-soft: rgba(143,106,18,.12);
-  --danger: #b03d33; --ok: #3a7549; --info: #3a6796;
-  --haiku: #4a8a5a; --sonnet: #3f6fa3; --opus: #96703a; --fable: #6f5a9f;
-  --danger-ink: #8a2b23; --danger-bg: #f6e3e1; --danger-bg2: #f0d4d0; --ok-ink: #2f6a3e; --ok-bg: #e2efe5;
-  --info-ink: #2f5a87; --accent-ink: #5e4508; --accent-bg: #f3ead3; --hz1: #efe4c4; --hz2: #e5d6ab; color-scheme: light;
-} }
-
-* { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font: 13px/1.5 var(--sans); }
-::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: var(--line-strong); }
-@keyframes blink { 50% { opacity: .25; } }
-@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-header { display: flex; align-items: center; gap: 18px; height: 52px; padding: 0 20px; background: var(--panel);
-  border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; overflow: hidden; }
-header::after { content: ""; position: absolute; left: 0; bottom: 0; height: 1px; width: 120px; background: var(--accent);
-  opacity: .6; animation: sweep 7s linear infinite; }
-@keyframes sweep { from { transform: translateX(-120px); } to { transform: translateX(100vw); } }
-a.nav { font: 500 11px var(--mono); color: var(--dim); text-decoration: none; border: 1px solid var(--line-strong); padding: 6px 9px; letter-spacing: .08em; }
-a.nav:hover { color: var(--text); border-color: var(--dim); }
-a.nav:focus-visible, button:focus-visible, .item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.brand { font: 500 12px var(--mono); letter-spacing: .22em; display: flex; align-items: center; gap: 12px; white-space: nowrap; }
-.brand .mark { width: 14px; height: 14px; border: 1px solid var(--accent); position: relative; }
-.brand .mark::after { content: ""; position: absolute; inset: 3px; background: var(--accent); animation: blink 2s steps(1) infinite; }
-.hdr { font: 11px var(--mono); color: var(--dim); display: flex; gap: 18px; margin-left: auto; white-space: nowrap; }
-.hdr b { color: var(--text); font-weight: 500; }
-main { display: grid; grid-template-columns: minmax(320px, 440px) minmax(0, 1fr); min-height: calc(100vh - 52px); }
-.col { border-right: 1px solid var(--line); min-width: 0; } .col:last-child { border-right: 0; }
-h2 { margin: 0; padding: 0 18px; height: 36px; display: flex; align-items: center; justify-content: space-between;
-  font: 500 11px var(--mono); letter-spacing: .14em; color: var(--dim); text-transform: uppercase; border-bottom: 1px solid var(--line); background: var(--panel); }
-h2 span { color: var(--faint); letter-spacing: .04em; text-transform: none; }
-.list { padding: 12px 14px 30px; display: grid; gap: 8px; }
-.item { border: 1px solid var(--line); background: var(--panel); border-left: 2px solid var(--line-strong); padding: 9px 12px; cursor: pointer;
-  animation: rise .4s cubic-bezier(.2,.7,.2,1) both; }
-.item:hover { border-color: var(--line-strong); } .item.on { border-left-color: var(--accent); background: var(--raise); }
-.item.finished { border-left-color: var(--ok); } .item.stopped { border-left-color: var(--danger); } .item.on { border-left-color: var(--accent); }
-.item .top { display: flex; gap: 8px; align-items: center; }
+.top { position: sticky; top: 0; z-index: 5; }
+.wrap { display: grid; grid-template-columns: minmax(320px, 420px) minmax(0, 1fr); gap: 0; flex: 1; min-height: 0; }
+.list-col { border-right: 1px solid var(--line); padding: 16px 16px 30px; display: flex; flex-direction: column; gap: 10px; }
+.filters { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.list { display: grid; gap: 8px; }
+.item { padding: 11px 13px; cursor: pointer; border-left: 3px solid var(--line-strong); animation: rise .35s cubic-bezier(.2,.7,.2,1) both; }
+.item:hover { border-color: var(--line-strong); background: var(--raise); }
+.item.finished { border-left-color: var(--ok); } .item.stopped { border-left-color: var(--danger); }
+.item.on { border-color: var(--accent); border-left-color: var(--accent); background: var(--raise); }
+.item .r1 { display: flex; gap: 8px; align-items: center; min-width: 0; }
 .item .name { font: 500 12.5px var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tag { font: 500 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; border: 1px solid var(--line-strong); padding: 0 6px; color: var(--dim); flex: none; }
-.tag.finished { color: var(--ok-ink); border-color: var(--ok); } .tag.stopped { color: var(--danger-ink); border-color: var(--danger); } .tag.demo { color: var(--info-ink); border-color: var(--info); }
-.item .when { margin-left: auto; font: 11px var(--mono); color: var(--faint); white-space: nowrap; }
-.item .goal { color: var(--dim); font-size: 12px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.item .meta { font: 11px var(--mono); color: var(--faint); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 2px 12px; }
-.sw { display: inline-block; width: 8px; height: 8px; margin-right: 2px; }
-.detail { padding: 16px 20px 30px; }
-.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 12px 0; }
-.stats div { background: var(--sunk); padding: 8px 10px; font: 10.5px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
-.stats b { display: block; color: var(--text); font: 500 16px var(--mono); margin-top: 2px; letter-spacing: 0; text-transform: none; }
-.stats small { display: block; text-transform: none; letter-spacing: 0; font-size: 10px; }
-.acts { display: flex; gap: 8px; align-items: center; }
-.acts .msg { font: 11px var(--mono); color: var(--faint); }
-pre.report { margin: 0; padding: 12px 14px; background: var(--sunk); border: 1px solid var(--line); font: 11.5px/1.6 var(--mono); color: var(--dim); white-space: pre-wrap; }
-.dname { font: 500 14px var(--mono); display: flex; gap: 10px; align-items: center; }
-.dgoal { color: var(--dim); margin-top: 4px; }
-.roster { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 0 0; font: 11px var(--mono); color: var(--dim); }
-.roster b { color: var(--text); font-weight: 500; }
-button { font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text); white-space: nowrap;
-  background: var(--raise); border: 1px solid var(--line-strong); border-radius: 2px; padding: 7px 12px; cursor: pointer; transition: border-color .15s, transform .08s; }
-button:hover { border-color: var(--dim); } button:active { transform: translateY(1px); }
-button.primary { border-color: var(--accent); background: var(--accent-bg); color: var(--accent-ink); }
-button.danger { color: var(--danger-ink); border-color: var(--danger); background: var(--danger-bg); }
-.empty { border: 1px dashed var(--line-strong); padding: 26px; color: var(--faint); text-align: center; font-size: 12.5px; }
-.sub { font: 500 10.5px var(--mono); letter-spacing: .14em; color: var(--dim); text-transform: uppercase; margin: 18px 0 6px; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
-@media (max-width: 900px) { main { grid-template-columns: 1fr; } .col { border-right: 0; border-bottom: 1px solid var(--line); } .stats { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 640px) { header { height: auto; flex-wrap: wrap; padding: 10px 16px; overflow: visible; } .hdr { margin-left: 0; flex-wrap: wrap; } }
+.item .when { margin-left: auto; font-size: 12px; color: var(--faint); white-space: nowrap; }
+.item .goal { font-size: 13.5px; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .meta { font-size: 12px; color: var(--faint); margin-top: 7px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.dots { display: inline-flex; gap: 3px; }
+.dots .sw { margin: 0; }
+.detail { padding: 22px 28px 40px; min-width: 0; max-width: 1040px; }
+.dname { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.dname h2 { font: 600 19px var(--sans); margin: 0 6px 0 0; }
+.drun { font: 12.5px var(--mono); color: var(--dim); margin-top: 4px; }
+.dgoal { font-size: 14.5px; margin-top: 10px; }
+.team { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.member { display: flex; align-items: center; gap: 9px; padding: 7px 11px 7px 8px; border: 1px solid var(--line); border-radius: var(--r2); background: var(--panel); min-width: 0; }
+.member b { font-weight: 600; font-size: 13px; }
+.member > div > span:last-child { display: block; font-size: 12px; color: var(--dim); }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
+.tiles div { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r2); padding: 11px 13px; font-size: 12.5px; color: var(--dim); min-width: 0; }
+.tiles b { display: block; color: var(--text); font: 500 19px var(--mono); margin: 2px 0; }
+.tiles small { display: block; font-size: 11.5px; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acts { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sub2 { font: 600 14px var(--sans); margin: 24px 0 8px; }
+pre.report { margin: 0; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r2); font: 12px/1.65 var(--mono); color: var(--dim); white-space: pre-wrap; }
+@media (max-width: 960px) { .wrap { grid-template-columns: 1fr; } .list-col { border-right: 0; border-bottom: 1px solid var(--line); } .tiles { grid-template-columns: repeat(2, 1fr); } .detail { padding: 18px 16px 30px; } }
 </style>
 </head>
 <body>
-<header>
-  <a class="nav" href="/" title="War Room home">◂ HOME</a>
-  <div class="brand"><i class="mark"></i>WAR ROOM <span style="color:var(--faint);letter-spacing:.06em">history</span></div>
-  <div class="hdr"><span>RUNS <b id="n">--</b></span><span>MEASURED <b id="tok">--</b></span><span>SPEND <b id="usd">--</b></span></div>
-</header>
-<main>
-  <div class="col"><h2>Finished runs <span id="count"></span></h2><div class="list" id="list"></div></div>
-  <div class="col"><h2>Run <span id="sel"></span></h2><div class="detail" id="detail"></div></div>
-</main>
+<div class="app">
+<nav class="side" id="side"></nav>
+<div class="page">
+  <header class="top">
+    <div class="ttl"><h1>History</h1><div class="sub" id="sub">Finished and stopped runs: reports, cost, replays</div></div>
+    <button type="button" class="cmdk" onclick="palette.open()"><span>Search or run a command…</span><span class="kbd">Ctrl K</span></button>
+  </header>
+  <div class="wrap">
+    <div class="list-col">
+      <div class="filters"><input type="text" id="q" placeholder="Filter by name or goal" aria-label="Filter runs" spellcheck="false">
+        <select id="f" aria-label="Show"><option value="">All runs</option><option value="finished">Finished</option><option value="stopped">Stopped</option><option value="real">Real only</option><option value="demo">Demos</option></select></div>
+      <div class="list" id="list"></div>
+    </div>
+    <div class="detail" id="detail" aria-live="polite"></div>
+  </div>
+</div>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="scrim" id="scrim"><div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt"></div></div>
+<script src="/ui.js"></script>
 <script>
 const TOKEN = "__TOKEN__";
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[c]);
-const tier = m => /^ally:/.test(m) ? "info" : /haiku/.test(m) ? "haiku" : /sonnet/.test(m) ? "sonnet" : /fable/.test(m) ? "fable" : "opus";
-const dur = s => s == null || s < 0 ? "--" : s < 60 ? `${Math.floor(s)}s` : s < 3600 ? `${Math.floor(s / 60)}m ${Math.floor(s % 60)}s` : `${Math.floor(s / 3600)}h ${Math.floor(s % 3600 / 60)}m`;
-const day = t => t ? new Date(t * 1000).toLocaleString([], {month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"}) : "--";
-const money = v => v == null ? "--" : `$${v.toFixed(v < 1 ? 3 : 2)}`;
+const day = t => t ? new Date(t * 1000).toLocaleString([], {month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23"}) : "--";
 let runs = [], pick = new URLSearchParams(location.search).get("run");
+shell("history");
+api("/api/home").then(h => { const live = h.runs.find(r => r.status === "live"); setRunNav((live || h.runs.find(r => r.status !== "planned"))?.run, !!live); }).catch(() => {});
 
+const shown = () => { const q = $("q").value.toLowerCase().trim(), f = $("f").value;
+  return runs.filter(r => (!q || `${r.run} ${r.goal}`.toLowerCase().includes(q)) && (!f || (f === "demo" ? r.demo : f === "real" ? !r.demo : r.status === f))); };
 function item(r) {
-  return `<div class="item ${esc(r.status)} ${r.run === pick ? "on" : ""}" data-run="${esc(r.run)}" role="button" tabindex="0">
-    <div class="top"><span class="name">${esc(r.run)}</span><span class="tag ${esc(r.status)}">${esc(r.status)}</span>${r.demo ? '<span class="tag demo">demo</span>' : ""}<span class="when">${day(r.started)}</span></div>
+  const fams = [...new Set((r.workers || []).map(w => family(w.model)))];
+  return `<div class="panel item ${esc(r.status)} ${r.run === pick ? "on" : ""}" data-run="${esc(r.run)}" role="button" tabindex="0" aria-current="${r.run === pick}">
+    <div class="r1"><span class="tag ${esc(r.status)}">${esc(cap(r.status))}</span>${r.demo ? '<span class="tag demo">Demo</span>' : ""}<span class="name">${esc(r.run)}</span><span class="when">${day(r.started)}</span></div>
     <div class="goal">${esc(r.goal)}</div>
-    <div class="meta"><span>${(r.workers || []).map(w => `<i class="sw" style="background:var(--${tier(w.model)})"></i>`).join("")} ${(r.workers || []).length} workers</span>
+    <div class="meta"><span class="dots">${(r.workers || []).map(w => `<i class="sw f-${family(w.model)}" title="${esc(w.name)} · ${esc(modelName(w.model))}"></i>`).join("")}</span>
       <span>${r.finished_tasks}/${r.tasks} tasks</span><span>${r.passed}/${r.reviews} reviews passed</span>
-      <span>${r.tokens ? `${(r.tokens.total / 1e6).toFixed(2)}M tok` : r.demo ? "simulated" : "not measured"}</span></div></div>`;
+      <span>${r.tokens ? `${(r.tokens.total / 1e6).toFixed(2)}M tokens` : r.demo ? "simulated" : "not measured"}</span>${fams.filter(f => f !== "claude").map(f => `<span class="fam f-${f}">${esc(FAMILIES[f])}</span>`).join("")}</div></div>`;
 }
 function detail(r) {
-  if (!r) return `<div class="empty">${runs.length ? "Pick a run on the left." : "No finished runs yet. A run lands here when it finishes or is stopped."}</div>`;
-  const length = r.finished && r.started ? r.finished - r.started : null;
-  return `<div class="dname">${esc(r.run)} <span class="tag ${esc(r.status)}">${esc(r.status)}</span>${r.demo ? '<span class="tag demo">demo</span>' : ""}</div>
-    <div class="dgoal">${esc(r.goal)}</div>
-    <div class="roster">${(r.workers || []).map(w => `<span><i class="sw" style="background:var(--${tier(w.model)})"></i> <b>${esc(w.name)}</b> ${esc(w.role)} · ${esc(w.model.replace("claude-", ""))} · ${esc(w.effort)}</span>`).join("")}</div>
-    <div class="stats"><div>Length<b>${dur(length)}</b><small>${day(r.started)} → ${day(r.finished)}</small></div>
+  if (!r) return `<div class="empty">${runs.length ? "Pick a run on the left." : "No finished runs yet. A run lands here when it finishes or is stopped. Start a demo from Home to see one."}</div>`;
+  const length = r.finished && r.started ? r.finished - r.started : null, allies = (r.workers || []).filter(w => isAlly(w.model)).length;
+  return `<div class="dname"><h2>${esc(r.goal || r.run)}</h2><span class="tag ${esc(r.status)}">${esc(cap(r.status))}</span>${r.demo ? '<span class="tag demo">Demo</span>' : ""}${r.integrated ? '<span class="tag ok">Integrated</span>' : ""}</div>
+    <div class="drun">${esc(r.run)}</div>
+    <div class="team">${(r.workers || []).map(w => `<div class="member">${avatar(w.name, w.model)}<div><b>${esc(w.name)}</b> ${famBadge(w.model)}<span>${esc(w.role)}${isAlly(w.model) ? "" : ` · ${esc(modelName(w.model))} · ${esc(w.effort)}`}</span></div></div>`).join("")}</div>
+    <div class="tiles"><div>Length<b>${dur(length)}</b><small>${day(r.started)} → ${day(r.finished)}</small></div>
       <div>Tasks<b>${r.finished_tasks}/${r.tasks}</b><small>${r.merged} merged${r.integrated ? " · integrated" : ""}</small></div>
       <div>Reviews<b>${r.passed}/${r.reviews}</b><small>verdicts that passed</small></div>
-      <div>Tokens<b>${r.tokens ? `${(r.tokens.total / 1e6).toFixed(2)}M` : "--"}</b><small>${r.tokens ? `${r.tokens.api_calls} calls · ${Math.round(r.tokens.per_worker_task / 1000)}k / worker-task` : r.demo ? "demo: simulated, not measured" : "not measured"}${r.cost_usd != null ? ` · ${money(r.cost_usd)} statusline` : ""}</small></div></div>
+      <div>Tokens<b>${r.tokens ? `${(r.tokens.total / 1e6).toFixed(2)}M` : "--"}</b><small>${r.tokens ? `${r.tokens.api_calls} calls · ${Math.round(r.tokens.per_worker_task / 1000)}k / worker-task` : r.demo ? "demo: simulated" : "not measured"}${r.cost_usd != null ? ` · ${money(r.cost_usd)} statusline` : ""}${allies ? ` · ${allies} ${allies === 1 ? "ally" : "allies"} on their own limits` : ""}</small></div></div>
     <div class="acts"><button class="primary" type="button" id="replay">Replay</button><button type="button" id="open">Open run view</button><button class="danger" type="button" id="del">Delete run</button><span class="msg" id="msg"></span></div>
-    <div class="sub">Report</div>${r.report ? `<pre class="report">${esc(r.report)}</pre>` : `<div class="empty">No report: the run was stopped before it finished.</div>`}`;
+    <div class="sub2">Report</div>${r.report ? `<pre class="report">${esc(r.report)}</pre>` : `<div class="empty">No report: the run was stopped before it finished.</div>`}`;
 }
 function render() {
-  const sel = runs.find(r => r.run === pick) || null;
-  $("count").textContent = runs.length ? `${runs.length}` : "";
-  const html = runs.map(item).join("") || `<div class="empty">Nothing here yet. Start a demo from Home to see how a run plays out.</div>`;
-  if ($("list")._h !== html) { $("list").innerHTML = html; $("list")._h = html; }
+  const list = shown(), sel = runs.find(r => r.run === pick) || null;
+  setHTML($("list"), list.map(item).join("") || `<div class="empty">${runs.length ? "No run matches the filter." : "Nothing here yet. Start a demo from Home to see how a run plays out."}</div>`);
   const d = detail(sel);
   if ($("detail")._h !== d) { $("detail").innerHTML = d; $("detail")._h = d; wire(sel); }
-  $("sel").textContent = sel ? sel.run : "";
   const real = runs.filter(r => !r.demo);
-  $("n").textContent = `${real.length}${runs.length > real.length ? ` + ${runs.length - real.length} demo` : ""}`;
-  $("tok").textContent = `${(real.reduce((a, r) => a + (r.tokens ? r.tokens.total : 0), 0) / 1e6).toFixed(1)}M tokens`;
-  $("usd").textContent = money(real.reduce((a, r) => a + (r.cost_usd || 0), 0));
+  $("sub").textContent = runs.length ? `${plural(real.length, "run")}${runs.length > real.length ? ` + ${runs.length - real.length} demo` : ""} · ${(real.reduce((a, r) => a + (r.tokens ? r.tokens.total : 0), 0) / 1e6).toFixed(1)}M tokens measured · ${money(real.reduce((a, r) => a + (r.cost_usd || 0), 0))} statusline spend`
+    : "Finished and stopped runs: reports, cost, replays";
 }
 function wire(r) {
   if (!r) return;
@@ -155,17 +109,22 @@ function wire(r) {
   $("replay").onclick = () => location.href = `/run/${encodeURIComponent(r.run)}?replay=1`;
   $("del").onclick = async () => {
     if (!confirm(`Delete ${r.run}? Its board, log and report are removed. ${r.demo ? "" : "Its measured cost stays in the cost model."}`)) return;
-    const res = await fetch(`/api/run/${encodeURIComponent(r.run)}/discard`, {method: "POST", headers: {"X-War-Room-Token": TOKEN, "Content-Type": "application/json"}, body: "{}"});
-    const out = await res.json().catch(() => ({}));
-    if (!res.ok) { $("msg").textContent = out.error || res.status; return; }
+    try { await api(`/api/run/${encodeURIComponent(r.run)}/discard`, {}); } catch (e) { $("msg").className = "msg err"; $("msg").textContent = e.message; return; }
     pick = null; history.replaceState(null, "", "/history"); load();
   };
 }
 function choose(run) { pick = run; history.replaceState(null, "", `/history?run=${encodeURIComponent(run)}`); render(); }
 $("list").addEventListener("click", e => { const it = e.target.closest(".item"); if (it) choose(it.dataset.run); });
-$("list").addEventListener("keydown", e => { const it = e.target.closest(".item"); if (it && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); choose(it.dataset.run); } });
+$("list").addEventListener("keydown", e => {
+  const it = e.target.closest(".item"); if (!it) return;
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(it.dataset.run); }
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); (e.key === "ArrowDown" ? it.nextElementSibling : it.previousElementSibling)?.focus(); }
+});
+$("q").oninput = render; $("f").onchange = render;
+palette.add(() => runs.flatMap(r => [{label: `Replay ${r.run}`, hint: r.goal, group: "History", run: () => location.href = `/run/${encodeURIComponent(r.run)}?replay=1`},
+  {label: `Show ${r.run}`, hint: `${r.status}${r.demo ? " · demo" : ""}`, group: "History", run: () => choose(r.run)}]));
 async function load() {
-  try { const r = await fetch("/api/history"); if (!r.ok) throw new Error(r.status); runs = (await r.json()).runs; }
+  try { runs = (await api("/api/history")).runs; }
   catch (e) { $("list").innerHTML = `<div class="empty">The hub did not answer (${esc(e.message)}).</div>`; return; }
   if (!pick && runs.length) pick = runs[0].run;
   render();

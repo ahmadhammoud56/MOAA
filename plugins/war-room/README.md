@@ -10,9 +10,13 @@ Finished work is reviewed by another worker on a different model before it count
 
 Install with `/plugin install war-room@moaa` (the MOAA installer adds it to both profiles). Design history: [feasibility study](docs/FEASIBILITY.md) and [step-0 spikes](docs/SPIKES.md).
 
-![War Room home: war mode master switch, settings, runs](docs/media/home.png)
+![The run view: needs-attention strip, KPI strip, team with Claude and ally workers, the board, review gates and the timeline](docs/media/run-live.png)
 
-![A finished run: Flow view with every task integrated, review gates, report and timeline](docs/media/run-finished.png)
+![Home: war mode, plan usage, quick-start templates and runs](docs/media/home.png)
+
+![New run: project, job, templates and the plan editor with an engine per worker](docs/media/new-run.png)
+
+![A finished run: the board with every task merged, review gates, the report and the timeline](docs/media/run-finished.png)
 
 ![The Tree tab: the run as an agent tree with the reviewer rail, bus meters, workers and session log](docs/media/run-tree.png)
 
@@ -20,9 +24,11 @@ Install with `/plugin install war-room@moaa` (the MOAA installer adds it to both
 
 ![A finished run replayed halfway through, with the scrubber above the run view](docs/media/run-replay.png)
 
+![History: finished runs with their team, outcome, cost and report](docs/media/history.png)
+
 ![The light theme](docs/media/run-light.png)
 
-To see the app without spending any tokens, run `python warroom.py demo` (or press **Start demo** on Home). It plays a simulated six-worker run through the real bus for two to three minutes: no Claude session is started.
+To see the app without spending any tokens, run `python warroom.py demo` (or press **Start demo** on Home). It plays a simulated six-worker run (four Claude workers, a Codex builder and a Gemini reviewer) through the real bus for two to three minutes: no Claude session is started.
 
 ## The app
 
@@ -30,47 +36,50 @@ To see the app without spending any tokens, run `python warroom.py demo` (or pre
 
 `python warroom.py app --install-shortcut` adds **War Room** to the Start menu and the desktop on Windows, with its own icon, or a menu entry on Linux. The shortcut runs a small launcher in `~/.claude/war-room/` that opens whichever War Room version is installed, so it survives plugin updates. No console window appears. `--remove-shortcut` takes it away again. War Room stays a MOAA plugin: the app still needs Claude Code and Python.
 
+Every page shares a slim sidebar: **Home**, **New run**, **Run** (the live run, with a green dot while one is running), **History** and **Settings**, plus the theme switch. **Ctrl+K** opens a command palette on every page: go anywhere, arm war mode, start a demo or a template, open or replay a run, and in a run pause, finish, stop, switch views, or jump to any worker or task.
+
+Workers are coloured by model family everywhere: Claude amber, Codex teal, Gemini blue, Kimi violet, DeepSeek sky, OmniRoute steel. An ally worker carries a family badge. Claude workers also show their tier (Haiku, Sonnet, Opus, Fable) as a small swatch.
+
 **Home**
 
-- **New run.** Pick the project folder with **Browse…** (the system folder dialog) or type its path; it must be a folder Claude Code already trusts. Then describe the job and either:
+- **War mode.** The master switch: Safe or Armed. Arming it opens a warning, the live plan meter and an acknowledgement. While it is Safe, launches are blocked; disarming never touches live runs.
+- **Plan usage.** The 5-hour window with the pause and stop thresholds marked, the weekly meter, and the cost model (median tokens per worker-task over measured runs).
+- **Quick start.** Every team template, each showing its model families, plus a demo run. A template fills the plan editor at no token cost.
+- **Runs.** Live and planned runs first. Each card shows its status, goal, the team as family-coloured avatars with ally badges, and progress. A planned run has **Preview and launch**: the roster with engines, plugins, the calibrated token estimate, guard, gates and warning, then an acknowledgement and a launch sequence that hands over to the run view.
+
+**New run**
+
+- Pick the project folder with **Browse…** (the system folder dialog) or type its path; it must be a folder Claude Code already trusts. Describe the job, then either:
   - **Draft with Claude:** one headless Sonnet call with no tools, no session file and no plugins drafts the plan (about 5–10k tokens of your plan; the app asks first and shows the progress and any error), or
-  - **Write by hand:** a form with a planner, a builder and a reviewer, at no token cost. The picker beside it starts the form from a team template instead: **feature team** (planner, builder, test-engineer reviewer), **bug hunt** (debugger, scout, challenger), **review swarm** (security, reliability and test reviewers, read-only), **research fan-out** (literature reviewer, editor, peer-reviewer fact-checker) or **refactor** (refactoring engineer, test engineer, challenger). Each has three workers, a reviewer whenever someone writes, and seed tasks.
+  - start from **a template** (feature team, bug hunt, review swarm, research fan-out, mixed allies, refactor) or a blank team, at no token cost.
+- The **plan editor**: name, goal, and per worker a council role, an **engine** (Claude or an ally: Codex, Gemini, Kimi, DeepSeek, OmniRoute), and for Claude a model tier and effort, plus a brief. Seed tasks have an assignee and review on or off. The budget comes from Settings. **Create plan** resolves roles and plugins exactly like `warroom.py plan` and opens Preview and launch; nothing starts until you arm war mode, acknowledge and launch. The draft survives a reload.
 
-  Both open the plan editor: name, goal, workers (council role, model, effort, brief) and seed tasks (assignee, review on or off). The budget comes from Settings. **Create plan** resolves roles and plugins exactly like `warroom.py plan` and opens **Preview & launch**; nothing starts until you arm war mode, acknowledge and launch. The draft survives a reload.
-- **War mode master switch.** Arming it opens a warning, the live plan meter and an acknowledgement. While the switch is SAFE, launches are blocked.
-- **Settings.** These are the defaults for every new plan:
-  - max workers
-  - usage guard pause and stop thresholds, shown on a gauge with the live meter marked
-  - max run length
-  - spend cap in USD (0 = none): the API-equivalent statusline cost of all workers, summed across resumed sessions. The conductor stops the run when it is reached and never resumes it by itself; resuming asks for a higher cap
-  - review gates: on/off, pass score, failed reviews before arbitration
-  - keep-alive wait
-  - auto finish and auto integrate
+**Settings** (saved with **Save settings** in the header; **Defaults** restores the built-in values)
 
-  Values are validated, and the built-in defaults can be restored. **Presets** save the current settings under a name and apply them later. **Alerts** switch the desktop notification and sound on or off.
-- **Worker profiles.** The plugins each worker kind loads (planner, builder, reviewer), and a default model tier and effort per Specialist Council role. Changes apply to new plans and are kept in `~/.claude/war-room/profiles.json` and `config.json`. Allow and deny lists are never changed here, but a plugin brings its own hooks and MCP servers, so add only plugins you trust for that kind of worker. A plan that names a model still wins.
-- **History** (header link): finished and stopped runs with outcome, review results, measured tokens, statusline spend and the report. Runs can be deleted there.
-- **Start demo** (header): opens a simulated run.
-- **Replay** on a finished or stopped run card (and on History) opens the run view in replay mode.
-- **Theme** (Settings → Alerts): graphite dark (the default), light, or follow the system. The Tree tab stays dark in the light theme, as a terminal pane would. `?theme=light` on any page previews a theme without saving it.
-- **Runs.** Every run with its status, goal, roster (tier swatch, worker, council role) and progress. A planned run has **Preview & launch**, which shows the roster, plugins, calibrated token estimate, guard, gates and warning, then an acknowledgement, then a launch sequence before it hands over to the run view.
+- Team and usage guard: max workers; pause and stop thresholds on a gauge with the live meter; max run length; spend cap in USD (0 = none), the API-equivalent statusline cost of all workers summed across resumed sessions. The conductor stops the run at the cap and never resumes it by itself; resuming asks for a higher cap.
+- Review gates (on/off, pass score, failed reviews before arbitration), keep-alive wait, auto finish and auto integrate. Values are validated server-side.
+- **Presets** save the settings under a name and apply them later. **Alerts and appearance**: desktop notifications, sound and the theme (graphite dark, light, or follow the system; `?theme=light` on any page previews a theme without saving it).
+- **Worker profiles:** the plugins each worker kind loads (planner, builder, reviewer), and a default model tier and effort per Specialist Council role, kept in `~/.claude/war-room/profiles.json` and `config.json`. Allow and deny lists are never changed here, but a plugin brings its own hooks and MCP servers, so add only plugins you trust for that kind of worker. A plan that names a model or engine still wins.
 
 **Run view**
 
-- **Flow** (default tab): a live view of the workflow. Five stations (Board → Build → Review → Merge queue → Integrated) are linked by moving conveyor belts. Each task is a persistent block that glides between stations. A forward move leaves an amber trail, and a failed review sends it back with a red trail. Each station lists the workers on it, with status lights. Below 640 px wide the view switches to rows.
-- **Tree** tab: the run as a terminal-style agent tree. A stepper marks the phases (plan, build, review, merge, done). A reviewer rail on the left lists the reviewers on call and the latest gates, and the gate under review is wired to the conductor. Below the conductor sit the bus (5-hour, weekly, board and inbox block meters), the workers fanned out in boxes coloured by model tier, and the integration branch. A session log and a status line close it off.
-- **Cost** tab: total spend, the 5-hour window with its burn rate and a dotted projection to the pause and stop thresholds, spend per worker over time with a crosshair, a per-worker table (share, burn per minute, context), and the measured runs behind the cost model.
-- **Worker drill-down:** click a worker card (or its box in the Tree) for its recent tool calls with a histogram, messages, checkpoints, tasks and context and spend charts. **Focus console** raises the worker's console, opening one if it has none; **Copy attach command** copies `claude attach <session>`.
+- **Header:** the goal, run id, uptime, conductor status and branch, a status tag (Live, Paused, Stopped, Finishing, Finished, Replay), and Alerts, Integrate, Resume, Pause, Finish and Stop all (each shown when it applies).
+- **Needs attention:** a strip that appears only when something wants you: a human gate (with **Approve** and **Reject** right there, the same as `warroom.py approve`), a failed review being reworked, spend near the cap, the 5-hour window near the pause line, a silent conductor, or the run's own state (stopped, paused, finishing countdown, complete, integrated).
+- **KPI strip:** tasks merged, the 5-hour window with its thresholds, spend against the cap, who is working (Claude versus allies, by family), and how many human gates are waiting.
+- **Team:** a card per worker with its family avatar, role and model, a status light (working, parked, booting, stopped), the task it holds, heartbeat, context, spend, inbox and a 20-minute activity sparkline. A launching or resumed worker steps through SPAWN → PROFILE → PLUGINS n → BUS → READY; while workers boot, a fleet boot panel shows them all together. Click a card for the **worker drill-down**: tool calls with a histogram, messages, checkpoints, tasks, and context and spend charts. A Claude worker has **Focus console** and **Copy attach command**; an ally worker has no console.
+- **Board** (default tab): the kanban. Board, Building, In review and Merged lanes; each card shows who holds it (family colour), the commit, tries and the score, and glides to its new lane when it moves. Click a card for the **task inspector**: status, every review with its verdict, score and notes, the commit with its diff stat, the people involved, the author's summary and the task's history. A task at a human gate can be approved or sent back from there.
+- **Flow** tab: five stations (Board → Build → Review → Merge queue → Integrated) linked by moving belts; tasks glide between them, leaving an amber trail forward and a red one when a review sends them back.
+- **Tree** tab: the run as a terminal-style agent tree with the reviewer rail, the bus meters, the workers and a session log. It stays dark in the light theme, as a terminal pane would.
+- **Topology** tab: who talks to whom, with messages travelling along the edges as packets.
+- **Cost** tab: total spend, the 5-hour window with its burn rate and a dotted projection to the pause and stop thresholds, spend per worker over time with a crosshair, a per-worker table, and the measured runs behind the cost model.
+- **Timeline:** the last 30 minutes per worker, with busy stretches and events in each worker's family colour and review verdicts as diamonds.
+- **Review gates:** every verdict with a score bar against the pass line, reviewer → author (allies named) and the notes; click one to inspect its task. Below it the **merge queue** (the report once the run finishes) and the **activity** feed.
 - **Alerts:** a toast when a human gate opens or the run stops or finishes, plus a desktop notification and two beeps when Alerts is on.
-- **Replay** (`/run/<run>?replay=1`, or Replay on History and Home): the run rebuilt from its full logs at any moment and played through the same panels, with play and pause, 1x to 120x speed and a scrubber. Tasks, reviews, merges, workers, inbox counts, checkpoints, meters and usage are all as they stood at that moment, and moving the scrubber back works too. `&at=0.5` opens it halfway through.
-- **Topology** tab: who talks to whom. Messages travel along the edges as packets. A newly launched worker's node draws itself in while a deploy line runs from the orchestrator.
-- **Boot sequence:** a launching or resumed worker's card slides in and steps through SPAWN → PROFILE → PLUGINS n → BUS → READY. READY is reached only when the worker has really started. While workers boot, a fleet boot panel in the Flow view shows them all together.
-- **Workers:** each card shows a status light (busy, parked, booting, stopped), model, effort, ticking heartbeat, inbox count, a 20-minute activity sparkline, context use, current task and last checkpoint.
-- **Review gates:** every verdict, with a score bar against the pass line, PASS, FAIL or REVIEWING, reviewer → author, and the notes.
-- **Merge queue**, a scrolling 30-minute timeline, and an activity feed. When the run finishes, the merge queue panel shows the report.
-- **Header:** conductor pulse, uptime, plan meters with threshold ticks, and Pause, Stop all, Finish, Resume and Integrate (each shown when it applies). A banner reports stopped, paused, human-gate, finishing-countdown and complete states.
+- **Replay** (`/run/<run>?replay=1`, or Replay on History and Home): the run rebuilt from its full logs at any moment and played through the same panels, with play and pause, 1× to 120× speed and a scrubber. `&at=0.5` opens it halfway through.
 
-The visual style is flat graphite, hairline borders, IBM Plex and muted model-tier colours, with no gradients, glow or pills. The Tree tab uses a brighter terminal palette, and the Cost charts use a categorical palette checked for colour-blind separation. Motion is mechanical (stepped lights, marching dashes, belts) and is switched off under reduced-motion settings.
+**History:** finished and stopped runs, filterable by name, goal, outcome or demo. Each shows its team, length, tasks, reviews, measured tokens and statusline spend, the report, and Replay, Open and Delete.
+
+The visual style is flat graphite with an amber accent, hairline borders and 6–8 px corners: IBM Plex Sans for text and Plex Mono only for data. There are no gradients or glow; hard hazard stripes mark only armed and danger states. The Cost charts use a categorical palette checked for colour-blind separation. Motion is mechanical (stepped lights, gliding cards, belts) and is switched off under reduced-motion settings.
 
 ## Command line
 

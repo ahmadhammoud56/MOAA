@@ -5,366 +5,315 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>War Room</title>
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/ui.css">
 <style>
-@font-face { font-family: "Plex Sans"; src: url(/fonts/IBMPlexSans-Variable.woff2) format("woff2"); font-weight: 100 700; }
-@font-face { font-family: "Plex Mono"; src: url(/fonts/IBMPlexMono-Regular.woff2) format("woff2"); font-weight: 400; }
-@font-face { font-family: "Plex Mono"; src: url(/fonts/IBMPlexMono-Medium.woff2) format("woff2"); font-weight: 500; }
-:root {
-  --bg: #0b0d10; --panel: #121519; --raise: #171b20; --sunk: #0e1013; --line: #232830; --line-strong: #343b45;
-  --text: #d7dce2; --dim: #8a939e; --faint: #5c6570; --accent: #c8a24a; --accent-soft: rgba(200,162,74,.14);
-  --danger: #c4544a; --ok: #6f9e7a; --info: #5f86b0;
-  --haiku: #6f9e7a; --sonnet: #5f86b0; --opus: #b08a4f; --fable: #8c78b0;
-  --sans: "Plex Sans", "Segoe UI", system-ui, sans-serif; --mono: "Plex Mono", Consolas, monospace;
-  --danger-ink: #f0d6d3; --danger-bg: #2a1715; --danger-bg2: #241413; --ok-ink: #b9d8c0; --ok-bg: #13201a;
-  --info-ink: #a9c3de; --accent-ink: #f0e2bc; --accent-bg: #2a2414; --hz1: #1d1a12; --hz2: #15130e; color-scheme: dark;
-}
-:root[data-theme="light"] {
-  --bg: #eef0f3; --panel: #f8f9fa; --raise: #ffffff; --sunk: #e4e7eb; --line: #d5dae0; --line-strong: #b4bcc6;
-  --text: #14181d; --dim: #4d5661; --faint: #77818c; --accent: #8f6a12; --accent-soft: rgba(143,106,18,.12);
-  --danger: #b03d33; --ok: #3a7549; --info: #3a6796;
-  --haiku: #4a8a5a; --sonnet: #3f6fa3; --opus: #96703a; --fable: #6f5a9f;
-  --danger-ink: #8a2b23; --danger-bg: #f6e3e1; --danger-bg2: #f0d4d0; --ok-ink: #2f6a3e; --ok-bg: #e2efe5;
-  --info-ink: #2f5a87; --accent-ink: #5e4508; --accent-bg: #f3ead3; --hz1: #efe4c4; --hz2: #e5d6ab; color-scheme: light;
-}
-@media (prefers-color-scheme: light) { :root[data-theme="system"] {
-  --bg: #eef0f3; --panel: #f8f9fa; --raise: #ffffff; --sunk: #e4e7eb; --line: #d5dae0; --line-strong: #b4bcc6;
-  --text: #14181d; --dim: #4d5661; --faint: #77818c; --accent: #8f6a12; --accent-soft: rgba(143,106,18,.12);
-  --danger: #b03d33; --ok: #3a7549; --info: #3a6796;
-  --haiku: #4a8a5a; --sonnet: #3f6fa3; --opus: #96703a; --fable: #6f5a9f;
-  --danger-ink: #8a2b23; --danger-bg: #f6e3e1; --danger-bg2: #f0d4d0; --ok-ink: #2f6a3e; --ok-bg: #e2efe5;
-  --info-ink: #2f5a87; --accent-ink: #5e4508; --accent-bg: #f3ead3; --hz1: #efe4c4; --hz2: #e5d6ab; color-scheme: light;
-} }
+.top { position: sticky; top: 0; z-index: 5; }
+[data-v] { display: none !important; }
+body[data-view="home"] [data-v~="home"], body[data-view="new"] [data-v~="new"], body[data-view="settings"] [data-v~="settings"] { display: inline-flex !important; }
+.wrap { padding: 24px 28px 48px; width: 100%; max-width: 1360px; }
+.view { display: none; } .view.on { display: block; animation: rise .25s ease-out; }
+.card { padding: 16px 18px; }
+.fl { display: block; font: 500 12.5px var(--sans); color: var(--dim); margin: 14px 0 6px; }
+.fl:first-child { margin-top: 0; }
+.row2 { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
 
-* { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font: 13px/1.5 var(--sans); }
-::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-thumb { background: var(--line-strong); }
-.mono { font-family: var(--mono); }
-
-header { display: flex; align-items: center; gap: 24px; height: 52px; padding: 0 20px; background: var(--panel);
-  border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; overflow: hidden; }
-header::after { content: ""; position: absolute; left: 0; bottom: 0; height: 1px; width: 120px; background: var(--accent);
-  opacity: .6; animation: sweep 7s linear infinite; }
-@keyframes sweep { from { transform: translateX(-120px); } to { transform: translateX(100vw); } }
-.brand { font: 500 12px var(--mono); letter-spacing: .22em; display: flex; align-items: center; gap: 12px; white-space: nowrap; }
-.brand .mark { width: 14px; height: 14px; border: 1px solid var(--accent); position: relative; }
-.brand .mark::after { content: ""; position: absolute; inset: 3px; background: var(--accent); animation: blink 2s steps(1) infinite; }
-.hdr { font: 11px var(--mono); color: var(--dim); display: flex; gap: 18px; margin-left: auto; white-space: nowrap; }
-.hdr b { color: var(--text); font-weight: 500; }
-@keyframes blink { 50% { opacity: .25; } }
-
-main { display: grid; grid-template-columns: 430px minmax(0, 1fr); gap: 0; min-height: calc(100vh - 52px); }
-.col { border-right: 1px solid var(--line); }
-.col:last-child { border-right: 0; }
-.panel { border-bottom: 1px solid var(--line); animation: rise .5s cubic-bezier(.2,.7,.2,1) both; }
-.panel:nth-child(2) { animation-delay: .08s; } .panel:nth-child(3) { animation-delay: .16s; }
-@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-h2 { margin: 0; padding: 0 18px; height: 36px; display: flex; align-items: center; justify-content: space-between;
-  font: 500 11px var(--mono); letter-spacing: .14em; color: var(--dim); text-transform: uppercase;
-  border-bottom: 1px solid var(--line); background: var(--panel); }
-h2 span { color: var(--faint); letter-spacing: .04em; text-transform: none; }
-.pad { padding: 18px; }
-
-/* ---------- war mode switch ---------- */
-.housing { position: relative; border: 1px solid var(--line-strong); background: var(--sunk); padding: 22px 20px 18px; }
-.housing i.screw { position: absolute; width: 6px; height: 6px; border: 1px solid var(--line-strong); background: var(--raise); }
-.housing i.screw::after { content: ""; position: absolute; left: 1px; right: 1px; top: 2px; height: 1px; background: var(--faint); }
-.s1 { top: 7px; left: 7px; } .s2 { top: 7px; right: 7px; } .s3 { bottom: 7px; left: 7px; } .s4 { bottom: 7px; right: 7px; }
-.wm-title { display: flex; justify-content: space-between; align-items: center; font: 500 11px var(--mono); letter-spacing: .2em; color: var(--dim); }
-.led { width: 9px; height: 9px; background: var(--faint); display: inline-block; }
-.led.on { background: var(--accent); animation: blink 1.2s steps(2, jump-none) infinite; }
-.switch { position: relative; height: 74px; margin: 16px 0 12px; border: 1px solid var(--line-strong); background: var(--bg);
-  cursor: pointer; user-select: none; display: grid; grid-template-columns: 1fr 1fr; outline: none; }
+/* ---------- home: war mode, usage, quick start ---------- */
+.hero { display: grid; grid-template-columns: minmax(300px, 1.05fr) minmax(260px, 1fr) minmax(280px, 1fr); gap: 16px; align-items: start; }
+.wm-note { margin: 14px 0 0; padding: 12px 0 0; border-top: 1px solid var(--line); list-style: none; display: grid; gap: 6px; font-size: 12.5px; color: var(--dim); }
+.wm-note li::before { content: "·"; color: var(--accent); margin-right: 8px; font-weight: 700; }
+.switch { position: relative; height: 58px; margin: 12px 0 12px; border: 1px solid var(--line-strong); border-radius: var(--r2); background: var(--sunk);
+  cursor: pointer; user-select: none; display: grid; grid-template-columns: 1fr 1fr; outline: none; overflow: hidden; }
 .switch:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
-.switch .lbl { display: flex; align-items: center; justify-content: center; font: 500 13px var(--mono); letter-spacing: .3em; color: var(--faint);
-  position: relative; z-index: 1; transition: color .3s; }
-.switch .knob { position: absolute; top: 5px; bottom: 5px; left: 5px; width: calc(50% - 5px); background: var(--raise);
-  border: 1px solid var(--line-strong); transition: transform .45s cubic-bezier(.65,0,.2,1), background .3s, border-color .3s; }
-.switch .knob::before, .switch .knob::after { content: ""; position: absolute; top: 18px; bottom: 18px; width: 1px; background: var(--line-strong); }
-.switch .knob::before { left: 46%; } .switch .knob::after { left: 54%; }
-.switch.armed { background: repeating-linear-gradient(-45deg, var(--hz1) 0 10px, var(--hz2) 10px 20px); background-size: 28px 28px; animation: hazard 2.4s linear infinite; }
+.switch .lbl { display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px var(--sans); color: var(--faint); position: relative; z-index: 1; transition: color .3s; }
+.switch .knob { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px); background: var(--raise); border: 1px solid var(--line-strong); border-radius: var(--r);
+  transition: transform .4s cubic-bezier(.65,0,.2,1), background .3s, border-color .3s; }
+.switch.armed { background: repeating-linear-gradient(-45deg, var(--hz1) 0 10px, var(--hz2) 10px 20px); background-size: 28px 28px; animation: hazard 2.4s linear infinite;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
 @keyframes hazard { to { background-position: 28px 0; } }
 .switch.armed .knob { transform: translateX(100%); background: var(--accent-bg); border-color: var(--accent); }
 .switch.armed .lbl.armed, .switch:not(.armed) .lbl.safe { color: var(--text); }
-.readout { font: 11px var(--mono); color: var(--dim); display: flex; justify-content: space-between; }
-.readout b { font-weight: 500; color: var(--text); }
-.readout.armed b { color: var(--accent); }
-
-/* ---------- settings ---------- */
-fieldset { border: 0; border-top: 1px solid var(--line); margin: 0; padding: 14px 18px 4px; }
-fieldset:first-child { border-top: 0; }
-legend { font: 500 10px var(--mono); letter-spacing: .14em; color: var(--faint); text-transform: uppercase; padding: 0; margin-bottom: 8px; float: left; width: 100%; }
-.row { display: grid; grid-template-columns: 1fr 112px; gap: 10px; align-items: center; padding: 6px 0; clear: both; }
-.row label { color: var(--text); font-size: 12.5px; }
-.row small { display: block; color: var(--faint); font-size: 11px; line-height: 1.35; }
-input[type=number] { width: 100%; font: 12px var(--mono); color: var(--text); background: var(--sunk); border: 1px solid var(--line-strong);
-  border-radius: 2px; padding: 6px 8px; text-align: right; }
-input[type=number]:focus { outline: none; border-color: var(--accent); }
-.tog { justify-self: end; width: 46px; height: 22px; border: 1px solid var(--line-strong); background: var(--sunk); position: relative; cursor: pointer; }
-.tog::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; background: var(--faint); transition: transform .25s, background .25s; }
-.tog.on { border-color: var(--ok); } .tog.on::after { transform: translateX(24px); background: var(--ok); }
-.tog:focus-visible { outline: 2px solid var(--accent); }
-.gauge { position: relative; height: 8px; background: var(--sunk); border: 1px solid var(--line); margin: 6px 0 2px; clear: both; }
+.readout { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--dim); }
+.readout b { color: var(--text); font-weight: 500; } .readout.armed b { color: var(--accent); }
+.big { display: flex; align-items: baseline; gap: 10px; margin: 6px 0 10px; }
+.big b { font: 500 30px/1 var(--mono); letter-spacing: -.02em; }
+.big span { color: var(--dim); font-size: 13px; }
+.gauge { position: relative; height: 8px; background: var(--sunk); border: 1px solid var(--line); border-radius: 4px; margin: 4px 0 4px; }
 .gauge i { position: absolute; top: 0; bottom: 0; }
-.gauge .pause { background: rgba(200,162,74,.25); border-left: 1px solid var(--accent); transition: left .3s, width .3s; }
-.gauge .stop { background: rgba(196,84,74,.3); border-left: 1px solid var(--danger); right: 0; transition: left .3s; }
-.gauge .now { width: 2px; background: var(--text); transition: left .6s; }
-.gauge-l { display: flex; justify-content: space-between; font: 10px var(--mono); color: var(--faint); }
-.actions { display: flex; gap: 8px; align-items: center; padding: 14px 18px 18px; }
-.actions .msg { font: 11px var(--mono); color: var(--faint); margin-left: auto; }
-.actions .msg.err { color: var(--danger); } .actions .msg.ok { color: var(--ok); }
-
-button { font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text); white-space: nowrap;
-  background: var(--raise); border: 1px solid var(--line-strong); border-radius: 2px; padding: 7px 12px; cursor: pointer;
-  transition: border-color .15s, background .15s, transform .08s, opacity .2s; }
-button:hover:not(:disabled) { border-color: var(--dim); } button:active:not(:disabled) { transform: translateY(1px); }
-button:disabled { opacity: .4; cursor: not-allowed; }
-button.primary { border-color: var(--accent); background: var(--accent-bg); color: var(--accent-ink); }
-button.danger { color: var(--danger-ink); border-color: var(--danger); background: var(--danger-bg); }
-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gauge .pause { background: color-mix(in srgb, var(--accent) 22%, transparent); border-left: 1px solid var(--accent); transition: left .3s, width .3s; }
+.gauge .stop { background: color-mix(in srgb, var(--danger) 26%, transparent); border-left: 1px solid var(--danger); right: 0; border-radius: 0 3px 3px 0; transition: left .3s; }
+.gauge .now { width: 3px; border-radius: 2px; background: var(--text); top: -3px; bottom: -3px; transition: left .6s; }
+.gauge-l { display: flex; justify-content: space-between; font: 11px var(--mono); color: var(--faint); }
+.kv { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; margin-top: 12px; font-size: 12.5px; color: var(--dim); }
+.kv b { font: 500 12.5px var(--mono); color: var(--text); text-align: right; }
+.qs { display: grid; gap: 6px; margin-top: 4px; }
+.qs button { justify-content: flex-start; width: 100%; background: var(--sunk); border-color: var(--line); padding: 9px 11px; text-align: left; white-space: normal; }
+.qs button .t { display: block; font-weight: 500; }
+.qs button .s { display: block; color: var(--faint); font-size: 12px; font-weight: 400; }
+.qs button .fams { margin-left: auto; display: flex; gap: 4px; flex: none; }
+.fams .sw { margin: 0; }
 
 /* ---------- runs ---------- */
-.runs { padding: 14px 18px 30px; display: grid; gap: 10px; }
-.run { border: 1px solid var(--line); background: var(--panel); border-left: 2px solid var(--line-strong); animation: rise .45s cubic-bezier(.2,.7,.2,1) both; }
+.runs-h { display: flex; align-items: baseline; gap: 12px; margin: 28px 0 12px; }
+.runs-h h2 { font: 600 15px var(--sans); margin: 0; }
+.runs-h span { color: var(--faint); font-size: 12.5px; }
+.runs { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 14px; }
+.run { padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 10px; animation: rise .35s cubic-bezier(.2,.7,.2,1) both; border-left: 3px solid var(--line-strong); }
 .run.live { border-left-color: var(--accent); } .run.planned { border-left-color: var(--info); }
 .run.finished { border-left-color: var(--ok); } .run.stopped { border-left-color: var(--danger); }
-.run .top { display: flex; align-items: center; gap: 10px; padding: 10px 14px 0; }
-.run .name { font: 500 13px var(--mono); }
-.tag { font: 500 10px var(--mono); letter-spacing: .1em; text-transform: uppercase; border: 1px solid var(--line-strong); padding: 1px 6px; color: var(--dim); }
-.run.live .tag { color: var(--accent); border-color: var(--accent); } .run.planned .tag { color: var(--info-ink); border-color: var(--info); }
-.run.finished .tag { color: var(--ok-ink); border-color: var(--ok); } .run.stopped .tag { color: var(--danger-ink); border-color: var(--danger); }
-.run .when { margin-left: auto; font: 11px var(--mono); color: var(--faint); }
-.run .goal { padding: 6px 14px 0; color: var(--dim); font-size: 12.5px; }
-.roster { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px 0; }
-.chip { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--sunk); padding: 3px 8px 3px 0; font: 11px var(--mono); color: var(--dim); }
-.chip i { width: 3px; align-self: stretch; }
-.chip b { color: var(--text); font-weight: 500; }
-.progress { margin: 10px 14px 0; height: 3px; background: var(--sunk); position: relative; }
-.progress i { position: absolute; inset: 0 auto 0 0; background: var(--ok); transition: width .8s cubic-bezier(.2,.7,.2,1); }
-.run .foot { display: flex; align-items: center; gap: 8px; padding: 10px 14px 12px; }
-.run .foot .meta { font: 11px var(--mono); color: var(--faint); margin-right: auto; }
-.empty { border: 1px dashed var(--line-strong); padding: 28px; color: var(--faint); text-align: center; font-size: 12.5px; }
-.empty code { font-family: var(--mono); color: var(--dim); }
+.run .rh { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.run .name { font: 500 13px var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.run .when { margin-left: auto; font-size: 12px; color: var(--faint); white-space: nowrap; }
+.run .goal { font-size: 14px; line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.crew { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.stack { display: flex; }
+.stack .av { margin-right: -6px; border: 2px solid var(--panel); width: 28px; height: 28px; font-size: 10px; }
+.crew .info { color: var(--dim); font-size: 12.5px; margin-left: 6px; }
+.prog { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; font: 12px var(--mono); color: var(--dim); }
+.prog .bar > i { background: var(--ok); }
+.run .foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 10px; }
+.run .foot .meta { font-size: 12.5px; color: var(--faint); margin-right: auto; }
 
-/* ---------- modal ---------- */
-.scrim { position: fixed; inset: 0; background: rgba(5,6,8,.72); display: none; align-items: center; justify-content: center; z-index: 20; }
-.scrim.show { display: flex; animation: fade .2s ease-out; }
-@keyframes fade { from { opacity: 0; } }
-.modal { width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 60px); overflow: auto; background: var(--panel);
-  border: 1px solid var(--line-strong); border-top: 2px solid var(--accent); animation: pop .28s cubic-bezier(.2,.7,.2,1); }
-.modal.danger { border-top-color: var(--danger); }
-@keyframes pop { from { transform: translateY(10px) scale(.985); opacity: 0; } }
-.modal h3 { margin: 0; padding: 14px 18px; font: 500 12px var(--mono); letter-spacing: .18em; border-bottom: 1px solid var(--line); }
-.modal .body { padding: 16px 18px; }
-.modal pre { white-space: pre-wrap; font: 11.5px/1.6 var(--mono); color: var(--dim); margin: 0 0 12px; }
-.modal table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 12px; }
-.modal th { text-align: left; font: 500 10px var(--mono); letter-spacing: .1em; color: var(--faint); text-transform: uppercase; padding: 6px 8px; border-bottom: 1px solid var(--line); }
-.modal td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-.modal td.m { font-family: var(--mono); font-size: 11.5px; }
-.ack { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line-strong); background: var(--sunk); cursor: pointer; }
-.ack input { margin-top: 3px; accent-color: #c8a24a; }
-.modal .foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px 16px; border-top: 1px solid var(--line); }
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 12px; }
-.stats div { background: var(--sunk); padding: 8px 10px; font: 11px var(--mono); color: var(--faint); }
-.stats b { display: block; color: var(--text); font-size: 14px; font-weight: 500; margin-top: 2px; }
-.seq { font: 12px/1.9 var(--mono); color: var(--dim); }
-.seq div { opacity: 0; animation: rise .3s forwards; }
-.seq div b { color: var(--accent); font-weight: 500; }
+/* ---------- new run ---------- */
+.nr { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+.nr-side { display: grid; gap: 16px; }
+.start { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+.start .or { color: var(--faint); font-size: 12.5px; }
+#nr-msg { margin-top: 10px; }
+#nr-msg .led { margin-right: 6px; vertical-align: 0; }
+.tpl { display: grid; gap: 8px; }
+.tpl button { display: block; width: 100%; text-align: left; background: var(--sunk); border-color: var(--line); padding: 10px 12px; white-space: normal; }
+.tpl button:hover { border-color: var(--line-strong); }
+.tpl .t { display: flex; align-items: center; gap: 6px; font-weight: 500; }
+.tpl .s { color: var(--faint); font-size: 12px; font-weight: 400; margin-top: 2px; }
+.tpl .r { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 7px; }
+.how { margin: 0; padding: 0; list-style: none; counter-reset: s; display: grid; gap: 10px; font-size: 12.5px; color: var(--dim); }
+.how li { counter-increment: s; display: grid; grid-template-columns: 22px 1fr; gap: 8px; }
+.how li::before { content: counter(s); font: 500 11px/20px var(--mono); text-align: center; width: 20px; height: 20px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--text); }
+.how b { color: var(--text); font-weight: 500; }
+.pl-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+.pl-item:first-of-type { border-top: 0; }
+.pl-item .n { font: 500 12.5px var(--mono); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ---------- settings v2: presets, alerts, worker profiles ---------- */
-.nav { font: 500 11px var(--mono); color: var(--dim); text-decoration: none; border: 1px solid var(--line-strong); padding: 6px 9px; letter-spacing: .08em; white-space: nowrap; }
-.nav:hover { color: var(--text); border-color: var(--dim); } .nav:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.hbtn { display: flex; gap: 8px; }
-select, input[type=text] { font: 12px var(--mono); color: var(--text); background: var(--sunk); border: 1px solid var(--line-strong); border-radius: 2px; padding: 6px 8px; min-width: 0; }
-select:focus, input[type=text]:focus { outline: none; border-color: var(--accent); }
-.prow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 4px 0; clear: both; }
+/* plan editor */
+.ed { margin-top: 16px; border-left: 3px solid var(--info); } .ed.fresh { animation: rise .3s ease-out; }
+.ed .eh { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.ed .eh h3 { margin: 0; font: 600 15px var(--sans); }
+.ed .eh span { color: var(--faint); font-size: 12.5px; }
+.ed .eb { padding: 14px 18px 16px; }
+.ed .grid2 { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 0 14px; }
+.ed .grid2 .fl { margin-top: 0; }
+.ed .lh { display: flex; align-items: center; justify-content: space-between; margin: 18px 0 8px; font: 600 13px var(--sans); }
+.ed .lh span { font-weight: 400; color: var(--faint); font-size: 12px; }
+.wr, .tr { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--sunk); margin-bottom: 8px; }
+.wr .l1 { display: grid; grid-template-columns: 30px minmax(90px, 1fr) minmax(120px, 1.3fr) minmax(110px, 1fr) minmax(96px, .9fr) minmax(92px, .8fr) auto; gap: 8px; align-items: center; }
+.tr .l1 { display: grid; grid-template-columns: minmax(0, 1fr) 150px auto auto; gap: 8px; align-items: center; }
+.wr input, .wr select, .tr input, .tr select { width: 100%; background: var(--panel); }
+.wr select:disabled { opacity: .45; }
+.tr label.g { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--dim); white-space: nowrap; }
+.ed .x { padding: 6px 9px; }
+.ed .foot { display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding: 12px 18px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.ed .foot .pmsg { margin-right: auto; }
+
+/* ---------- settings ---------- */
+.set { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.set .col { display: grid; gap: 16px; }
+.srow { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.srow:first-of-type { border-top: 0; }
+.srow label { font-size: 13.5px; }
+.srow small { display: block; color: var(--faint); font-size: 12px; line-height: 1.4; margin-top: 1px; }
+.srow input[type=number], .srow select { width: 100%; }
+.srow .tog { justify-self: end; }
+.prow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; margin-bottom: 8px; }
 .prow.two { grid-template-columns: minmax(0, 1fr) auto; }
-.kind { border: 1px solid var(--line); background: var(--panel); margin-bottom: 10px; }
-.kind .kh { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); font: 500 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; }
-.kind .kh span { color: var(--faint); letter-spacing: .02em; text-transform: none; font-weight: 400; }
+#smsg { font-size: 12.5px; }
+.kind { border: 1px solid var(--line); border-radius: var(--r); background: var(--sunk); margin-bottom: 10px; overflow: hidden; }
+.kind .kh { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--line); font-weight: 500; }
+.kind .kh span { color: var(--faint); font-weight: 400; font-size: 12px; }
 .kind .kh .r { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 .kind .kh .r .chg { color: var(--accent); }
-.pl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 5px 12px; border-bottom: 1px solid var(--line); font: 12px var(--mono); }
-.pl:last-of-type { border-bottom: 0; }
+.pl { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--line); font: 12.5px var(--mono); }
 .pl .src { color: var(--faint); }
-.pl button { padding: 3px 8px; font-size: 10px; }
-.kind .add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--line); background: var(--sunk); }
-table.rm { width: 100%; border-collapse: collapse; font: 12px var(--mono); }
-table.rm th { text-align: left; font: 500 10px var(--mono); letter-spacing: .1em; color: var(--faint); text-transform: uppercase; padding: 6px 8px; border-bottom: 1px solid var(--line); }
-table.rm td { padding: 5px 8px; border-bottom: 1px solid var(--line); }
+.kind .add { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 8px 12px; }
+table.rm { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.rm th { text-align: left; font: 500 12px var(--sans); color: var(--faint); padding: 6px 6px; border-bottom: 1px solid var(--line); }
+table.rm td { padding: 5px 6px; border-bottom: 1px solid var(--line); }
 table.rm select { width: 100%; }
-.pmsg { font: 11px var(--mono); color: var(--faint); clear: both; } .pmsg.ok { color: var(--ok); } .pmsg.err { color: var(--danger); }
-.toasts { position: fixed; top: 60px; right: 16px; z-index: 40; display: grid; gap: 8px; width: min(360px, calc(100vw - 32px)); }
-.toast { background: var(--panel); border: 1px solid var(--line-strong); border-left: 2px solid var(--accent); padding: 9px 12px; font-size: 12px; animation: rise .25s ease-out; }
-.toast b { display: block; font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: 2px; }
-.toast.danger { border-left-color: var(--danger); } .toast.ok { border-left-color: var(--ok); }
-.tag.demo { color: var(--info-ink); border-color: var(--info); }
 
-/* ---------- new run: prompt, planner, plan editor ---------- */
-textarea { width: 100%; font: 12.5px/1.5 var(--sans); color: var(--text); background: var(--sunk); border: 1px solid var(--line-strong);
-  border-radius: 2px; padding: 8px 10px; resize: vertical; display: block; }
-textarea:focus { outline: none; border-color: var(--accent); }
-.fl { display: block; font: 500 10px var(--mono); letter-spacing: .14em; color: var(--faint); text-transform: uppercase; margin: 12px 0 6px; }
-.fl:first-child { margin-top: 0; }
-.nr-act { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
-.nr-act .pmsg { flex: 1 1 260px; clear: none; }
-.nr-act .pmsg code { font-family: var(--mono); }
-.nr-act .pmsg .led { width: 7px; height: 7px; margin-right: 6px; vertical-align: 1px; }
-.nr-act .pmsg.run { color: var(--accent); } .nr-act .pmsg.run .led { background: var(--accent); animation: blink 1s steps(2, jump-none) infinite; }
-.ed { margin-top: 14px; border: 1px solid var(--line); border-left: 2px solid var(--info); background: var(--panel); animation: rise .3s ease-out; }
-.ed .kh { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); font: 500 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; }
-.ed .kh span { color: var(--faint); letter-spacing: .02em; text-transform: none; font-weight: 400; }
-.ed .eb { padding: 4px 12px 12px; }
-.ed table.rm td { border-bottom: 0; padding: 4px 4px 0; } .ed table.rm th { padding: 6px 4px; }
-.ed table.rm select[data-f=model], .ed table.rm select[data-f=effort] { min-width: 92px; }
-.ed table.rm tr.sub td { padding-bottom: 8px; border-bottom: 1px solid var(--line); }
-.ed table.rm input[type=text] { width: 100%; }
-.ed table.rm td.x { width: 1%; } .ed table.rm td.g { width: 1%; text-align: center; }
-.ed table.rm input[type=checkbox] { accent-color: #c8a24a; }
-.ed .add { margin-top: 8px; }
-.ed .foot { display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding: 10px 12px; border-top: 1px solid var(--line); flex-wrap: wrap; }
-.ed .foot .pmsg { margin-right: auto; clear: none; }
-
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .seq div { opacity: 1; } }
-@media (max-width: 980px) { main { grid-template-columns: 1fr; } .col { border-right: 0; } }
-@media (max-width: 700px) { header { height: auto; flex-wrap: wrap; padding: 10px 16px; overflow: visible; } .hdr { flex-wrap: wrap; white-space: normal; margin-left: 0; } }
+@media (max-width: 1180px) { .hero { grid-template-columns: 1fr 1fr; } .hero > :last-child { grid-column: 1 / -1; } .nr { grid-template-columns: 1fr; }
+  .wr .l1 { grid-template-columns: 30px 1fr 1fr 1fr; } .wr .l1 select[data-f=model], .wr .l1 select[data-f=effort] { grid-column: span 1; } }
+@media (max-width: 900px) { .hero, .set { grid-template-columns: 1fr; } .runs { grid-template-columns: 1fr; } .wrap { padding: 18px 16px 40px; } .ed .grid2 { grid-template-columns: 1fr; } }
 </style>
 </head>
-<body>
-<header>
-  <div class="brand"><i class="mark"></i>WAR ROOM <span style="color:var(--faint);letter-spacing:.06em">control</span></div>
-  <div class="hbtn"><a class="nav" href="/history" title="Finished runs: reports, cost, outcome">HISTORY</a>
-    <button type="button" id="demo" title="A simulated run in the app: no Claude sessions, no tokens">Start demo</button></div>
-  <div class="hdr"><span>HUB <b style="color:var(--ok)" id="hub">online</b></span><span>PLAN <b id="meter">--</b></span><span>COST MODEL <b id="calib">--</b></span><span id="clock"></span></div>
-</header>
-<main>
-  <div class="col">
-    <section class="panel">
-      <h2>War mode <span id="wm-state">--</span></h2>
-      <div class="pad">
-        <div class="housing">
-          <i class="screw s1"></i><i class="screw s2"></i><i class="screw s3"></i><i class="screw s4"></i>
-          <div class="wm-title"><span>MASTER SWITCH</span><i class="led" id="wm-led"></i></div>
+<body data-view="home">
+<div class="app">
+<nav class="side" id="side"></nav>
+<div class="page">
+  <header class="top">
+    <div class="ttl"><h1 id="h1">War Room</h1><div class="sub" id="sub">connecting to the hub…</div></div>
+    <button type="button" class="cmdk" onclick="palette.open()"><span>Search or run a command…</span><span class="kbd">Ctrl K</span></button>
+    <div class="acts">
+      <button type="button" id="demo" data-v="home" title="A simulated run in the app: no Claude sessions, no tokens">Start demo</button>
+      <a class="btn primary" href="#new" data-v="home">New run</a>
+      <span class="msg" id="smsg" data-v="settings"></span>
+      <button id="reset" type="button" data-v="settings">Defaults</button>
+      <button class="primary" id="save" type="button" data-v="settings" disabled>Save settings</button>
+    </div>
+  </header>
+  <main class="wrap">
+    <!-- ================= HOME ================= -->
+    <section class="view" id="v-home" aria-labelledby="h1">
+      <div class="hero">
+        <div class="panel card">
+          <div class="sec-h">War mode <span id="wm-state" class="tag">--</span></div>
           <div class="switch" id="switch" role="switch" aria-checked="false" aria-label="War mode" tabindex="0">
-            <span class="lbl safe">SAFE</span><span class="lbl armed">ARMED</span><i class="knob"></i>
+            <span class="lbl safe">Safe</span><span class="lbl armed"><i class="led" id="wm-led"></i>Armed</span><i class="knob"></i>
           </div>
-          <div class="readout" id="readout"><span>launches <b>blocked</b></span><span id="live-count"></span></div>
+          <div class="readout" id="readout"><span>Launches <b>blocked</b></span><span id="live-count"></span></div>
+          <ul class="wm-note"><li>Armed allows launches; each run still needs its own confirmation.</li>
+            <li>Disarming blocks new launches only. Live runs keep going.</li><li>Workers draw on your plan; allies on their providers' limits.</li></ul>
+        </div>
+        <div class="panel card">
+          <div class="sec-h">Plan usage <small id="u-age"></small></div>
+          <div class="big"><b id="u5">--</b><span>of the 5-hour window</span></div>
+          <div class="gauge" aria-hidden="true"><i class="pause" id="h-pause"></i><i class="stop" id="h-stop"></i><i class="now" id="h-now"></i></div>
+          <div class="gauge-l"><span>0%</span><span id="h-marks"></span><span>100%</span></div>
+          <div class="kv"><span>Weekly</span><b id="u7">--</b><span>Cost model</span><b id="calib">--</b></div>
+        </div>
+        <div class="panel card">
+          <div class="sec-h">Quick start <small>free: no tokens until you launch</small></div>
+          <div class="qs" id="qs"></div>
         </div>
       </div>
-    </section>
-    <section class="panel">
-      <h2>Settings <span>defaults for every new plan</span></h2>
-      <form id="settings" onsubmit="return false">
-        <fieldset><legend>Presets</legend>
-          <div class="prow"><select id="preset" aria-label="Saved preset"></select><button type="button" id="p-apply">Apply</button><button type="button" id="p-del">Delete</button></div>
-          <div class="prow two"><input type="text" id="p-name" maxlength="32" placeholder="name, e.g. overnight" aria-label="New preset name"><button type="button" id="p-save" title="Save the saved settings below under this name">Save current</button></div>
-          <div class="pmsg" id="p-msg">Named sets of the settings below; applying one replaces them.</div>
-        </fieldset>
-        <fieldset><legend>Team</legend>
-          <div class="row"><label for="max_workers">Max workers<small>Parallel Claude instances per run (hard cap 8)</small></label><input type="number" id="max_workers" min="1" max="8" step="1"></div>
-        </fieldset>
-        <fieldset><legend>Usage guard</legend>
-          <div class="row"><label for="pause_at">Pause claims at<small>% of the 5-hour window: workers finish, checkpoint, park</small></label><input type="number" id="pause_at" min="10" max="99"></div>
-          <div class="row"><label for="stop_at">Stop all at<small>% of the window: stop, keep conversations, resume after reset</small></label><input type="number" id="stop_at" min="11" max="100"></div>
-          <div class="gauge" aria-hidden="true"><i class="pause" id="g-pause"></i><i class="stop" id="g-stop"></i><i class="now" id="g-now"></i></div>
-          <div class="gauge-l"><span>0%</span><span id="g-now-l">now --</span><span>100%</span></div>
-          <div class="row"><label for="max_hours">Max run length<small>Hours before the conductor stops a run</small></label><input type="number" id="max_hours" min="0.25" max="72" step="0.25"></div>
-          <div class="row"><label for="max_cost_usd">Spend cap<small>USD, API-equivalent statusline cost of all workers; the run stops there (0 = no cap)</small></label><input type="number" id="max_cost_usd" min="0" max="100000" step="1"></div>
-        </fieldset>
-        <fieldset><legend>Review gates</legend>
-          <div class="row"><label id="l-gates">Gates<small>Work is reviewed by another worker on a different model before it counts</small></label><i class="tog" id="gates" role="switch" tabindex="0" aria-labelledby="l-gates"></i></div>
-          <div class="row"><label for="gate_score">Pass score<small>Minimum review score (Agent Arena standard: 85)</small></label><input type="number" id="gate_score" min="50" max="100"></div>
-          <div class="row"><label for="max_fails">Failed reviews before arbitration<small>Then an arbiter worker decides, then you</small></label><input type="number" id="max_fails" min="1" max="5"></div>
-        </fieldset>
-        <fieldset><legend>Workers</legend>
-          <div class="row"><label for="wait_seconds">Keep-alive wait<small>Seconds an idle worker stays parked (no tokens) before going idle</small></label><input type="number" id="wait_seconds" min="60" max="7200" step="30"></div>
-        </fieldset>
-        <fieldset><legend>Completion</legend>
-          <div class="row"><label id="l-af">Auto finish<small>When all work is merged: stop workers, record cost, clean sessions and worktrees</small></label><i class="tog" id="auto_finish" role="switch" tabindex="0" aria-labelledby="l-af"></i></div>
-          <div class="row"><label id="l-ai">Auto integrate<small>Also merge the run's branch into your current branch (clean tree only, never pushed)</small></label><i class="tog" id="auto_integrate" role="switch" tabindex="0" aria-labelledby="l-ai"></i></div>
-        </fieldset>
-        <fieldset><legend>Alerts</legend>
-          <div class="row"><label id="l-nt">Desktop notifications<small>When a human gate opens, or a run stops or finishes (saved at once)</small></label><i class="tog" id="u-notify" role="switch" tabindex="0" aria-labelledby="l-nt"></i></div>
-          <div class="row"><label id="l-sd">Sound<small>Two short beeps with each alert</small></label><i class="tog" id="u-sound" role="switch" tabindex="0" aria-labelledby="l-sd"></i></div>
-          <div class="row"><label for="u-theme">Theme<small>Graphite, light, or follow the system (saved at once)</small></label>
-            <select id="u-theme"><option value="dark">dark</option><option value="light">light</option><option value="system">system</option></select></div>
-        </fieldset>
-        <div class="actions"><button class="primary" id="save" type="button" disabled>Save settings</button><button id="reset" type="button">Defaults</button><span class="msg" id="smsg"></span></div>
-      </form>
-    </section>
-  </div>
-  <div class="col">
-    <section class="panel">
-      <h2>New run <span>prompt · draft plan · preview &amp; launch</span></h2>
-      <div class="pad">
-        <label class="fl" for="nr-proj">Project folder</label>
-        <div class="prow two"><input type="text" id="nr-proj" spellcheck="false" placeholder="a folder Claude Code already trusts"><button type="button" id="nr-browse">Browse…</button></div>
-        <label class="fl" for="nr-prompt">The job</label>
-        <textarea id="nr-prompt" rows="4" maxlength="8000" placeholder="What should the team build or fix, and what does done look like?"></textarea>
-        <div class="nr-act"><button class="primary" type="button" id="nr-draft">Draft with Claude</button><select id="nr-tpl" aria-label="Start the plan from"><option value="">Blank team</option></select><button type="button" id="nr-hand">Write by hand</button>
-          <span class="pmsg" id="nr-msg">Drafting is one Sonnet call with no tools: roughly 5–10k tokens of your plan. Nothing launches until you preview and confirm.</span></div>
-        <div id="nr-ed"></div>
-      </div>
-    </section>
-    <section class="panel">
-      <h2>Runs <span id="rcount"></span></h2>
+      <div class="runs-h"><h2>Runs</h2><span id="rcount"></span></div>
       <div class="runs" id="runs"></div>
     </section>
-    <section class="panel">
-      <h2>Worker profiles <span>plugins per kind · default model per role · used by new plans</span></h2>
-      <div class="pad" style="padding-bottom:6px"><div id="kinds"></div></div>
-      <div class="pad" style="padding-top:4px"><table class="rm"><thead><tr><th>Role</th><th>Model tier</th><th>Effort</th><th></th></tr></thead><tbody id="rm"></tbody></table>
-        <div class="pmsg" id="rm-msg" style="margin-top:8px">A role without a row uses its Specialist Council default; a plan that names a model still wins.</div></div>
+
+    <!-- ================= NEW RUN ================= -->
+    <section class="view" id="v-new" aria-label="New run">
+      <div class="nr">
+        <div>
+          <div class="panel card">
+            <label class="fl" for="nr-proj">Project folder</label>
+            <div class="row2"><input type="text" id="nr-proj" spellcheck="false" placeholder="A folder Claude Code already trusts"><button type="button" id="nr-browse">Browse…</button></div>
+            <label class="fl" for="nr-prompt">The job</label>
+            <textarea id="nr-prompt" rows="5" maxlength="8000" placeholder="What should the team build or fix, and what does done look like?"></textarea>
+            <div class="start">
+              <button class="primary" type="button" id="nr-draft">Draft with Claude</button><span class="or">or start from</span>
+              <select id="nr-tpl" aria-label="Start the plan from"><option value="">A blank team</option></select>
+              <button type="button" id="nr-hand">Write the plan</button>
+            </div>
+            <div class="pmsg" id="nr-msg">Drafting is one Sonnet call with no tools: roughly 5–10k tokens of your plan. A template costs nothing. Nothing launches until you preview and confirm.</div>
+          </div>
+          <div id="nr-ed"></div>
+        </div>
+        <aside class="nr-side">
+          <div class="panel card"><div class="sec-h">Templates <small>pick one to fill the editor</small></div><div class="tpl" id="tpl"></div></div>
+          <div class="panel card"><div class="sec-h">Awaiting launch <small id="pl-n"></small></div><div id="planned"></div></div>
+          <div class="panel card"><div class="sec-h">How it works</div><ol class="how">
+            <li><span><b>Describe the job</b> and pick the project folder.</span></li>
+            <li><span><b>Draft</b> a plan with Claude, or start from a template.</span></li>
+            <li><span><b>Shape the team.</b> Each worker runs on a Claude tier or an ally engine (Codex, Gemini, …).</span></li>
+            <li><span><b>Preview and launch</b> once war mode is armed. Review gates check work on another model.</span></li></ol></div>
+        </aside>
+      </div>
     </section>
-  </div>
-</main>
+
+    <!-- ================= SETTINGS ================= -->
+    <section class="view" id="v-settings" aria-label="Settings">
+      <form id="settings-form" onsubmit="return false" class="set">
+        <div class="col">
+          <div class="panel card">
+            <div class="sec-h">Team and usage guard <small>defaults for every new plan</small></div>
+            <div class="srow"><label for="max_workers">Max workers<small>Parallel workers per run (hard cap 8)</small></label><input type="number" id="max_workers" min="1" max="8" step="1"></div>
+            <div class="srow"><label for="pause_at">Pause claims at<small>% of the 5-hour window: workers finish, checkpoint and park</small></label><input type="number" id="pause_at" min="10" max="99"></div>
+            <div class="srow"><label for="stop_at">Stop all at<small>% of the window: stop, keep conversations, resume after the reset</small></label><input type="number" id="stop_at" min="11" max="100"></div>
+            <div style="padding: 2px 0 10px"><div class="gauge" aria-hidden="true"><i class="pause" id="g-pause"></i><i class="stop" id="g-stop"></i><i class="now" id="g-now"></i></div>
+              <div class="gauge-l"><span>0%</span><span id="g-now-l">now --</span><span>100%</span></div></div>
+            <div class="srow"><label for="max_hours">Max run length<small>Hours before the conductor stops a run</small></label><input type="number" id="max_hours" min="0.25" max="72" step="0.25"></div>
+            <div class="srow"><label for="max_cost_usd">Spend cap<small>USD, API-equivalent statusline cost of all workers; the run stops there (0 = no cap)</small></label><input type="number" id="max_cost_usd" min="0" max="100000" step="1"></div>
+          </div>
+          <div class="panel card">
+            <div class="sec-h">Review gates</div>
+            <div class="srow"><label id="l-gates">Gates<small>Work is reviewed by another worker on a different model before it counts</small></label><i class="tog" id="gates" role="switch" tabindex="0" aria-labelledby="l-gates"></i></div>
+            <div class="srow"><label for="gate_score">Pass score<small>Minimum review score (Agent Arena standard: 85)</small></label><input type="number" id="gate_score" min="50" max="100"></div>
+            <div class="srow"><label for="max_fails">Failed reviews before arbitration<small>Then an arbiter worker decides, then you</small></label><input type="number" id="max_fails" min="1" max="5"></div>
+          </div>
+          <div class="panel card">
+            <div class="sec-h">Workers and completion</div>
+            <div class="srow"><label for="wait_seconds">Keep-alive wait<small>Seconds an idle worker stays parked (no tokens) before going idle</small></label><input type="number" id="wait_seconds" min="60" max="7200" step="30"></div>
+            <div class="srow"><label id="l-af">Auto finish<small>When all work is merged: stop workers, record cost, clean sessions and worktrees</small></label><i class="tog" id="auto_finish" role="switch" tabindex="0" aria-labelledby="l-af"></i></div>
+            <div class="srow"><label id="l-ai">Auto integrate<small>Also merge the run's branch into your current branch (clean tree only, never pushed)</small></label><i class="tog" id="auto_integrate" role="switch" tabindex="0" aria-labelledby="l-ai"></i></div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="panel card">
+            <div class="sec-h">Presets <small>named sets of these settings</small></div>
+            <div class="prow"><select id="preset" aria-label="Saved preset"></select><button type="button" id="p-apply">Apply</button><button type="button" id="p-del">Delete</button></div>
+            <div class="prow two"><input type="text" id="p-name" maxlength="32" placeholder="Name, e.g. overnight" aria-label="New preset name"><button type="button" id="p-save" title="Save the saved settings under this name">Save current</button></div>
+            <div class="pmsg" id="p-msg">Applying a preset replaces the settings.</div>
+          </div>
+          <div class="panel card">
+            <div class="sec-h">Alerts and appearance <small>saved at once</small></div>
+            <div class="srow"><label id="l-nt">Desktop notifications<small>When a human gate opens, or a run stops or finishes</small></label><i class="tog" id="u-notify" role="switch" tabindex="0" aria-labelledby="l-nt"></i></div>
+            <div class="srow"><label id="l-sd">Sound<small>Two short beeps with each alert</small></label><i class="tog" id="u-sound" role="switch" tabindex="0" aria-labelledby="l-sd"></i></div>
+            <div class="srow"><label for="u-theme">Theme<small>Graphite, light, or follow the system</small></label>
+              <select id="u-theme"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select></div>
+          </div>
+          <div class="panel card">
+            <div class="sec-h">Worker profiles <small>plugins per kind, used by new plans</small></div>
+            <div id="kinds"></div>
+          </div>
+          <div class="panel card">
+            <div class="sec-h">Default model per role</div>
+            <table class="rm"><thead><tr><th>Role</th><th>Model tier</th><th>Effort</th><th></th></tr></thead><tbody id="rm"></tbody></table>
+            <div class="pmsg" id="rm-msg" style="margin-top:8px">A role without a row uses its Specialist Council default; a plan that names a model or engine still wins.</div>
+          </div>
+        </div>
+      </form>
+    </section>
+  </main>
+</div>
+</div>
 
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <div class="scrim" id="scrim"><div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt"></div></div>
 
+<script src="/ui.js"></script>
 <script>
 const TOKEN = "__TOKEN__";
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[c]);
-const tier = m => /^ally:/.test(m) ? "info" : /haiku/.test(m) ? "haiku" : /sonnet/.test(m) ? "sonnet" : /fable/.test(m) ? "fable" : "opus";
-const ago = t => { const s = Date.now() / 1000 - t; return s < 60 ? "just now" : s < 3600 ? `${Math.floor(s / 60)} min ago` : s < 86400 ? `${Math.floor(s / 3600)} h ago` : `${Math.floor(s / 86400)} d ago`; };
 const NUMS = ["max_workers", "pause_at", "stop_at", "max_hours", "max_cost_usd", "gate_score", "max_fails", "wait_seconds"];
 const TOGS = ["gates", "auto_finish", "auto_integrate"];
 let home = null, dirty = false, seen = new Set();
+shell("home");
 
-async function api(path, body) {
-  const r = await fetch(path, body === undefined ? {} : {method: "POST", headers: {"X-War-Room-Token": TOKEN, "Content-Type": "application/json"}, body: JSON.stringify(body)});
-  const out = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(out.error || r.status);
-  return out;
+/* ---------- views: #new and #settings are pages of their own ---------- */
+const TITLES = {home: ["War Room", null], new: ["New run", "Describe the job · draft a plan · preview and launch"], settings: ["Settings", "Defaults for every new plan · alerts · worker profiles"]};
+function route() {
+  const v = ["new", "settings"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
+  document.body.dataset.view = v;
+  for (const k of Object.keys(TITLES)) $(`v-${k}`).classList.toggle("on", k === v);
+  setNav(v); $("h1").textContent = TITLES[v][0];
+  document.title = v === "home" ? "War Room" : `War Room · ${TITLES[v][0]}`;
+  subline(); scrollTo(0, 0);
 }
-
-/* ---------- modal helpers ---------- */
-let lastFocus = null;
-function modal(html, danger = false) {
-  lastFocus = document.activeElement;
-  $("modal").className = "modal" + (danger ? " danger" : ""); $("modal").innerHTML = html.replace("<h3>", '<h3 id="mt">');
-  $("scrim").classList.add("show");
-  for (const el of document.querySelectorAll("header, main")) el.inert = true;  /* keeps Tab inside the dialog */
-  ($("modal").querySelector("input, button") || $("modal")).focus();
+function subline() {
+  const v = document.body.dataset.view;
+  if (TITLES[v][1]) { $("sub").textContent = TITLES[v][1]; return; }
+  if (!home) return;
+  const live = home.runs.filter(r => r.status === "live").length;
+  $("sub").textContent = `Hub online · ${home.war_mode ? "war mode armed" : "war mode safe"} · ${live ? plural(live, "live run") : "no live runs"}`;
 }
-function closeModal() {
-  $("scrim").classList.remove("show");
-  for (const el of document.querySelectorAll("header, main")) el.inert = false;
-  if (lastFocus && lastFocus.focus) lastFocus.focus();
-}
-const fail = e => alert(`War Room: ${e.message}`);
-$("scrim").addEventListener("click", e => { if (e.target === $("scrim")) closeModal(); });
-addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+addEventListener("hashchange", route);
 
 /* ---------- war mode ---------- */
 function renderSwitch() {
   const on = home.war_mode, live = home.runs.filter(r => r.status === "live").length;
   $("switch").classList.toggle("armed", on); $("switch").setAttribute("aria-checked", on);
   $("wm-led").classList.toggle("on", on);
-  $("wm-state").textContent = on ? "armed" : "safe";
+  $("wm-state").textContent = on ? "Armed" : "Safe"; $("wm-state").className = `tag ${on ? "warn" : ""}`;
   $("readout").className = "readout" + (on ? " armed" : "");
-  $("readout").firstElementChild.innerHTML = `launches <b>${on ? "allowed" : "blocked"}</b>`;
-  $("live-count").textContent = live ? `${live} run${live > 1 ? "s" : ""} live` : "no live runs";
+  $("readout").firstElementChild.innerHTML = `Launches <b>${on ? "allowed" : "blocked"}</b>`;
+  $("live-count").textContent = live ? plural(live, "live run") : "no live runs";
 }
 function toggleWar() {
   if (home.war_mode) {
@@ -372,16 +321,34 @@ function toggleWar() {
     if (live && !confirm(`Disarm war mode? ${live} live run(s) keep running; only new launches are blocked.`)) return;
     return api("/api/toggle", {on: false}).then(refresh).catch(fail);
   }
-  modal(`<h3>ARM WAR MODE</h3><div class="body">
+  modal(`<h3>Arm war mode</h3><div class="body">
     <pre>${esc(home.warning)}</pre>
-    <div class="stats"><div>Plan meter<b>${esc(home.meter)}</b></div><div>Max workers<b>${home.settings.max_workers}</b></div><div>Guard<b>${home.settings.pause_at}% / ${home.settings.stop_at}%</b></div></div>
-    <label class="ack"><input type="checkbox" id="ack"> <span>I understand that every War Room worker draws on my plan's limits, runs unattended within its allow-list, and that I approve each launch separately.</span></label>
+    <div class="stats"><div>Plan meter<b>${esc(meterParts().five == null ? "unknown" : meterParts().five + "%")}</b></div><div>Max workers<b>${home.settings.max_workers}</b></div><div>Guard<b>${home.settings.pause_at}% / ${home.settings.stop_at}%</b></div></div>
+    <label class="ack"><input type="checkbox" id="ack"> <span>I understand that every War Room worker draws on my plan's limits (allies on their own providers' limits), runs unattended within its allow-list, and that I approve each launch separately.</span></label>
   </div><div class="foot"><button type="button" onclick="closeModal()">Cancel</button><button class="primary" id="arm" type="button" disabled>Arm war mode</button></div>`, true);
   $("ack").onchange = e => $("arm").disabled = !e.target.checked;
   $("arm").onclick = () => api("/api/toggle", {on: true}).then(() => { closeModal(); refresh(); }).catch(fail);
 }
 $("switch").onclick = toggleWar;
 $("switch").onkeydown = e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); toggleWar(); } };
+
+/* ---------- plan usage ---------- */
+function meterParts() {
+  const m = home?.meter || "", n = re => { const x = re.exec(m); return x ? +x[1] : null; };
+  return {five: n(/5-hour ([\d.]+)%/), week: n(/weekly ([\d.]+)%/), age: (/\(([^)]+)\)/.exec(m) || [])[1] || ""};
+}
+function usageCard() {
+  const u = meterParts(), s = home.settings;
+  $("u5").textContent = u.five == null ? "--" : `${Math.round(u.five)}%`;
+  $("u7").textContent = u.week == null ? "--" : `${Math.round(u.week)}%`;
+  $("u-age").textContent = u.five == null ? "no worker has reported yet" : `reported ${u.age}`;
+  $("h-pause").style.left = `${s.pause_at}%`; $("h-pause").style.width = `${Math.max(0, s.stop_at - s.pause_at)}%`; $("h-stop").style.left = `${s.stop_at}%`;
+  $("h-now").style.left = `${u.five ?? 0}%`; $("h-now").style.display = u.five == null ? "none" : "block";
+  $("h-marks").textContent = `pause ${s.pause_at}% · stop ${s.stop_at}%`;
+  const c = home.calibration || {};
+  $("calib").textContent = c.runs ? `${Math.round(c.per_worker_task / 1000)}k tok / worker-task` : "uncalibrated";
+  $("calib").title = c.runs ? `median over ${plural(c.runs, "measured run")}` : "no measured runs yet";
+}
 
 /* ---------- settings ---------- */
 function fillSettings(st) {
@@ -395,32 +362,33 @@ function collect() {
   for (const k of TOGS) out[k] = $(k).classList.contains("on");
   return out;
 }
-function markDirty() { dirty = true; $("save").disabled = false; $("smsg").className = "msg"; $("smsg").textContent = "unsaved changes"; gauge(); }
+function markDirty() { dirty = true; $("save").disabled = false; $("smsg").className = "msg"; $("smsg").textContent = "Unsaved changes"; gauge(); }
 for (const k of NUMS) $(k).addEventListener("input", markDirty);
 for (const k of TOGS) { const t = $(k); t.onclick = () => { t.classList.toggle("on"); t.setAttribute("aria-checked", t.classList.contains("on")); markDirty(); };
   t.onkeydown = e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); t.click(); } }; }
 function gauge() {
   const p = +$("pause_at").value || 0, s = +$("stop_at").value || 0;
   $("g-pause").style.left = `${p}%`; $("g-pause").style.width = `${Math.max(0, s - p)}%`; $("g-stop").style.left = `${s}%`;
-  const m = /5-hour ([\d.]+)%/.exec(home?.meter || ""), now = m ? +m[1] : null;
+  const now = meterParts().five;
   $("g-now").style.left = `${now ?? 0}%`; $("g-now").style.display = now == null ? "none" : "block";
   $("g-now-l").textContent = now == null ? "now --" : `now ${now}%`;
 }
 $("save").onclick = async () => {
   try { const out = await api("/api/settings", {settings: collect()}); home.settings = out.settings; fillSettings(out.settings);
-    $("smsg").className = "msg ok"; $("smsg").textContent = "saved"; }
+    $("smsg").className = "msg ok"; $("smsg").textContent = "Saved"; }
   catch (e) { $("smsg").className = "msg err"; $("smsg").textContent = e.message; }
 };
 $("reset").onclick = async () => { if (!confirm("Restore the built-in defaults?")) return;
   let out; try { out = await api("/api/settings", {reset: true}); } catch (e) { return fail(e); }
   home.settings = out.settings; fillSettings(out.settings);
-  $("smsg").className = "msg ok"; $("smsg").textContent = "defaults restored"; };
+  $("smsg").className = "msg ok"; $("smsg").textContent = "Defaults restored"; };
+addEventListener("beforeunload", e => { if (dirty) e.preventDefault(); });
 
 /* ---------- presets ---------- */
 const pmsg = (id, text, cls = "") => { $(id).className = `pmsg ${cls}`; $(id).textContent = text; };
 function renderPresets() {
   const names = Object.keys(home.presets || {}).sort();
-  const html = names.length ? names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("") : `<option value="">no presets yet</option>`;
+  const html = names.length ? names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("") : `<option value="">No presets yet</option>`;
   if ($("preset")._h !== html) { const cur = $("preset").value; $("preset").innerHTML = html; $("preset")._h = html; if (names.includes(cur)) $("preset").value = cur; }
   $("p-apply").disabled = $("p-del").disabled = !names.length;
 }
@@ -429,35 +397,25 @@ async function presetOp(op, name) {
     const out = await api("/api/presets", {op, name});
     home.presets = out.presets; renderPresets();
     if (op === "apply") { home.settings = out.settings; fillSettings(out.settings); }
-    pmsg("p-msg", `${op === "save" ? "saved" : op === "apply" ? "applied" : "deleted"} "${name}"`, "ok");
+    pmsg("p-msg", `${op === "save" ? "Saved" : op === "apply" ? "Applied" : "Deleted"} "${name}"`, "ok");
     return true;
   } catch (e) { pmsg("p-msg", e.message, "err"); return false; }
 }
 $("p-save").onclick = async () => {
   const n = $("p-name").value.trim();
-  if (dirty) return pmsg("p-msg", "save the settings first, then save them as a preset", "err");
+  if (dirty) return pmsg("p-msg", "Save the settings first, then save them as a preset", "err");
   if (n && await presetOp("save", n)) { $("p-name").value = ""; $("preset").value = n; }
 };
 $("p-apply").onclick = () => { if (dirty && !confirm("Discard unsaved settings and apply the preset?")) return; presetOp("apply", $("preset").value); };
 $("p-del").onclick = () => { const n = $("preset").value; if (n && confirm(`Delete preset "${n}"?`)) presetOp("delete", n); };
 
-/* ---------- alerts ---------- */
-let actx = null;
-function beep() {
-  try { actx = actx || new AudioContext();
-    [0, .16].forEach(d => { const o = actx.createOscillator(), g = actx.createGain(); o.type = "square"; o.frequency.value = 880; g.gain.value = .04;
-      o.connect(g).connect(actx.destination); o.start(actx.currentTime + d); o.stop(actx.currentTime + d + .08); });
-  } catch (e) { /* audio is optional */ }
+/* ---------- alerts and theme ---------- */
+$("u-theme").onchange = e => setTheme(e.target.value);
+document.addEventListener("themechange", () => { if (document.activeElement !== $("u-theme")) $("u-theme").value = document.documentElement.dataset.theme; });
+function renderUi() {
+  if (document.activeElement !== $("u-theme")) $("u-theme").value = document.documentElement.dataset.theme || "dark";
+  for (const k of ["notify", "sound"]) { const t = $(`u-${k}`), on = !!(home.ui || {})[k]; t.classList.toggle("on", on); t.setAttribute("aria-checked", on); }
 }
-function toast(title, body, kind = "") {
-  const t = document.createElement("div"); t.className = `toast ${kind}`; t.innerHTML = `<b>${esc(title)}</b>${esc(body)}`;
-  $("toasts").appendChild(t); setTimeout(() => t.remove(), 9000);
-}
-$("u-theme").onchange = async e => {
-  const theme = e.target.value; document.documentElement.dataset.theme = theme;
-  try { home.ui = (await api("/api/ui", {theme})).ui; } catch (err) { fail(err); }
-};
-function renderUi() { if (document.activeElement !== $("u-theme")) $("u-theme").value = (home.ui || {}).theme || "dark"; for (const k of ["notify", "sound"]) { const t = $(`u-${k}`), on = !!(home.ui || {})[k]; t.classList.toggle("on", on); t.setAttribute("aria-checked", on); } }
 for (const k of ["notify", "sound"]) {
   const t = $(`u-${k}`);
   t.onclick = async () => {
@@ -472,9 +430,7 @@ function runAlerts() {
   const now = Object.fromEntries(home.runs.map(r => [r.run, r.status]));
   if (prevRuns) for (const r of home.runs) if (prevRuns[r.run] === "live" && r.status !== "live") {
     const fin = r.status === "finished";
-    toast(fin ? "Run finished" : "Run stopped", r.run, fin ? "ok" : "danger");
-    if (home.ui?.notify && home.ui?.sound) beep();
-    if (home.ui?.notify && "Notification" in window && Notification.permission === "granted") new Notification(`War Room · ${fin ? "Run finished" : "Run stopped"}`, {body: r.run, tag: `${r.run}:${r.status}`});
+    alertUser(fin ? "Run finished" : "Run stopped", r.run, fin ? "ok" : "danger", home.ui, `${r.run}:${r.status}`);
   }
   prevRuns = now;
 }
@@ -484,14 +440,14 @@ function renderKinds() {
   const ins = home.installed || [];
   const html = Object.entries(home.kinds || {}).map(([k, v]) => {
     const changed = JSON.stringify(v.plugins) !== JSON.stringify(v.shipped), avail = ins.filter(p => !v.plugins.includes(p));
-    return `<div class="kind" data-kind="${esc(k)}"><div class="kh">${esc(k)} <span>${v.roles.length} roles · ${v.plugins.length} plugin${v.plugins.length === 1 ? "" : "s"}</span>
-      <span class="r">${changed ? `<span class="chg">changed</span><button type="button" data-reset="1">Shipped list</button>` : "<span>as shipped</span>"}</span></div>
+    return `<div class="kind" data-kind="${esc(k)}"><div class="kh">${esc(cap(k))} <span>${plural(v.roles.length, "role")} · ${plural(v.plugins.length, "plugin")}</span>
+      <span class="r">${changed ? `<span class="chg">changed</span><button class="sm" type="button" data-reset="1">Shipped list</button>` : "<span>as shipped</span>"}</span></div>
       ${v.plugins.map(p => `<div class="pl"><span>${esc(p.split("@")[0])} <span class="src">@${esc(p.split("@")[1] || "")}</span>${ins.includes(p) ? "" : ' <span style="color:var(--danger)">not installed</span>'}</span>
-        <button type="button" data-rm="${esc(p)}" aria-label="Remove ${esc(p)} from ${esc(k)}">Remove</button></div>`).join("") || `<div class="pl"><span class="src">no plugins: workers start lean</span><span></span></div>`}
+        <button class="sm ghost" type="button" data-rm="${esc(p)}" aria-label="Remove ${esc(p)} from ${esc(k)}">Remove</button></div>`).join("") || `<div class="pl"><span class="src">No plugins: workers start lean</span><span></span></div>`}
       <div class="add"><select aria-label="Plugin to add to ${esc(k)}">${avail.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join("")}</select>
-        <button type="button" data-add="1" ${avail.length ? "" : "disabled"}>Add plugin</button></div></div>`;
+        <button class="sm" type="button" data-add="1" ${avail.length ? "" : "disabled"}>Add plugin</button></div></div>`;
   }).join("");
-  if ($("kinds")._h !== html) { $("kinds").innerHTML = html; $("kinds")._h = html; }
+  setHTML($("kinds"), html);
 }
 $("kinds").addEventListener("click", async e => {
   const b = e.target.closest("button"); if (!b) return;
@@ -506,14 +462,14 @@ function renderRoleModels() {
   const html = Object.keys(rm).sort().map(r => `<tr data-role="${esc(r)}"><td>${esc(r)}</td>
       <td><select data-f="tier" aria-label="${esc(r)} model tier">${opt(home.tiers, rm[r].tier)}</select></td>
       <td><select data-f="effort" aria-label="${esc(r)} effort">${opt(home.efforts, rm[r].effort)}</select></td>
-      <td><button type="button" data-del="${esc(r)}">Remove</button></td></tr>`).join("")
+      <td><button class="sm ghost" type="button" data-del="${esc(r)}">Remove</button></td></tr>`).join("")
     + `<tr><td><select id="rm-role" aria-label="Role">${(home.roles || []).filter(r => !rm[r]).map(r => `<option>${esc(r)}</option>`).join("")}</select></td>
       <td><select id="rm-tier" aria-label="Model tier">${opt(home.tiers, "sonnet")}</select></td><td><select id="rm-eff" aria-label="Effort">${opt(home.efforts, "medium")}</select></td>
-      <td><button type="button" id="rm-add">Add</button></td></tr>`;
-  if ($("rm")._h !== html) { $("rm").innerHTML = html; $("rm")._h = html; }
+      <td><button class="sm" type="button" id="rm-add">Add</button></td></tr>`;
+  setHTML($("rm"), html);
 }
 async function saveRm(rm) {
-  try { home.role_models = (await api("/api/role-models", {role_models: rm})).role_models; renderRoleModels(); pmsg("rm-msg", "saved: new plans use it", "ok"); }
+  try { home.role_models = (await api("/api/role-models", {role_models: rm})).role_models; renderRoleModels(); pmsg("rm-msg", "Saved: new plans use it", "ok"); }
   catch (e) { pmsg("rm-msg", e.message, "err"); }
 }
 $("rm").addEventListener("change", e => {
@@ -528,10 +484,35 @@ $("rm").addEventListener("click", e => {
   else return;
   saveRm(rm);
 });
-$("demo").onclick = async () => {
+async function startDemo() {
   $("demo").disabled = true;
   try { location.href = (await api("/api/demo", {})).url; } catch (e) { fail(e); $("demo").disabled = false; }
-};
+}
+$("demo").onclick = startDemo;
+
+/* ---------- templates: quick start on Home, cards on New run ---------- */
+const tplModel = w => w.engine ? `ally:${w.engine}` : (w.model || "");  /* no model: the role's council default */
+const tplFams = t => [...new Set(t.workers.map(w => family(tplModel(w))))];
+function renderTemplates() {
+  if (!home?.templates) return;
+  const ts = Object.entries(home.templates);
+  setHTML($("qs"), ts.map(([k, t]) => `<button type="button" data-tpl="${esc(k)}"><span><span class="t">${esc(t.label)}</span><span class="s">${esc(t.summary)}</span></span>
+      <span class="fams">${tplFams(t).map(f => `<i class="sw f-${f}" title="${esc(FAMILIES[f])}"></i>`).join("")}</span></button>`).join("")
+    + `<button type="button" data-demo="1"><span><span class="t">Watch a demo run</span><span class="s">simulated: no Claude sessions, no tokens</span></span></button>`);
+  setHTML($("tpl"), ts.map(([k, t]) => `<button type="button" data-tpl="${esc(k)}"><span class="t">${esc(t.label)}</span><span class="s">${esc(t.summary)}</span>
+      <span class="r">${t.workers.map(w => `<span class="fam f-${family(tplModel(w))}" title="${esc(w.role)}">${esc(w.name)} · ${esc(isAlly(tplModel(w)) ? modelName(tplModel(w)) : w.model ? cap(tier(w.model)) : "Claude")}</span>`).join("")}</span></button>`).join(""));
+  const sel = $("nr-tpl");
+  if (sel.options.length === 1) for (const [k, t] of ts) sel.add(new Option(t.label, k));
+}
+function useTemplate(k, scroll = true) {
+  if (draft && !confirm("Replace the plan you are editing with this template?")) return;
+  $("nr-tpl").value = k; location.hash = "new"; draft = null; $("nr-hand").click();
+  if (scroll) $("nr-ed").scrollIntoView({behavior: REDUCED ? "auto" : "smooth", block: "start"});
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-tpl], [data-demo]"); if (!b || !e.target.closest("#qs, #tpl")) return;
+  b.dataset.demo ? startDemo() : useTemplate(b.dataset.tpl);
+});
 
 /* ---------- new run: project folder, planner, plan editor ---------- */
 const NR_KEY = "warroom.newrun";
@@ -539,11 +520,11 @@ let draft = null, plannerTimer = null;
 const store = v => { try { v ? localStorage.setItem(NR_KEY, JSON.stringify(v)) : localStorage.removeItem(NR_KEY); } catch (e) { /* storage is optional */ } };
 const nrmsg = (html, cls = "") => { $("nr-msg").className = `pmsg ${cls}`; $("nr-msg").innerHTML = html; };
 $("nr-browse").onclick = async () => {
-  $("nr-browse").disabled = true; nrmsg("folder dialog open…");
+  $("nr-browse").disabled = true; nrmsg("Folder dialog open…");
   try {
     const out = await api("/api/pick-folder", {start: $("nr-proj").value.trim()});
     if (out.path) $("nr-proj").value = out.path;
-    nrmsg(!out.path ? "no folder picked" : out.trusted ? "folder trusted by Claude Code" : "Claude Code does not trust this folder yet: run <code>claude</code> there once and accept the trust prompt",
+    nrmsg(!out.path ? "No folder picked" : out.trusted ? "Folder trusted by Claude Code" : "Claude Code does not trust this folder yet: run <code>claude</code> there once and accept the trust prompt",
       !out.path ? "" : out.trusted ? "ok" : "err");
   } catch (e) { nrmsg(esc(e.message), "err"); }
   $("nr-browse").disabled = false;
@@ -559,11 +540,6 @@ $("nr-hand").onclick = () => {  /* a template fills the draft at no token cost *
     workers: t ? copy(t.workers) : [{name: "planner", role: "project-planner", brief: ""}, {name: "builder", role: "builder", brief: ""}, {name: "reviewer", role: "challenger", brief: ""}],
     tasks: t ? copy(t.tasks) : []});
 };
-function fillTemplates() {
-  const sel = $("nr-tpl");
-  if (sel.options.length > 1 || !home?.templates) return;
-  for (const [k, t] of Object.entries(home.templates)) sel.add(new Option(`${t.label} · ${t.summary}`, k));
-}
 async function watchPlanner() {
   clearTimeout(plannerTimer);
   let job; try { job = await api("/api/planner"); } catch (e) { plannerTimer = setTimeout(watchPlanner, 2000); return; }
@@ -571,7 +547,7 @@ async function watchPlanner() {
   $("nr-draft").disabled = busy;
   if (busy) {
     const s = Math.max(0, Math.floor(Date.now() / 1000 - job.started));
-    nrmsg(`<i class="led"></i>PLANNING · ${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")} · Sonnet, no tools`, "run");
+    nrmsg(`<i class="led on"></i>Planning · <span class="num">${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}</span> · Sonnet, no tools`, "run");
     plannerTimer = setTimeout(watchPlanner, 1000);
   } else if (job.status === "error" && job.ended !== watchPlanner.seen) { watchPlanner.seen = job.ended; nrmsg(`Planner: ${esc(job.error)}`, "err"); }
   else if (job.status === "done" && job.draft && job.ended !== watchPlanner.seen) {
@@ -581,38 +557,44 @@ async function watchPlanner() {
     editDraft({...job.draft, _job: job.ended});
   }
 }
-const optList = (arr, v, first) => (first ? `<option value="">${esc(first)}</option>` : "") + arr.map(x => `<option value="${esc(x)}" ${x === v ? "selected" : ""}>${esc(x)}</option>`).join("");
+const optList = (arr, v, first, label = x => x) => (first ? `<option value="">${esc(first)}</option>` : "") + arr.map(x => `<option value="${esc(x)}" ${x === v ? "selected" : ""}>${esc(label(x))}</option>`).join("");
 function editDraft(d) {
   draft = d; store(d);
   const roles = [...new Set([...(home?.roles || []), ...d.workers.map(w => w.role).filter(Boolean)])];
-  const names = d.workers.map(w => w.name).filter(Boolean);
-  $("nr-ed").innerHTML = `<div class="ed"><div class="kh">Plan draft <span>${d.workers.length} worker${d.workers.length === 1 ? "" : "s"} · ${d.tasks.length} task${d.tasks.length === 1 ? "" : "s"} · budget from Settings</span></div>
-    <div class="eb"><label class="fl" for="ed-name">Name</label><input type="text" id="ed-name" maxlength="40" value="${esc(d.name)}" placeholder="short-name" style="width:100%">
-      <label class="fl" for="ed-goal">Goal</label><textarea id="ed-goal" rows="3" maxlength="4000">${esc(d.goal)}</textarea>
-      <label class="fl">Workers</label><table class="rm" id="ed-w"><thead><tr><th>Name</th><th>Council role</th><th>Model</th><th>Effort</th><th></th></tr></thead>
-      ${d.workers.map((w, i) => `<tbody data-i="${i}"><tr><td><input type="text" data-f="name" maxlength="24" value="${esc(w.name)}" aria-label="Worker name"></td>
-        <td><select data-f="role" aria-label="Council role">${optList(roles, w.role)}</select></td>
-        <td><select data-f="model" aria-label="Model">${optList([...(home?.tiers || []), ...(home?.engines || []).map(e => "ally:" + e)], w.engine ? "ally:" + w.engine : w.model ? tier(w.model) : "", "default")}</select></td>
-        <td><select data-f="effort" aria-label="Effort">${optList(home?.efforts || [], w.effort || "", "default")}</select></td>
-        <td class="x" rowspan="2"><button type="button" data-delw="${i}" aria-label="Remove worker">✕</button></td></tr>
-        <tr class="sub"><td colspan="4"><input type="text" data-f="brief" maxlength="1000" value="${esc(w.brief)}" placeholder="brief: what this worker does" aria-label="Brief"></td></tr></tbody>`).join("")}</table>
-      <button type="button" class="add" id="ed-addw">Add worker</button>
-      <label class="fl">Seed tasks</label><table class="rm" id="ed-t"><thead><tr><th>Title</th><th>Assignee</th><th title="Reviewed before it counts (off for coordination-only tasks)">Review</th><th></th></tr></thead>
-      ${d.tasks.map((t, i) => `<tbody data-i="${i}"><tr><td><input type="text" data-f="title" maxlength="200" value="${esc(t.title)}" aria-label="Task title"></td>
-        <td><select data-f="assignee" aria-label="Assignee">${optList(names, t.assignee, "anyone")}</select></td>
-        <td class="g"><input type="checkbox" data-f="gate" ${t.gate === 0 ? "" : "checked"} aria-label="Needs review" title="Reviewed before it counts (off for coordination-only tasks)"></td>
-        <td class="x" rowspan="2"><button type="button" data-delt="${i}" aria-label="Remove task">✕</button></td></tr>
-        <tr class="sub"><td colspan="3"><input type="text" data-f="detail" maxlength="2000" value="${esc(t.detail)}" placeholder="detail" aria-label="Task detail"></td></tr></tbody>`).join("") || `<tbody><tr><td colspan="4" style="color:var(--faint)">No seed tasks: the planner worker fills the board.</td></tr></tbody>`}</table>
-      <button type="button" class="add" id="ed-addt">Add task</button></div>
+  const names = d.workers.map(w => w.name).filter(Boolean), engines = home?.engines || [];
+  const allies = d.workers.filter(w => w.engine).length;
+  const fresh = !$("nr-ed").firstElementChild;  /* animate the editor in once, not on every edit */
+  $("nr-ed").innerHTML = `<div class="panel ed ${fresh ? "fresh" : ""}"><div class="eh"><h3>Plan draft</h3><span>${plural(d.workers.length, "worker")}${allies ? ` (${allies} ${allies === 1 ? "ally" : "allies"})` : ""} · ${plural(d.tasks.length, "task")} · budget from Settings</span></div>
+    <div class="eb"><div class="grid2"><div><label class="fl" for="ed-name">Name</label><input type="text" id="ed-name" maxlength="40" value="${esc(d.name)}" placeholder="short-name" style="width:100%"></div>
+      <div><label class="fl" for="ed-goal">Goal</label><textarea id="ed-goal" rows="2" maxlength="4000">${esc(d.goal)}</textarea></div></div>
+      <div class="lh">Team <span>Claude tiers or ally engines; reviews always go to a different model</span></div>
+      <div id="ed-w">${d.workers.map((w, i) => { const m = w.engine ? `ally:${w.engine}` : (w.model || "");
+        return `<div class="wr" data-i="${i}"><div class="l1">${avatar(w.name || "?", m || "sonnet")}
+          <input type="text" data-f="name" maxlength="24" value="${esc(w.name)}" placeholder="name" aria-label="Worker name">
+          <select data-f="role" aria-label="Council role">${optList(roles, w.role)}</select>
+          <select data-f="engine" aria-label="Engine">${optList(engines, w.engine || "", "Claude", e => FAMILIES[e] || cap(e))}</select>
+          <select data-f="model" aria-label="Claude model tier" ${w.engine ? "disabled" : ""}>${optList(home?.tiers || [], w.model ? tier(w.model) : "", "Model: default", cap)}</select>
+          <select data-f="effort" aria-label="Effort" ${w.engine ? "disabled" : ""}>${optList(home?.efforts || [], w.effort && w.effort !== "-" ? w.effort : "", "Effort: default", cap)}</select>
+          <button class="ghost x" type="button" data-delw="${i}" aria-label="Remove worker ${esc(w.name)}">✕</button></div>
+          <input type="text" data-f="brief" maxlength="1000" value="${esc(w.brief)}" placeholder="Brief: what this worker does" aria-label="Brief"></div>`; }).join("")}</div>
+      <button type="button" class="sm" id="ed-addw">Add worker</button>
+      <div class="lh">Seed tasks <span>untick review for coordination-only tasks</span></div>
+      <div id="ed-t">${d.tasks.map((t, i) => `<div class="tr" data-i="${i}"><div class="l1"><input type="text" data-f="title" maxlength="200" value="${esc(t.title)}" placeholder="Task title" aria-label="Task title">
+          <select data-f="assignee" aria-label="Assignee">${optList(names, t.assignee, "Anyone")}</select>
+          <label class="g"><input type="checkbox" data-f="gate" ${t.gate === 0 ? "" : "checked"}> Review</label>
+          <button class="ghost x" type="button" data-delt="${i}" aria-label="Remove task">✕</button></div>
+          <input type="text" data-f="detail" maxlength="2000" value="${esc(t.detail)}" placeholder="Detail" aria-label="Task detail"></div>`).join("") || `<div class="empty" style="padding:14px">No seed tasks: the planner worker fills the board.</div>`}</div>
+      <button type="button" class="sm" id="ed-addt">Add task</button></div>
     <div class="foot"><span class="pmsg" id="ed-msg">Creating the plan resolves roles and plugins; it does not launch anything.</span><button type="button" id="ed-discard">Discard draft</button><button class="primary" type="button" id="ed-create">Create plan</button></div></div>`;
 }
 function readDraft() {
-  const rows = id => [...$(id).querySelectorAll("tbody[data-i]")].map(tb => Object.fromEntries([...tb.querySelectorAll("[data-f]")].map(el => [el.dataset.f, el.type === "checkbox" ? (el.checked ? 1 : 0) : el.value.trim()])));
+  const rows = id => [...$(id).querySelectorAll("[data-i]")].map(r => Object.fromEntries([...r.querySelectorAll("[data-f]")].map(el => [el.dataset.f, el.type === "checkbox" ? (el.checked ? 1 : 0) : el.value.trim()])));
   return {...draft, name: $("ed-name").value.trim(), goal: $("ed-goal").value.trim(), project: $("nr-proj").value.trim(),
     workers: rows("ed-w").map(w => ({name: w.name, role: w.role, brief: w.brief,
-      ...(/^ally:/.test(w.model) ? {engine: w.model.slice(5)} : {...(w.model ? {model: w.model} : {}), ...(w.effort ? {effort: w.effort} : {})})})), tasks: rows("ed-t")};
+      ...(w.engine ? {engine: w.engine} : {...(w.model ? {model: w.model} : {}), ...(w.effort ? {effort: w.effort} : {})})})), tasks: rows("ed-t")};
 }
 $("nr-ed").addEventListener("input", () => { if (draft) store(readDraft()); });
+$("nr-ed").addEventListener("change", e => { if (e.target.dataset.f === "engine") editDraft(readDraft()); });  /* the avatar and Claude-only fields follow the engine */
 $("nr-proj").addEventListener("input", () => { if (draft) store(readDraft()); });
 $("nr-ed").addEventListener("click", async e => {
   const b = e.target.closest("button"); if (!b) return;
@@ -623,10 +605,10 @@ $("nr-ed").addEventListener("click", async e => {
   if (b.id === "ed-addt") { d.tasks.push({title: "", detail: "", assignee: "", gate: 1}); return editDraft(d); }
   if (b.id === "ed-discard" && confirm("Discard this draft?")) { draft = null; store(null); $("nr-ed").innerHTML = ""; api("/api/planner", {clear: true}).catch(() => {}); return; }
   if (b.id === "ed-create") {
-    b.disabled = true; pmsg("ed-msg", "resolving roles and plugins…");
+    b.disabled = true; pmsg("ed-msg", "Resolving roles and plugins…");
     try {
       const out = await api("/api/plan", {plan: d});
-      draft = null; store(null); $("nr-ed").innerHTML = ""; nrmsg(`Planned <b>${esc(out.run)}</b>: review it in Preview &amp; launch.`, "ok");
+      draft = null; store(null); $("nr-ed").innerHTML = ""; nrmsg(`Planned <b>${esc(out.run)}</b>: review it in Preview and launch.`, "ok");
       await refresh(); const r = home.runs.find(x => x.run === out.run); if (r) launchModal(r);
     } catch (err) { pmsg("ed-msg", err.message, "err"); b.disabled = false; }
   }
@@ -634,32 +616,41 @@ $("nr-ed").addEventListener("click", async e => {
 try { const saved = JSON.parse(localStorage.getItem(NR_KEY) || "null"); if (saved && Array.isArray(saved.workers)) { $("nr-proj").value = saved.project || ""; draft = saved; } } catch (e) { /* no saved draft */ }
 
 /* ---------- runs ---------- */
-function roster(r) { return (r.workers || []).map(w => `<span class="chip"><i style="background:var(--${tier(w.model)})"></i><b>${esc(w.name)}</b>${esc(w.role)}</span>`).join(""); }
+function crew(r) {
+  const ws = r.workers || [], allies = ws.filter(w => isAlly(w.model)), fams = [...new Set(allies.map(w => family(w.model)))];
+  return `<div class="crew"><span class="stack">${ws.slice(0, 8).map(w => `<span title="${esc(`${w.name} · ${w.role} · ${modelName(w.model)}`)}">${avatar(w.name, w.model)}</span>`).join("")}</span>
+    <span class="info">${plural(ws.length, "worker")}${allies.length ? ` · ${allies.length} ${allies.length === 1 ? "ally" : "allies"}` : ""}</span>${fams.map(f => `<span class="fam f-${f}">${esc(FAMILIES[f])}</span>`).join("")}</div>`;
+}
 function runCard(r) {
-  const pct = r.tasks ? Math.round(100 * (r.finished_tasks || 0) / r.tasks) : 0;
+  const pct = r.tasks ? Math.round(100 * (r.finished_tasks || 0) / r.tasks) : 0, est = r.estimate || [0, 0];
   const when = r.status === "planned" ? "awaiting launch" : r.started ? `started ${ago(r.started)}` : "";
-  const est = r.estimate || [0, 0];
-  const meta = r.status === "planned" ? `${(r.workers || []).length} workers · ${r.tasks || 0} seed task(s) · est ${(est[0] / 1e6).toFixed(1)}–${(est[1] / 1e6).toFixed(1)}M tokens`
-    : `${r.finished_tasks}/${r.tasks} tasks finished${r.integrated ? " · integrated" : ""}`;
+  const meta = r.status === "planned" ? `${plural(r.tasks || 0, "seed task")} · est ${(est[0] / 1e6).toFixed(1)}–${(est[1] / 1e6).toFixed(1)}M tokens` : (r.integrated ? "integrated" : "");
   const acts = r.status === "planned"
-    ? `<button type="button" data-discard="${esc(r.run)}">Discard</button><button class="primary" type="button" data-launch="${esc(r.run)}">Preview &amp; launch</button>`
-    : `${r.demo ? `<button type="button" data-discard="${esc(r.run)}">Delete</button>` : ""}${r.status === "live" ? `<button class="danger" type="button" data-stop="${esc(r.run)}">Stop all</button>` : `<button type="button" data-replay="${esc(r.run)}">Replay</button>`}<button class="primary" type="button" data-open="${esc(r.run)}">Open</button>`;
+    ? `<button type="button" data-discard="${esc(r.run)}">Discard</button><button class="primary" type="button" data-launch="${esc(r.run)}">Preview and launch</button>`
+    : `${r.demo ? `<button class="ghost" type="button" data-discard="${esc(r.run)}">Delete</button>` : ""}${r.status === "live" ? `<button class="danger" type="button" data-stop="${esc(r.run)}">Stop all</button>` : `<button type="button" data-replay="${esc(r.run)}">Replay</button>`}<button class="primary" type="button" data-open="${esc(r.run)}">Open</button>`;
   const fresh = !seen.has(r.run); seen.add(r.run);
-  return `<article class="run ${esc(r.status)}" style="${fresh ? "" : "animation:none"}"><div class="top"><span class="name">${esc(r.run)}</span><span class="tag">${esc(r.status)}</span>${r.demo ? '<span class="tag demo">demo</span>' : ""}<span class="when">${when}</span></div>
-    <div class="goal">${esc(r.goal)}</div><div class="roster">${roster(r)}</div>
-    ${r.status === "planned" ? "" : `<div class="progress"><i style="width:${pct}%"></i></div>`}
+  const label = {live: "Live", planned: "Planned", finished: "Finished", stopped: "Stopped"}[r.status] || r.status;
+  return `<article class="panel run ${esc(r.status)}" style="${fresh ? "" : "animation:none"}"><div class="rh"><span class="tag ${esc(r.status)}">${r.status === "live" ? '<i class="pulse"></i>' : ""}${esc(label)}</span>${r.demo ? '<span class="tag demo">Demo</span>' : ""}<span class="name">${esc(r.run)}</span><span class="when">${when}</span></div>
+    <div class="goal">${esc(r.goal)}</div>${crew(r)}
+    ${r.status === "planned" ? "" : `<div class="prog"><div class="bar"><i style="width:${pct}%"></i></div><span>${r.finished_tasks || 0}/${r.tasks || 0} tasks</span></div>`}
     <div class="foot"><span class="meta">${meta}</span>${acts}</div></article>`;
 }
 function renderRuns() {
-  const runs = home.runs;
-  $("rcount").textContent = runs.length ? `${runs.filter(r => r.status === "live").length} live · ${runs.length} total` : "";
-  const safe = r => { try { return runCard(r); } catch (e) { return `<article class="run"><div class="top"><span class="name">${esc(r.run)}</span><span class="tag">unreadable</span></div></article>`; } };
-  const html = runs.length ? runs.map(safe).join("") :
-    `<div class="empty">No runs yet. Describe a job under New run, or ask Claude for a War Room (<code>/war-room</code>); its plan appears here for preview and launch.</div>`;
-  if ($("runs")._h !== html) { $("runs").innerHTML = html; $("runs")._h = html; }
+  const runs = home.runs, live = runs.filter(r => r.status === "live");
+  $("rcount").textContent = runs.length ? `${live.length} live · ${runs.length} total` : "";
+  const safe = r => { try { return runCard(r); } catch (e) { return `<article class="panel run"><div class="rh"><span class="name">${esc(r.run)}</span><span class="tag">unreadable</span></div></article>`; } };
+  const order = [...runs].sort((a, z) => ["live", "planned"].indexOf(z.status) - ["live", "planned"].indexOf(a.status));  /* live and planned first, stable */
+  setHTML($("runs"), runs.length ? order.map(safe).join("") :
+    `<div class="empty" style="grid-column:1/-1">No runs yet. Start one under <a href="#new">New run</a>, pick a quick start above, or ask Claude for a War Room (<code>/war-room</code>).</div>`);
+  const planned = runs.filter(r => r.status === "planned");
+  $("pl-n").textContent = planned.length ? `${planned.length}` : "";
+  setHTML($("planned"), planned.map(r => `<div class="pl-item"><span class="n" title="${esc(r.goal)}">${esc(r.run)}</span><button class="sm primary" type="button" data-launch="${esc(r.run)}">Preview</button></div>`).join("")
+    || `<div class="faint" style="font-size:12.5px">Plans you create appear here until you launch them.</div>`);
+  const target = live[0] || runs.find(r => r.status !== "planned");
+  setRunNav(target?.run, !!live.length);
 }
-$("runs").addEventListener("click", async e => {
-  const b = e.target.closest("button"); if (!b) return;
+document.addEventListener("click", async e => {
+  const b = e.target.closest("button[data-open], button[data-replay], button[data-stop], button[data-discard], button[data-launch]"); if (!b) return;
   const u = s => encodeURIComponent(s);
   try {
     if (b.dataset.open) location.href = `/run/${u(b.dataset.open)}`;
@@ -670,47 +661,58 @@ $("runs").addEventListener("click", async e => {
   if (b.dataset.launch) launchModal(home.runs.find(r => r.run === b.dataset.launch));
 });
 function launchModal(r) {
-  const b = r.budget, armed = home.war_mode;
-  modal(`<h3>LAUNCH ${esc(r.run.toUpperCase())}</h3><div class="body">
-    <div style="color:var(--dim);margin-bottom:12px">${esc(r.goal)}</div>
-    <table><thead><tr><th>Worker</th><th>Council role</th><th>Kind</th><th>Model</th><th>Effort</th><th>Plugins / MCP</th></tr></thead><tbody>
-    ${r.workers.map(w => `<tr><td class="m">${esc(w.name)}</td><td>${esc(w.role)}</td><td class="m">${esc(w.kind)}${w.write ? " · writes" : ""}</td>
-      <td class="m"><span class="led" style="background:var(--${tier(w.model)});width:8px;height:8px"></span> ${esc(w.model.replace("claude-", ""))}</td>
-      <td class="m">${esc(w.effort)}</td><td class="m">${esc([...(w.plugins || []), ...(w.mcp || []).map(m => "mcp:" + m)].join(", "))}</td></tr>`).join("")}</tbody></table>
+  const b = r.budget, armed = home.war_mode, allies = r.workers.filter(w => isAlly(w.model)).length;
+  modal(`<h3>Launch ${esc(r.run)}</h3><div class="body">
+    <div style="color:var(--dim);margin-bottom:14px">${esc(r.goal)}</div>
+    <table><thead><tr><th>Worker</th><th>Role</th><th>Engine</th><th>Effort</th><th>Plugins / MCP</th></tr></thead><tbody>
+    ${r.workers.map(w => `<tr><td><span style="display:inline-flex;align-items:center;gap:8px">${avatar(w.name, w.model, "sm")}<b style="font-weight:500">${esc(w.name)}</b></span></td>
+      <td>${esc(w.role)}<div class="faint" style="font-size:12px">${esc(w.kind)}${w.write ? " · writes in a worktree" : ""}</div></td>
+      <td>${isAlly(w.model) ? famBadge(w.model) : `<span class="sw" style="--c:var(--${tier(w.model)})"></span>${esc(modelName(w.model))}`}</td>
+      <td class="m">${esc(w.effort)}</td><td class="m">${esc([...(w.plugins || []), ...(w.mcp || []).map(m => "mcp:" + m)].join(", ") || "—")}</td></tr>`).join("")}</tbody></table>
     <div class="stats"><div>Estimated tokens<b>${((r.estimate || [0, 0])[0] / 1e6).toFixed(1)}–${((r.estimate || [0, 0])[1] / 1e6).toFixed(1)}M</b></div>
       <div>Usage guard<b>${b.pause_at}% / ${b.stop_at}%</b></div><div>Spend cap<b>${b.max_cost_usd ? "$" + (+b.max_cost_usd).toFixed(2) : "none"}</b></div><div>Review gates<b>${b.gates ? `on · ${b.gate_score}` : "off"}</b></div></div>
     <pre>${esc(home.warning)}</pre>
-    ${armed ? `<label class="ack"><input type="checkbox" id="ack"> <span>I have read the roster and the warning. Launch ${r.workers.length} Claude Code workers now.</span></label>`
-            : `<div class="ack" style="border-color:var(--danger);cursor:default">War mode is SAFE. Arm the master switch first.</div>`}
+    ${armed ? `<label class="ack"><input type="checkbox" id="ack"> <span>I have read the roster and the warning. Launch ${plural(r.workers.length, "worker")}${allies ? ` (${allies} on ally engines, which use their own providers' limits)` : ""} now.</span></label>`
+            : `<div class="ack bad">War mode is safe. Arm the master switch on Home first.</div>`}
   </div><div class="foot"><button type="button" onclick="closeModal()">Cancel</button><button class="primary" id="go" type="button" disabled>Launch</button></div>`);
   if (!armed) return;
   $("ack").onchange = e => $("go").disabled = !e.target.checked;
   $("go").onclick = async () => {
     $("go").disabled = true;
     try { await api(`/api/run/${encodeURIComponent(r.run)}/launch`, {confirm: r.confirm}); }
-    catch (e) { alert(`Launch refused: ${e.message}`); $("go").disabled = false; return; }
-    $("modal").querySelector(".body").innerHTML = `<div class="seq">${["WAR MODE ARMED · LAUNCH AUTHORISED", "WRITING WORKER PROFILES AND PERMISSIONS",
-      "CURATING PLUGINS PER ROLE", "OPENING THE BUS", ...r.workers.map(w => `SPAWNING <b>${esc(w.name)}</b> · ${esc(w.role)} · ${esc(w.model.replace("claude-", ""))}`), "HANDING OVER TO THE RUN VIEW"]
+    catch (e) { toast("Launch refused", e.message, "danger"); $("go").disabled = false; return; }
+    $("modal").querySelector(".body").innerHTML = `<div class="seq">${["War mode armed · launch authorised", "Writing worker profiles and permissions",
+      "Curating plugins per role", "Opening the bus", ...r.workers.map(w => `Spawning <b>${esc(w.name)}</b> · ${esc(w.role)} · ${esc(modelName(w.model))}`), "Handing over to the run view"]
       .map((t, i) => `<div style="animation-delay:${i * .32}s">▸ ${t}</div>`).join("")}</div>`;
     $("modal").querySelector(".foot").innerHTML = "";
     setTimeout(() => location.href = `/run/${encodeURIComponent(r.run)}`, 600 + (r.workers.length + 5) * 320);
   };
 }
 
+/* ---------- command palette entries for this page ---------- */
+palette.add(() => !home ? [] : [
+  {label: home.war_mode ? "Disarm war mode" : "Arm war mode", group: "War mode", run: () => { location.hash = ""; toggleWar(); }},
+  {label: "Start demo run", hint: "simulated, no tokens", group: "Runs", run: startDemo},
+  {label: "Draft a plan with Claude", group: "New run", run: () => { location.hash = "new"; $("nr-prompt").focus(); }},
+  ...Object.entries(home.templates || {}).map(([k, t]) => ({label: `Template: ${t.label}`, hint: t.summary, group: "New run", run: () => useTemplate(k)})),
+  ...home.runs.flatMap(r => r.status === "planned" ? [{label: `Preview and launch ${r.run}`, hint: r.goal, group: "Runs", run: () => launchModal(r)}]
+    : [{label: `Open ${r.run}`, hint: `${r.status} · ${r.goal}`, group: "Runs", run: () => location.href = `/run/${encodeURIComponent(r.run)}`},
+       {label: `Replay ${r.run}`, group: "Runs", run: () => location.href = `/run/${encodeURIComponent(r.run)}?replay=1`}])]);
+
 async function refresh() {
   try {
     home = await api("/api/home");
-    $("hub").textContent = "online"; $("hub").style.color = "var(--ok)";
-    $("meter").textContent = home.meter;
-    const c = home.calibration || {};
-    $("calib").textContent = c.runs ? `${Math.round(c.per_worker_task / 1000)}k tok / worker-task · ${c.runs} run${c.runs > 1 ? "s" : ""}` : "uncalibrated";
-    renderSwitch(); renderRuns(); fillTemplates();
+    renderSwitch(); usageCard(); renderRuns(); renderTemplates(); subline();
     if (!dirty) fillSettings(home.settings); else gauge();
     renderPresets(); renderUi(); renderKinds(); renderRoleModels(); runAlerts();
-  } catch (e) { $("hub").textContent = "offline"; $("hub").style.color = "var(--danger)"; }
+  } catch (e) { $("sub").textContent = `Hub offline (${e.message})`; }
 }
-setInterval(() => $("clock").textContent = new Date().toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"}), 1000);
-refresh().then(() => { if (draft) editDraft(draft); watchPlanner(); }); setInterval(refresh, 2500);
+route();
+refresh().then(() => {
+  const t = new URLSearchParams(location.search).get("template");  /* /?template=mixed-allies#new opens that team in the editor */
+  if (t && home?.templates?.[t]) { draft = null; useTemplate(t, false); history.replaceState(null, "", "/#new"); } else if (draft) editDraft(draft);
+  watchPlanner();
+}); setInterval(refresh, 2500);
 </script>
 </body>
 </html>

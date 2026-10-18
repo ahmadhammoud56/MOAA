@@ -4,6 +4,31 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-18
+
+### Changed
+- **War Room 0.6.0: the app is redesigned around allies.**
+  - Every page shares an icon sidebar (Home, New run, Run, History, Settings) and a **Ctrl+K** command palette.
+  - Text is set in IBM Plex Sans and Plex Mono is kept for data. The style stays flat graphite and amber, with 6–8 px corners.
+  - Workers are coloured by model family everywhere: Claude, Codex, Gemini, Kimi, DeepSeek and OmniRoute. Ally workers carry a badge and have no console button.
+  - **Run view:**
+    - A **needs-attention** strip: human gates can be approved or rejected in place.
+    - A KPI strip.
+    - Team cards.
+    - A kanban **Board** (the new default view) whose cards glide between lanes.
+    - A **task inspector**: reviews and notes, the commit with its diff stat, the people involved and the task's history.
+    - A timeline coloured by family, showing busy stretches.
+    - Flow, Tree, Topology, Cost, replay and the worker drill-down are kept.
+  - **Home** is split into Home (war mode, plan usage, quick-start templates, runs), **New run** (with a plan editor that picks an engine per worker) and **Settings**.
+  - **History** gains a filter and shows each run's team.
+  - **New hub routes:**
+    - `POST /api/run/<run>/decide` answers a human gate, the same as `warroom.py approve`. It accepts blocked tasks only and needs the app token.
+    - `GET /api/run/<run>/task/<id>/diff` gives a commit's diff stat.
+    - `/ui.css` and `/ui.js` serve the shared styles and helpers.
+  - `/?template=<name>#new` opens a template in the editor.
+  - The demo team now includes a Codex builder and a Gemini reviewer.
+- **README:** the Allies and Strata sections now explain what each is for, how it stays safe, and how to use it.
+
 ## [0.7.1] - 2026-10-18
 
 ### Fixed

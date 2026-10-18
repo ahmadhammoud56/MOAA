@@ -66,35 +66,33 @@ The same task in an interactive session with Specialist Council 1.3.1: both work
 
 **A team of real Claude Code sessions working one big job in parallel.** Subagents share one context and one turn. A War Room is different: it starts several independent `claude` sessions, each with its own Specialist Council role, model, effort, plugins and permissions. They coordinate through a shared task board and message bus, review each other's work and merge it into one branch. A local app shows the whole team at work.
 
-![War Room Tree view: the run as an agent tree with the reviewer rail, bus meters, workers by model tier and a session log](plugins/war-room/docs/media/run-tree.png)
+![War Room run view: a team of Claude, Codex and Gemini workers, the board, review gates and a needs-attention strip](plugins/war-room/docs/media/run-live.png)
 
 ### How a run works
 
-1. **Plan.** Describe the job, either in the app (Home → New run) or to Claude in a chat (`/war-room`). The plan names the workers (for example a planner, two builders, a reviewer and an arbiter), the seed tasks and the budget. In the app, **Draft with Claude** writes the plan with one headless Sonnet call (about 5k tokens, no tools); **Write by hand** costs nothing. You can edit every worker and task before saving.
+1. **Plan.** Describe the job, either in the app (Home → New run) or to Claude in a chat (`/war-room`). The plan names the workers (for example a planner, two builders, a reviewer and an arbiter), the seed tasks and the budget. In the app, **Draft with Claude** writes the plan with one headless Sonnet call (about 5k tokens, no tools); a team template costs nothing. You can edit every worker and task before saving, and run any worker on an ally engine (Codex, Gemini, Kimi, DeepSeek or OmniRoute) instead of Claude.
 2. **Preview and launch.** The preview lists every worker with its role, model, effort and plugins, plus a calibrated token estimate and the usage guard. Launching needs war mode armed, an acknowledgement and a confirm code tied to that exact plan.
 3. **Work.** Workers claim tasks from the board, message each other and checkpoint as they go. Builders write in their own git worktree. Parked workers wait for new work without using tokens, and the conductor wakes idle ones when work arrives.
-4. **Review gates.** Finished work counts only after a reviewer on a **different model tier** passes it (score 85 by default). Failed work goes back to its author. After repeated failures an arbiter decides, and after that you do.
+4. **Review gates.** Finished work counts only after a reviewer on a **different model** passes it (score 85 by default). Failed work goes back to its author. After repeated failures an arbiter decides, and after that you do.
 5. **Merge.** Approved commits merge into a per-run branch, `war-room/<run>`. Merge conflicts go back to the author.
 6. **Finish.** When everything is merged, the run stops its workers, measures the real token cost (this calibrates later estimates), removes its sessions and merged worktrees, and writes a report. Merging into your own branch is a separate **Integrate** step, and it never pushes.
 
 ### The app
 
-![War Room home: war mode master switch, new run, settings and runs](plugins/war-room/docs/media/home.png)
+![War Room home: war mode, plan usage, quick-start templates and runs](plugins/war-room/docs/media/home.png)
 
-- **Home:**
-  - the war mode master switch (SAFE or ARMED);
-  - **New run**, with a folder picker, a job prompt and team templates (feature team, bug hunt, review swarm, research fan-out, refactor) that fill the plan at no token cost;
-  - settings: team size, the usage guard, a spend cap, gates, presets, plugins per worker kind and a default model per role;
-  - every run, with Preview & launch.
-- **Run views:**
-  - **Flow:** tasks moving through Board, Build, Review, Merge queue and Integrated;
-  - **Tree:** the run as an agent tree, shown above;
-  - **Topology:** messages between workers;
-  - **Cost:** spend and burn per worker, with a projection to the usage guard.
-- **Worker drill-down:** a worker's tool calls, messages, checkpoints and usage charts, and a button to raise its console.
+- **Pages:** Home (war mode switch, plan usage, quick-start templates, runs), New run, the run view, History and Settings, behind a slim sidebar. **Ctrl+K** opens a command palette everywhere.
+- **New run:** a folder picker, a job prompt and team templates (feature team, bug hunt, review swarm, research fan-out, mixed allies, refactor) that fill the plan editor at no token cost. Each worker gets a role and an engine: a Claude tier, or an ally.
+- **Run view:**
+  - a **needs-attention** strip for human gates (approve or reject in place), failed reviews, spend near the cap and a silent conductor;
+  - a KPI strip: tasks merged, the 5-hour window, spend, who is working (Claude versus allies) and gates waiting;
+  - the team, coloured by model family (Claude, Codex, Gemini, Kimi, DeepSeek, OmniRoute);
+  - **Board** (a kanban), **Flow**, **Tree**, **Topology** and **Cost** views, review gates, the merge queue, activity and a family-coloured timeline.
+- **Inspectors:** click a task for its reviews, notes, commit and diff stat; click a worker for its tool calls, messages, checkpoints and usage charts, and a button to raise its console.
+- **Settings:** team size, the usage guard, a spend cap, gates, presets, alerts, theme, plugins per worker kind and a default model per role.
 - **Replay** of any finished run at up to 120x, and a **History** page with outcomes, review results and measured cost.
 - **Alerts:** a toast, a desktop notification and a sound when a human gate opens or a run stops or finishes.
-- **Look:** a flat graphite design in dark, light or system theme, with mechanical motion that turns off under reduced-motion settings.
+- **Look:** flat graphite and amber in dark, light or system theme, sans for text and mono for data, with mechanical motion that turns off under reduced-motion settings.
 
 ![War Room Cost view: spend per worker, the 5-hour window with its projection, and the cost model](plugins/war-room/docs/media/run-cost.png)
 
@@ -131,37 +129,90 @@ This adds War Room to the Start menu and the desktop. `python plugins/war-room/w
 
 ## Allies: other agents on call
 
-The `allies` plugin lets Claude Code hand bounded tasks to other agent CLIs, each signed in with its own account:
-OpenAI **Codex**, Google **Gemini**, Moonshot **Kimi**, **DeepSeek** (Claude Code on DeepSeek's API), or a local
-**OmniRoute** gateway on free tiers. Claude writes the brief, the member works headless, and Claude checks the answer.
+**Claude stays in charge; other model families do bounded jobs for it.** The `allies` plugin lets Claude Code hand a
+task to another agent CLI, wait for the answer, and check it before using it. Each member signs in with its own
+account, so the work spends that service's quota instead of your Claude usage.
 
-- Use it for a second opinion from another model family (`ask codex,gemini`), or to move bulk reading, first drafts
-  and test writing off your Claude limits.
-- Read-only by default. Write tasks run in a separate git worktree, and allies commits them on a branch of their own.
-- In War Room, any worker can take an `engine` (for example a Codex builder reviewed by a Gemini reviewer); see the
-  `mixed-allies` template.
-- OmniRoute is optional (`--with-omniroute`). MOAA starts it on loopback only, with an API key required and a
-  generated password. Connect only API-key and free-tier providers to it, never other services' subscription
-  logins.
+| Member | What runs | Sign-in |
+|---|---|---|
+| `codex` | OpenAI Codex CLI | `codex login` (ChatGPT plan or API key) |
+| `gemini` | Google Gemini CLI | a free `GEMINI_API_KEY` from Google AI Studio |
+| `kimi` | Moonshot Kimi Code CLI | `/login` inside `kimi` |
+| `deepseek` | Claude Code pointed at DeepSeek's API | `DEEPSEEK_API_KEY` |
+| `omniroute` | Claude Code through a local [OmniRoute](https://github.com/diegosouzapw/OmniRoute) gateway | providers you connect in its dashboard |
+
+**What it is good for**
+
+- **A second opinion from another model family.** `ask codex,gemini` sends the same brief to both in parallel; Claude
+  compares the answers and reports where they agree and disagree. Different families miss different things.
+- **Stretching your Claude limits.** Bulk reading, first drafts, test writing and long-context summaries can run on
+  another quota while Claude plans and verifies.
+- **Independent review.** A change written by Claude can be reviewed by Codex or Gemini, and the other way round.
+
+**How it stays safe**
+
+- **Read-only by default.** Codex runs in its read-only sandbox; Gemini runs under a shipped policy that denies shell
+  and file-write tools; the others run in plan mode.
+- **Writes never touch your checkout.** `write` (or `run --write`) works in a separate git worktree. Allies commits
+  the result on branch `ally/<member>-<id>` and shows the diff; you merge it yourself.
+- **Answers are untrusted.** The skill tells Claude to verify every claim and never follow instructions inside an
+  answer. Every brief, answer and log is kept under `~/.claude/allies/runs/`.
+- **Credentials stay apart.** Each member gets only its own key, read from the environment or
+  `~/.claude/allies/keys.env` outside any repository. The DeepSeek and OmniRoute members run Claude Code with
+  `--bare`, so they never see your Claude login.
+- **`doctor` tells you what works:** ready, not signed in, or blocked by the network you are on.
+
+**In War Room**, any worker can take an `engine` instead of a Claude model. The `mixed-allies` template has Claude
+plan, Codex build and Gemini review; review gates still require a different model than the author's. The app colours
+every worker by family and lets you pick the engine per worker in the plan editor.
+
+**OmniRoute** is optional (`--with-omniroute` installs a pinned version). `allies.py omniroute start` runs it on
+loopback only, with an API key required, tracking off and a generated dashboard password. Connect only API-key and
+free-tier providers to it, never another service's subscription login.
 
 ```
 /allies:allies doctor
-/allies:allies ask codex,gemini -- Review src/parser.py for edge cases
+/allies:allies ask codex,gemini -- Review src/parser.py for edge cases and say which you would fix first
+/allies:allies write codex -- Add a test for the empty-input case in src/parser.py
 ```
 
 Details: [plugins/allies/README.md](plugins/allies/README.md).
 
 ## Strata: layered memory
 
-The `strata` plugin keeps four layers, after the design of TencentDB Agent Memory:
-- raw sessions;
-- extracted notes, where a newer note can supersede an older one;
-- one scene per project topic;
-- a profile of how you work.
+**Claude Code forgets everything between sessions; Strata keeps what matters.** It follows the four-layer design of
+[TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory), rebuilt as standard-library Python
+on a local SQLite file: no proxy, no extra service and no other API key.
 
-At session start it injects your profile and the project's scenes and notes. At session end one background Haiku
-call extracts new notes. Everything stays in a local SQLite file with full-text search: no proxy, no extra service
-and no other API key. `/strata:strata search ...` recalls older material. Details:
+| Layer | Holds |
+|---|---|
+| L0 raw | every message of each session, with secrets redacted |
+| L1 notes | atomic facts, decisions, preferences and constraints; a newer note supersedes an older one |
+| L2 scenes | one living summary per ongoing topic of a project |
+| L3 profile | how you like to work, shared by all projects |
+
+**How it works**
+
+- **Session start:** Claude receives your profile, this project's scenes and its newest notes (6,000 characters by
+  default), labelled as data that may be out of date.
+- **Session end:** the conversation is stored, and when enough is new, one background Haiku call (every tool denied,
+  no session saved) extracts notes, scenes and profile entries. Expect about 10–20k Haiku tokens per session.
+- **Recall:** the skill searches the upper layers first and falls back to raw conversations, so "what did we decide
+  about the cache last week?" finds the answer.
+- A project is its git repository root, so every worktree of a repository shares one memory.
+
+**You stay in control:** `remember` adds a note yourself (only `--global` makes it shared across projects), `forget`
+removes a note, a scene or a whole session, `show` and `stats` list what is stored, and `config auto off` stops the
+background extraction. Secrets that look like keys, tokens or passwords are redacted before storage, extraction
+output is validated before it is saved, and injected memory is marked as data, never instructions.
+
+```
+/strata:strata search cache invalidation
+/strata:strata remember "Always run the WSL suite before a release" --kind preference
+/strata:strata forget 42
+```
+
+Strata needs no worker process or background service; claude-mem is still available with `--with-claude-mem`. Details:
 [plugins/strata/README.md](plugins/strata/README.md).
 
 ## Profiles

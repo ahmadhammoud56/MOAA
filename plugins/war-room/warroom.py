@@ -1853,6 +1853,24 @@ def usage(run):
             "measured": cal.get(run)}
 
 
+def task_diff(run, task_id):
+    """The diff stat of a task's commit, for the app's task inspector (None when there is no commit or no git)."""
+    bus = open_bus(run)
+    t = bus.db.execute("SELECT commit_ref FROM tasks WHERE id=?", (task_id,)).fetchone()
+    if not t:
+        raise KeyError(f"no task #{task_id}")
+    ref, path = t["commit_ref"] or "", (json.loads(bus.control("integration") or "null") or {}).get("path") or ""
+    if bus.control("demo") or not re.fullmatch(r"[0-9a-f]{7,40}", ref) or not os.path.isdir(path):
+        return {"commit": ref or None, "files": None}
+    r = git("show", "--numstat", "--format=%s", ref, cwd=path)
+    if r.returncode:
+        return {"commit": ref, "files": None}
+    lines = r.stdout.splitlines()
+    files = [{"add": None if a == "-" else int(a), "del": None if d == "-" else int(d), "path": redact(f)}
+             for a, d, f in (x.split("\t", 2) for x in lines[1:] if x.count("\t") >= 2)]
+    return {"commit": ref, "subject": redact(lines[0]) if lines else "", "files": files[:60]}
+
+
 def replay(run):
     """Everything the app needs to rebuild the run at any moment: the final state plus the full event, message,
     checkpoint and usage logs (the live state endpoint only carries the latest slice)."""
@@ -2009,6 +2027,7 @@ def cmd_hub(a):
     token = secrets.token_urlsafe(16)
     pages = {name: open(os.path.join(HERE, name), encoding="utf-8").read().replace("__TOKEN__", token)
              for name in ("home.html", "dashboard.html", "history.html")}
+    shared = {f"/ui.{x}": open(os.path.join(HERE, "assets", f"ui.{x}"), "rb").read() for x in ("css", "js")}
     fonts = os.path.join(HERE, "assets", "fonts")
     run_re = re.compile(r"^/(?:api/)?run/([A-Za-z0-9-]{1,80})(/.*)?$")
 
@@ -2088,6 +2107,14 @@ def cmd_hub(a):
                     return self.send(200, worker_detail(m.group(1), wm.group(1)))
                 except KeyError as e:
                     return self.send(404, {"error": str(e)})
+            tm = m and re.match(r"^/task/(\d{1,9})/diff$", m.group(2) or "")
+            if tm:
+                try:
+                    return self.send(200, task_diff(m.group(1), int(tm.group(1))))
+                except KeyError as e:
+                    return self.send(404, {"error": str(e)})
+            if path in shared:
+                return self.send(200, shared[path], "text/css" if path.endswith("css") else "text/javascript")
             if path == "/icon.svg":
                 return self.send(200, open(os.path.join(HERE, "assets", "icon.svg"), "rb").read(), "image/svg+xml")
             if path.startswith("/fonts/") and re.match(r"^/fonts/[\w.-]+\.woff2$", path):
@@ -2209,6 +2236,14 @@ def cmd_hub(a):
                     cmd_pause(argparse.Namespace(run=run), on=action == "pause")
                 elif action == "integrate":
                     out = integrate_into_project(bus)
+                    return self.send(200 if out["ok"] else 409, out)
+                elif action == "decide":  # a human gate, answered from the app (same as `warroom.py approve`)
+                    t = bus._task(int(data["task"]))
+                    if not t or t["status"] != "blocked":
+                        return self.send(409, {"error": "only a task waiting at a human gate can be decided here"})
+                    out = bus.decide(t["id"], approve=bool(data.get("approve")), notes=str(data.get("notes") or "")[:500])
+                    if out["ok"] and not bus.control("demo"):
+                        process_merges(bus)
                     return self.send(200 if out["ok"] else 409, out)
                 elif action in ("finish", "shutdown"):
                     threading.Thread(target=shutdown, args=(run, f"{action} from the app", False), daemon=True).start()
@@ -2505,8 +2540,8 @@ def cmd_shutdown(a):
 # ---------------------------------------------------------------- demo: a simulated run for the app, no Claude sessions
 DEMO_GOAL = "Add rate limiting to the public API, with tests and docs"
 DEMO_ROSTER = [("lead", "project-planner", "planner", "sonnet", "high"), ("scout", "scout", "planner", "haiku", "low"),
-               ("swift", "builder", "builder", "haiku", "medium"), ("forge", "backend-engineer", "builder", "sonnet", "medium"),
-               ("judge", "peer-reviewer", "reviewer", "opus", "high"), ("arbiter", "arbiter", "reviewer", "fable", "high")]
+               ("swift", "builder", "builder", "haiku", "medium"), ("forge", "backend-engineer", "builder", "ally:codex", "-"),
+               ("judge", "test-engineer", "reviewer", "ally:gemini", "-"), ("arbiter", "arbiter", "reviewer", "fable", "high")]
 DEMO_SEED = [("Break the goal into tasks and assign them", "lead"), ("Survey the existing middleware and limits", "scout")]
 DEMO_PLAN = [("Token-bucket limiter core", "swift"), ("Redis-backed counter store", "forge"),
              ("Wire the limiter into the request pipeline", "forge"), ("429 responses with Retry-After", "swift")]
@@ -2517,7 +2552,7 @@ DEMO_TOOLS = {"planner": ["Read src/api/middleware.py", "Grep RateLimit", "Glob 
                           "Bash python -m pytest tests/test_limits.py", "Grep retry_after", "Bash git commit -m wip"],
               "reviewer": ["Bash git show HEAD --stat", "Bash python -m pytest", "Read src/limits/bucket.py",
                            "Agent agent-arena-judge score"]}
-DEMO_COST = {"haiku": .004, "sonnet": .018, "opus": .06, "fable": .05}
+DEMO_COST = {"haiku": .004, "sonnet": .018, "opus": .06, "fable": .05, "ally:codex": .02, "ally:gemini": .008}
 
 
 def make_demo(drive=True, speed=1.0, max_cost=None):
@@ -2527,8 +2562,10 @@ def make_demo(drive=True, speed=1.0, max_cost=None):
     while os.path.exists(os.path.join(RUNS, run)):
         run += "x"
     models, kinds = council_models(), load_profiles()["kinds"]
-    workers = [{"name": n, "role": r, "kind": k, "model": models.get(t, FALLBACK_MODELS[t]), "effort": e, "write": k == "builder",
-                "brief": "", "plugins": kinds[k]["plugins"], "plugin_dirs": [], "mcp": []} for n, r, k, t, e in DEMO_ROSTER]
+    ally = lambda t: t.startswith("ally:")  # noqa: E731  (a Codex or Gemini worker, like the mixed-allies template)
+    workers = [{"name": n, "role": r, "kind": k, "model": t if ally(t) else models.get(t, FALLBACK_MODELS[t]), "effort": e,
+                "write": k == "builder", "brief": "", "plugins": [] if ally(t) else kinds[k]["plugins"], "plugin_dirs": [], "mcp": [],
+                **({"engine": t[5:]} if ally(t) else {})} for n, r, k, t, e in DEMO_ROSTER]
     save_json(os.path.join(RUNS, run, "plan.json"), {"name": "demo", "goal": DEMO_GOAL, "project": "(simulated project)",
                                                      "worktrees": "", "workers": workers, "tasks": [], "budget": budget, "demo": True})
     bus = open_bus(run)
@@ -2537,7 +2574,7 @@ def make_demo(drive=True, speed=1.0, max_cost=None):
                  ("integration", json.dumps({"path": "", "branch": f"war-room/{run}", "base": secrets.token_hex(20)}))):
         bus.control(k, v)
     for w in workers:
-        sid = secrets.token_hex(16)
+        sid = f"ally-{w['name']}" if w.get("engine") else secrets.token_hex(16)
         bus.put_worker(name=w["name"], role=w["role"], kind=w["kind"], model=w["model"], effort=w["effort"], session_id=sid,
                        cwd="", argv="[]", resume_argv=None, state="running")
         bus.event("launch", f"{w['name']} {sid[:8]} {w['model']}/{w['effort']}")
