@@ -15,10 +15,14 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
     the same brief to several members in parallel.
   - `run --write` works in a separate git worktree. Allies commits the result on branch `ally/<member>-<id>` and never
     touches your checkout.
-  - Every run is kept under `~/.claude/allies/runs/`.
+  - Every run is kept under `~/.claude/allies/runs/`. Keys can live in `~/.claude/allies/keys.env`, outside any
+    repository; each member gets only its own key.
+  - Gemini uses an API key: Google sign-in no longer serves the CLI's free tier. Gemini runs in its own home, set to
+    API-key sign-in, so your `~/.gemini` is left alone.
+  - `doctor` reports `blocked` when a member's service cannot be reached from the current network.
   - The Claude-format members never read your Claude login.
   - An `allies` skill covers briefing, verification, stretching Claude limits, and what never to send.
-  - Verified live with Codex: a read-only question (correct answer, no files changed) and a write task (bug fixed
+  - Verified live with Gemini (API key) on a read-only question, and with Codex: a read-only question (correct answer, no files changed) and a write task (bug fixed
     with a test, committed on its own branch).
 - **Strata 0.1.0 (new plugin): layered long-term memory across sessions.**
   - Four layers, after the design of TencentDB Agent Memory: raw sessions, extracted notes with supersession,

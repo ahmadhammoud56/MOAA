@@ -6,7 +6,7 @@ account, so the work spends that service's quota instead of your Claude usage.
 | Member | What runs | Sign-in |
 |---|---|---|
 | `codex` | OpenAI Codex CLI (`codex exec`) | `codex login` (ChatGPT or API key) |
-| `gemini` | Google Gemini CLI (`gemini -p`) | run `gemini` once and sign in with Google, or set `GEMINI_API_KEY` |
+| `gemini` | Google Gemini CLI (`gemini -p`) | `GEMINI_API_KEY` (free key from [Google AI Studio](https://aistudio.google.com/apikey)). Google sign-in no longer serves the CLI's free tier; allies runs Gemini in its own home set to API-key sign-in and leaves your `~/.gemini` alone |
 | `kimi` | Moonshot Kimi Code CLI (`kimi -p`) | run `kimi` once and use `/login` |
 | `deepseek` | Claude Code on DeepSeek's Anthropic-format API | set `DEEPSEEK_API_KEY` |
 | `omniroute` | Claude Code through a local [OmniRoute](https://github.com/diegosouzapw/OmniRoute) gateway | `allies.py omniroute start`, then connect providers in its dashboard |
@@ -64,7 +64,8 @@ Never connect your Claude account.
 
 - Codex's Windows sandbox may not see your Python install, so it cannot run Python tests. Allies reports what the
   member says it could not check; run the tests yourself before merging.
-- Sign-in checks are best effort. Gemini and Kimi report `unverified` until their first run.
+- Sign-in checks are best effort; Kimi reports `unverified` until its first run. `doctor` reports `blocked` when a
+  member's service cannot be reached from this network (some institutions block certain providers).
 - A member's answer is untrusted text. The skill tells Claude to verify it and never to follow instructions in it.
 
 MIT licensed; see [LICENSE](LICENSE). Part of [MOAA](https://github.com/ahmadhammoud56/MOAA).

@@ -1,5 +1,5 @@
 {
-  "_doc": "Each member is an agent CLI run headless. read: argv for read-only work; write: argv for work in an allies worktree. {prompt} is replaced by the prompt (or the prompt is sent on stdin when stdin is true), {out} by the file the final answer is written to, {model} by --model. env values starting with $ are read from the environment and the member is unavailable when one is missing. Claude-format members run Claude Code with --bare, so it never reads your Claude login. pass_env is a regex of credential-like variable names this member may see; every other credential (Claude, cloud, other providers) is removed from its environment.",
+  "_doc": "Each member is an agent CLI run headless. read: argv for read-only work; write: argv for work in an allies worktree. {prompt} is replaced by the prompt (or the prompt is sent on stdin when stdin is true), {out} by the file the final answer is written to, {model} by --model. env values starting with $ are read from the environment and the member is unavailable when one is missing. Claude-format members run Claude Code with --bare, so it never reads your Claude login. pass_env is a regex of credential-like variable names this member may see; every other credential (Claude, cloud, other providers) is removed from its environment. {data} in env values and file paths is the allies data folder; files are JSON files written there when missing (Gemini gets its own home whose settings select API-key sign-in, so your ~/.gemini is never used or changed). probe is a URL doctor checks to tell a network block (a firewall or institution policy) from a sign-in problem.",
   "members": {
     "codex": {
       "label": "OpenAI Codex CLI",
@@ -43,13 +43,14 @@
         "debug",
         "bulk"
       ],
-      "pass_env": "^(OPENAI_|CODEX_)"
+      "pass_env": "^(OPENAI_|CODEX_)",
+      "probe": "https://api.openai.com"
     },
     "gemini": {
       "label": "Google Gemini CLI",
       "bin": "gemini",
       "install": "npm install -g @google/gemini-cli",
-      "login": "run `gemini` once and sign in with Google (free tier), or set GEMINI_API_KEY",
+      "login": "put GEMINI_API_KEY=<free key from aistudio.google.com> in ~/.claude/allies/keys.env (Google sign-in no longer serves the free tier)",
       "stdin": true,
       "read": [
         "--approval-mode",
@@ -79,7 +80,20 @@
         "review",
         "bulk"
       ],
-      "pass_env": "^(GEMINI_|GOOGLE_)"
+      "pass_env": "^(GEMINI_|GOOGLE_)",
+      "env": {
+        "GEMINI_CLI_HOME": "{data}/gemini-home"
+      },
+      "files": {
+        "{data}/gemini-home/.gemini/settings.json": {
+          "security": {
+            "auth": {
+              "selectedType": "gemini-api-key"
+            }
+          }
+        }
+      },
+      "probe": "https://generativelanguage.googleapis.com"
     },
     "kimi": {
       "label": "Moonshot Kimi Code CLI",
@@ -110,7 +124,8 @@
         "research",
         "bulk"
       ],
-      "pass_env": "^(KIMI_|MOONSHOT_)"
+      "pass_env": "^(KIMI_|MOONSHOT_)",
+      "probe": "https://www.kimi.com"
     },
     "deepseek": {
       "label": "DeepSeek through Claude Code (Anthropic-format API)",
@@ -151,7 +166,8 @@
         "code",
         "debug",
         "bulk"
-      ]
+      ],
+      "probe": "https://api.deepseek.com"
     },
     "omniroute": {
       "label": "Claude Code through a local OmniRoute gateway (free-tier fallback)",

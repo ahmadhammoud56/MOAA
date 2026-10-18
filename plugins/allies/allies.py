@@ -105,6 +105,8 @@ def child_env(spec, overrides):
     providers), plus what this member needs. A member only sees its own keys."""
     keep = re.compile(spec["pass_env"]) if spec.get("pass_env") else None
     env = {k: v for k, v in os.environ.items() if not SECRETISH.search(k) or (keep and keep.match(k))}
+    if keep:  # this member's own keys kept in keys.env, when the environment does not set them
+        env.update({k: v for k, v in read_env_file(allies_home() / "keys.env").items() if keep.match(k) and k not in env})
     env.pop("CLAUDECODE", None)  # a nested headless Claude Code must not think it runs inside this session
     return {**env, **overrides}
 
@@ -150,7 +152,7 @@ def member_env(spec):
                 missing.append(v[1:])
                 continue
             v = val
-        out[k] = v
+        out[k] = v.replace("{data}", allies_home().as_posix())
     return out, missing
 
 
@@ -166,12 +168,12 @@ def read_env_file(path):
     return vals
 
 
-def reachable(url, timeout=2):
+def reachable(url, timeout=2, any_status=False):
     try:
-        with urllib.request.urlopen(url, timeout=timeout) as r:  # noqa: S310  loopback URL from members.json
-            return r.status < 500
+        with urllib.request.urlopen(url, timeout=timeout) as r:  # noqa: S310  fixed URLs from members.json
+            return any_status or r.status < 500
     except urllib.error.HTTPError as e:
-        return e.code < 500  # 401 still means the gateway is up
+        return any_status or e.code < 500  # 401 still means the gateway is up
     except (OSError, ValueError):
         return False
 
@@ -188,9 +190,10 @@ def signed_in(name):
         except (OSError, subprocess.SubprocessError):
             return None
         return out.returncode == 0 and "logged in" in (out.stdout + out.stderr).lower()
-    if name == "gemini":
+    if name == "gemini":  # Google sign-in no longer serves the CLI's free tier ("migrate to Antigravity"): a key is needed
+        saved = read_env_file(allies_home() / "keys.env")
         return bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-                    or (home / ".gemini" / "oauth_creds.json").is_file())
+                    or saved.get("GEMINI_API_KEY") or saved.get("GOOGLE_API_KEY"))
     if name == "kimi":
         return any((home / d).is_dir() and any((home / d).rglob("*cred*")) for d in (".kimi", ".kimi-code")) or None
     return None
@@ -210,12 +213,18 @@ def doctor():
                 row["version"] = "?"
         if spec.get("needs_url"):
             row["reachable"] = reachable(spec["needs_url"])
+        elif spec.get("probe"):  # any HTTP answer means the service is reachable; a timeout means a network block
+            row["reachable"] = reachable(spec["probe"], timeout=6, any_status=True)
         row["signed_in"] = (not missing) if spec.get("env") else (signed_in(name) if exe else False)
         usable = bool(exe) and not missing and row["signed_in"] is not False and row.get("reachable", True)
         row["ready"] = usable and row["signed_in"] is True
         row["state"] = "ready" if row["ready"] else "unverified" if usable else "not ready"
         row["fix"] = ("" if row["ready"] else "sign-in cannot be checked: " + spec["login"] if usable
-                      else spec["install"] if not exe else spec["login"])
+                      else spec["install"] if not exe
+                      else f"blocked on this network ({spec['probe']} unreachable)" if row.get("reachable") is False
+                      and spec.get("probe") else spec["login"])
+        if row.get("reachable") is False and spec.get("probe"):
+            row["state"] = "blocked"
         rows.append(row)
     return rows
 
@@ -318,6 +327,11 @@ def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=Non
     if via_cmd and any(CMD_META.search(a) for a in argv[1:]):
         raise SystemExit(f"allies: {member} is a .cmd shim allies could not unwrap, and the task has characters cmd.exe "
                          "would interpret; give it on stdin or simplify it")
+    for path, content in (spec.get("files") or {}).items():  # e.g. Gemini's own home, set to API-key sign-in
+        f = Path(path.replace("{data}", allies_home().as_posix()))
+        if not f.is_file():
+            f.parent.mkdir(parents=True, exist_ok=True)
+            f.write_text(json.dumps(content, indent=2) + "\n", encoding="utf-8")
     env = child_env(spec, env_over)
     t0 = time.time()
     code, stdout, stderr = run_proc(argv, prompt if spec.get("stdin") else None, str(cwd), env, timeout, on_start)
