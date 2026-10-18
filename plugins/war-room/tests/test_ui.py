@@ -110,7 +110,10 @@ class Hub(Sandbox):
                 return r.status, json.loads(r.read())
         except urllib.error.HTTPError as e:
             with e:
-                return e.code, json.loads(e.read() or b"{}")
+                try:
+                    return e.code, json.loads(e.read() or b"{}")
+                except ConnectionError:  # a refused POST is answered before its body is read; macOS may reset the socket
+                    return e.code, {}
 
     def test_pages_load_the_shared_assets(self):
         for page in ("/", "/history"):
