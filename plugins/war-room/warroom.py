@@ -981,7 +981,8 @@ def ally_job(run, w, task_id):
         else:
             brief = head + f"\nTASK #{task_id}: {task['title']}\n{task['detail'] or ''}"
             meta = ally.run(engine, brief, cwd=w["cwd"], write=bool(pw.get("write")),
-                            workdir=w["cwd"] if pw.get("write") else None, on_start=started)
+                            workdir=w["cwd"] if pw.get("write") else None, on_start=started,
+                            title=f"#{task_id} {task['title']}")
         if bus.control("run") == "stop":  # stopped while the member worked: the result is not reported
             return requeue_ally_task(bus, name, task_id, "run stopped while the ally worked")
         answer = Path(meta["answer"]).read_text(encoding="utf-8").strip() if meta.get("answer") else ""

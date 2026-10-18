@@ -54,7 +54,9 @@
       "stdin": true,
       "read": [
         "--approval-mode",
-        "plan",
+        "default",
+        "--policy",
+        "{plugin}/gemini-read-only.toml",
         "--skip-trust",
         "--output-format",
         "text",

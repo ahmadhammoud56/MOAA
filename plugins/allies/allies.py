@@ -142,7 +142,7 @@ def run_proc(argv, stdin, cwd, env, timeout, on_start=None):
 
 
 def long_path(path):
-    """Absolute path with Windows 8.3 short names (C:/Users/DEATHS~1) expanded: agent sandboxes such as Codex's deny
+    """Absolute path with Windows 8.3 short names (such as PROGRA~1) expanded: agent sandboxes such as Codex's deny
     access to a workspace given in short form."""
     p = Path(path).resolve()
     if IS_WIN:
@@ -286,7 +286,8 @@ def commit_worktree(wt, member, task, base):
 
 
 def build_argv(spec, exe, write, model, prompt, out_file):
-    argv = [exe] + [a.replace("{out}", str(out_file)).replace("{prompt}", prompt) for a in spec["write" if write else "read"]]
+    argv = [exe] + [a.replace("{out}", str(out_file)).replace("{plugin}", HERE.as_posix()).replace("{prompt}", prompt)
+                    for a in spec["write" if write else "read"]]
     model = model or spec.get("default_model")
     if model:
         argv += [a.replace("{model}", model) for a in spec.get("model", [])]
@@ -297,7 +298,8 @@ def new_run_id():
     return time.strftime("%Y%m%d-%H%M%S") + "-" + secrets.token_hex(2)
 
 
-def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=None, workdir=None, on_start=None):
+def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=None, workdir=None, on_start=None,
+        title=None):
     """Run one member. With write, it works in a fresh worktree, or in `workdir` (an existing worktree the caller
     owns, such as a War Room writer's); either way allies commits what it leaves behind."""
     members = load_members()
@@ -354,7 +356,7 @@ def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=Non
                                         encoding="utf-8")
     meta.update(exit=code, seconds=round(time.time() - t0, 1), answer=str(out_file), ok=code == 0 and bool(answer))
     if write:
-        meta.update(commit_worktree(cwd, member, task, meta["base"]), head=git(cwd, "rev-parse", "HEAD").stdout.strip())
+        meta.update(commit_worktree(cwd, member, title or task, meta["base"]), head=git(cwd, "rev-parse", "HEAD").stdout.strip())
     (rdir / f"meta-{member}.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     return meta
 

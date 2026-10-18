@@ -1,0 +1,18 @@
+# Allies: Gemini in read-only work. Denied tools fail at once instead of waiting for an approval no one can give.
+[[rule]]
+toolName = "run_shell_command"
+decision = "deny"
+priority = 900
+denyMessage = "Read-only allies run: shell commands are disabled. Read files instead and say what you could not check."
+
+[[rule]]
+toolName = "write_file"
+decision = "deny"
+priority = 900
+denyMessage = "Read-only allies run: do not modify files."
+
+[[rule]]
+toolName = "replace"
+decision = "deny"
+priority = 900
+denyMessage = "Read-only allies run: do not modify files."

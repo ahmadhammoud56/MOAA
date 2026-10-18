@@ -182,7 +182,11 @@ class ShippedMembers(unittest.TestCase):
                     self.assertIn("--bare", spec["read"])  # --bare never reads the Claude OAuth login
                     self.assertIn("--bare", spec["write"])
                     self.assertEqual(spec["env"]["ANTHROPIC_API_KEY"][0], "$")
-                self.assertTrue(any(x in spec["read"] for x in ("read-only", "plan", "--plan")))  # read stays read-only
+                self.assertTrue(any(x in spec["read"] for x in ("read-only", "plan", "--plan", "--policy")))  # read-only
+        policy = (Path(allies.__file__).parent / "gemini-read-only.toml").read_text(encoding="utf-8")
+        for tool in ("run_shell_command", "write_file", "replace"):  # denied, so headless Gemini never hangs on approval
+            self.assertIn(f'toolName = "{tool}"', policy)
+        self.assertIn("{plugin}/gemini-read-only.toml", members["gemini"]["read"])
 
 
 if __name__ == "__main__":

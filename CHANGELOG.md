@@ -17,6 +17,10 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
     touches your checkout.
   - Every run is kept under `~/.claude/allies/runs/`. Keys can live in `~/.claude/allies/keys.env`, outside any
     repository; each member gets only its own key.
+  - In read-only work Gemini runs under a shipped policy that denies shell and file-write tools; headless Gemini
+    otherwise waits forever for an approval no one can give.
+  - Windows short (8.3) paths are expanded before a member runs, because Codex's sandbox denies them. Its
+    sandbox also cannot enter the user Temp folder, so keep projects in normal folders.
   - Gemini uses an API key: Google sign-in no longer serves the CLI's free tier. Gemini runs in its own home, set to
     API-key sign-in, so your `~/.gemini` is left alone.
   - `doctor` reports `blocked` when a member's service cannot be reached from the current network.
@@ -44,6 +48,8 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
   - Ally workers have no console, and stop and resume skip them.
   - The plan editor offers the engines in its model list.
   - New template: `mixed-allies` (Claude plans, Codex builds, Gemini reviews).
+  - Verified live through the War Room bus. Codex fixed a function and added four tests in its worktree (58 s).
+    Gemini reviewed the commit and passed it at 100 (41 s). The bus then approved the task and queued the merge.
 - **`install.py --with-omniroute`:** installs a pinned `omniroute` from npm and records it, so `--uninstall`
   removes it.
   - `allies.py omniroute start` runs it on 127.0.0.1 only, with an API key required, conversation tracking,

@@ -32,7 +32,8 @@ class FakeAllies:
     def load_members(self):
         return {"codex": {}, "gemini": {}}
 
-    def run(self, member, task, cwd=".", write=False, model=None, timeout=1200, run_id=None, workdir=None, on_start=None):
+    def run(self, member, task, cwd=".", write=False, model=None, timeout=1200, run_id=None, workdir=None, on_start=None,
+            title=None):
         if on_start:
             on_start(999999)  # a pid no real process has
         if self.before:
