@@ -272,7 +272,7 @@
       "profile": "full"
     },
     {
-      "id": "crew@moaa",
+      "id": "allies@moaa",
       "enabled": true,
       "tested_version": "0.1.0",
       "profile": "core"
@@ -308,7 +308,7 @@
       "profile": "core"
     },
     {
-      "id": "layered-memory@moaa",
+      "id": "strata@moaa",
       "enabled": true,
       "tested_version": "0.1.0",
       "profile": "core"
@@ -703,8 +703,8 @@
   "own_work": [
     "agents/code-improver.md",
     "plugins/agent-arena-mode",
-    "plugins/crew",
-    "plugins/layered-memory",
+    "plugins/allies",
+    "plugins/strata",
     "plugins/specialist-council",
     "plugins/war-room",
     "skills/agent-teams",

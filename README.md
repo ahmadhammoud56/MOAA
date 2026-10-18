@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/ahmadhammoud56/MOAA/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmadhammoud56/MOAA/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/ahmadhammoud56/MOAA)](https://github.com/ahmadhammoud56/MOAA/releases) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Turn Claude Code into a team.** MOAA gives you a **Specialist Council** of 60 expert agents, each with its own model and effort level, and an **Agent Arena** where agents compete and get judged. Agents that keep winning are **forged** into new permanent council members. For the biggest jobs, a **War Room** runs a whole team of parallel Claude Code sessions, with review gates and a live control app. A **Crew** hands tasks to Codex, Gemini, Kimi or DeepSeek when you want another model family or need to save Claude usage, and **Layered memory** carries what matters from one session to the next. It installs with one command or loads as a plugin marketplace.
+**Turn Claude Code into a team.** MOAA gives you a **Specialist Council** of 60 expert agents, each with its own model and effort level, and an **Agent Arena** where agents compete and get judged. Agents that keep winning are **forged** into new permanent council members. For the biggest jobs, a **War Room** runs a whole team of parallel Claude Code sessions, with review gates and a live control app. **Allies** hands tasks to Codex, Gemini, Kimi or DeepSeek when you want another model family or need to save Claude usage, and **Strata** carries what matters from one session to the next. It installs with one command or loads as a plugin marketplace.
 
 Created by **[Ahmad Hammoud](https://github.com/ahmadhammoud56)**. The Specialist Council and the Agent Arena are original work; everything else is credited in [NOTICE](NOTICE) and [THIRD_PARTY.md](THIRD_PARTY.md).
 
@@ -129,31 +129,31 @@ python plugins/war-room/warroom.py app --install-shortcut
 
 This adds War Room to the Start menu and the desktop. `python plugins/war-room/warroom.py app` opens the app directly. Full details are in [plugins/war-room/README.md](plugins/war-room/README.md).
 
-## Crew: other agents on call
+## Allies: other agents on call
 
-The `crew` plugin lets Claude Code hand bounded tasks to other agent CLIs, each signed in with its own account:
+The `allies` plugin lets Claude Code hand bounded tasks to other agent CLIs, each signed in with its own account:
 OpenAI **Codex**, Google **Gemini**, Moonshot **Kimi**, **DeepSeek** (Claude Code on DeepSeek's API), or a local
 **OmniRoute** gateway on free tiers. Claude writes the brief, the member works headless, and Claude checks the answer.
 
 - Use it for a second opinion from another model family (`ask codex,gemini`), or to move bulk reading, first drafts
   and test writing off your Claude limits.
-- Read-only by default. Write tasks run in a separate git worktree, and crew commits them on a branch of their own.
+- Read-only by default. Write tasks run in a separate git worktree, and allies commits them on a branch of their own.
 - In War Room, any worker can take an `engine` (for example a Codex builder reviewed by a Gemini reviewer); see the
-  `mixed-crew` template.
+  `mixed-allies` template.
 - OmniRoute is optional (`--with-omniroute`). MOAA starts it on loopback only, with an API key required and a
   generated password. Connect only API-key and free-tier providers to it, never other services' subscription
   logins.
 
 ```
-/crew:crew doctor
-/crew:crew ask codex,gemini -- Review src/parser.py for edge cases
+/allies:allies doctor
+/allies:allies ask codex,gemini -- Review src/parser.py for edge cases
 ```
 
-Details: [plugins/crew/README.md](plugins/crew/README.md).
+Details: [plugins/allies/README.md](plugins/allies/README.md).
 
-## Layered memory
+## Strata: layered memory
 
-The `layered-memory` plugin keeps four layers, after the design of TencentDB Agent Memory:
+The `strata` plugin keeps four layers, after the design of TencentDB Agent Memory:
 - raw sessions;
 - extracted notes, where a newer note can supersede an older one;
 - one scene per project topic;
@@ -161,14 +161,14 @@ The `layered-memory` plugin keeps four layers, after the design of TencentDB Age
 
 At session start it injects your profile and the project's scenes and notes. At session end one background Haiku
 call extracts new notes. Everything stays in a local SQLite file with full-text search: no proxy, no extra service
-and no other API key. `/layered-memory:memory search ...` recalls older material. Details:
-[plugins/layered-memory/README.md](plugins/layered-memory/README.md).
+and no other API key. `/strata:strata search ...` recalls older material. Details:
+[plugins/strata/README.md](plugins/strata/README.md).
 
 ## Profiles
 
 | | Core (default) | Full (`--full`) |
 |---|---|---|
-| Plugins | 13: council, arena, war-room, crew, layered-memory, flightdeck, plot-deck, prismantis, superpowers, mattpocock-skills, karpathy-skills, document-skills, understand-anything | 96 (98 with `--with-claude-mem`) |
+| Plugins | 13: council, arena, war-room, allies, strata, flightdeck, plot-deck, prismantis, superpowers, mattpocock-skills, karpathy-skills, document-skills, understand-anything | 96 (98 with `--with-claude-mem`) |
 | Standalone skills | 10 | 10 |
 | MCP servers | `rea` | `rea`, `ansys` |
 | Context cost | light | heavy: 1,000+ skills and many hooks |
@@ -210,7 +210,7 @@ Both wrappers pass these flags through to `scripts/install.py`:
 | Flag | Effect |
 |---|---|
 | `--full` | Install all 96 plugins and the ansys MCP server. The default is the core profile. |
-| `--with-omniroute` | Also install the [OmniRoute](https://github.com/diegosouzapw/OmniRoute) gateway from npm (pinned) for crew's free-tier fallback. It is not started; `crew.py omniroute start` runs it with locked-down settings. |
+| `--with-omniroute` | Also install the [OmniRoute](https://github.com/diegosouzapw/OmniRoute) gateway from npm (pinned) for the allies' free-tier fallback. It is not started; `allies.py omniroute start` runs it with locked-down settings. |
 | `--with-claude-mem` | Also install claude-mem and claude-mem-cowork (with `--full`). They need a model-provider key, which you set up through claude-mem's own setup, and they run a background worker on port 37777. |
 | `--upstream` | Install third-party plugins from their own marketplaces at the latest version, instead of the pinned `moaa` catalog. |
 | `--skip-ansys` / `--skip-mcp` | Skip the ansys server, or both MCP servers. |
@@ -266,8 +266,8 @@ Every agent's model and effort are stored inside the plugins themselves; see [MO
 | `plot-deck@moaa` | Side panel listing plot images; Enter copies and opens one. |
 | `prismantis@moaa` | Colorful, themeable rendering for Claude Code replies. |
 | `war-room@moaa` | War Room: a team of real, parallel Claude Code workers with council roles, review gates, a merge queue, usage… |
-| `crew@moaa` | Crew: hand bounded tasks from Claude Code to Codex, Gemini, Kimi, DeepSeek or a local OmniRoute gateway, each… |
-| `layered-memory@moaa` | Layered long-term memory (raw sessions, extracted notes, project scenes, user profile) in local SQLite with f… |
+| `allies@moaa` | Allies: hand bounded tasks from Claude Code to Codex, Gemini, Kimi, DeepSeek or a local OmniRoute gateway, ea… |
+| `strata@moaa` | Layered long-term memory (raw sessions, extracted notes, project scenes, user profile) in local SQLite with f… |
 
 ### Third-party plugins
 
@@ -524,8 +524,8 @@ python -m unittest discover -s tests                         # installer
 (cd plugins/specialist-council && python -m unittest discover -s tests)
 (cd plugins/agent-arena-mode && python -m unittest discover -s tests)
 (cd plugins/war-room && python -m unittest discover -s tests && python tests/test_bus.py)
-(cd plugins/crew && python -m unittest discover -s tests)
-(cd plugins/layered-memory && python -m unittest discover -s tests)
+(cd plugins/allies && python -m unittest discover -s tests)
+(cd plugins/strata && python -m unittest discover -s tests)
 ```
 
 `python scripts/install.py --doctor` runs all of these plus every other pre-commit check in one go. `python scripts/scan.py` checks the tree for secrets and machine-specific paths. Run it before every push. `python scripts/scan.py --public` also fails on any vendored item without a clear licence.

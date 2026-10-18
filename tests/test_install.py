@@ -74,7 +74,7 @@ class MergeTests(unittest.TestCase):
         home = Path(tempfile.mkdtemp()) / "Some User" / ".claude"
         cache = home / "plugins" / "cache" / "moaa"
         record = {p: [{"installPath": str(cache / p / v)}] for p, v in
-                  (("war-room", "0.5.0"), ("crew", "0.1.0"), ("layered-memory", "0.1.0"), ("specialist-council", "1.4.0"))}
+                  (("war-room", "0.5.0"), ("allies", "0.1.0"), ("strata", "0.1.0"), ("specialist-council", "1.4.0"))}
         (home / "plugins").mkdir(parents=True)
         (home / "plugins" / "installed_plugins.json").write_text(json.dumps({"plugins": {f"{k}@moaa": v for k, v in record.items()}}))
         return home, cache.as_posix()
@@ -96,14 +96,14 @@ class MergeTests(unittest.TestCase):
                         f"python {cache}/war-room/0.5.0/warroom.py list"):  # unquoted path with a space: not ours
             self.assertFalse(allowed(crafted), crafted)
 
-    def test_crew_and_memory_rules_allow_only_reading(self):
+    def test_allies_and_strata_rules_allow_only_reading(self):
         home, cache = self.installed_home()
         allowed = self.allowed(install.council_permissions(home))
-        crew, mem = f'py "{cache}/crew/0.1.0/crew.py"', f'py "{cache}/layered-memory/0.1.0/memory.py"'
-        for ok in (f"{crew} doctor", f"{crew} runs --limit 5", f'{mem} search "tests"', f"{mem} stats"):
+        allies, mem = f'py "{cache}/allies/0.1.0/allies.py"', f'py "{cache}/strata/0.1.0/strata.py"'
+        for ok in (f"{allies} doctor", f"{allies} runs --limit 5", f'{mem} search "tests"', f"{mem} stats"):
             self.assertTrue(allowed(ok), ok)
-        for gated in (f'{crew} run codex --task "list runs"', f'{crew} run codex --write --task "x {crew} doctor"',
-                      f'{crew} ask codex --task "doctor this"', f'{mem} remember "search the logs"', f"{mem} forget 3",
+        for gated in (f'{allies} run codex --task "list runs"', f'{allies} run codex --write --task "x {allies} doctor"',
+                      f'{allies} ask codex --task "doctor this"', f'{mem} remember "search the logs"', f"{mem} forget 3",
                       f"{mem} consolidate --pending"):
             self.assertFalse(allowed(gated), gated)
 

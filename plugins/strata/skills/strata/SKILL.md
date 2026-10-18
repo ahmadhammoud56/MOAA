@@ -1,12 +1,12 @@
 ---
-name: memory
+name: strata
 description: Search, show, add to, correct or forget the layered long-term memory kept across Claude Code sessions (profile, project scenes, extracted notes, raw past conversations). Use when the user asks what was decided or discussed before, says "remember this" or "forget that", or when earlier context about this project would help.
 argument-hint: "search QUERY | show | remember TEXT | forget ID | consolidate | stats | config"
 ---
 
-# Layered memory
+# Strata
 
-Request: `$ARGUMENTS`. `M` below means `python "${CLAUDE_PLUGIN_ROOT}/memory.py"` (on Windows `py` instead of
+Request: `$ARGUMENTS`. `M` below means `python "${CLAUDE_PLUGIN_ROOT}/strata.py"` (on Windows `py` instead of
 `python`). Run each `M` command as one standalone command.
 
 Memory has four layers:

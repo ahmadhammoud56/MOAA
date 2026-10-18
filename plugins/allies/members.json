@@ -1,5 +1,5 @@
 {
-  "_doc": "Each member is an agent CLI run headless. read: argv for read-only work; write: argv for work in a crew worktree. {prompt} is replaced by the prompt (or the prompt is sent on stdin when stdin is true), {out} by the file the final answer is written to, {model} by --model. env values starting with $ are read from the environment and the member is unavailable when one is missing. Claude-format members run Claude Code with --bare, so it never reads your Claude login. pass_env is a regex of credential-like variable names this member may see; every other credential (Claude, cloud, other providers) is removed from its environment.",
+  "_doc": "Each member is an agent CLI run headless. read: argv for read-only work; write: argv for work in an allies worktree. {prompt} is replaced by the prompt (or the prompt is sent on stdin when stdin is true), {out} by the file the final answer is written to, {model} by --model. env values starting with $ are read from the environment and the member is unavailable when one is missing. Claude-format members run Claude Code with --bare, so it never reads your Claude login. pass_env is a regex of credential-like variable names this member may see; every other credential (Claude, cloud, other providers) is removed from its environment.",
   "members": {
     "codex": {
       "label": "OpenAI Codex CLI",
@@ -156,8 +156,8 @@
     "omniroute": {
       "label": "Claude Code through a local OmniRoute gateway (free-tier fallback)",
       "bin": "claude",
-      "install": "python scripts/install.py --with-omniroute, then `crew.py omniroute start`",
-      "login": "start it with `crew.py omniroute start`; connect providers in its dashboard",
+      "install": "python scripts/install.py --with-omniroute, then `allies.py omniroute start`",
+      "login": "start it with `allies.py omniroute start`; connect providers in its dashboard",
       "stdin": true,
       "needs_url": "http://127.0.0.1:20128/v1/models",
       "env": {

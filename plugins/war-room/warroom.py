@@ -219,29 +219,29 @@ def council_py():
     die("specialist-council not found (install specialist-council@moaa)")
 
 
-def crew_mod():
-    """The crew plugin's crew.py (installed, else the sibling in this repo), imported once; None when it is absent."""
-    global _CREW
-    if _CREW is None:
-        path = installed_plugins().get("crew@moaa")
-        for root in filter(None, [path, os.path.join(HERE, "..", "..", "plugins", "crew")]):
-            if os.path.isfile(os.path.join(root, "crew.py")):
+def allies_mod():
+    """The allies plugin's allies.py (installed, else the sibling in this repo), imported once; None when it is absent."""
+    global _ALLIES
+    if _ALLIES is None:
+        path = installed_plugins().get("allies@moaa")
+        for root in filter(None, [path, os.path.join(HERE, "..", "..", "plugins", "allies")]):
+            if os.path.isfile(os.path.join(root, "allies.py")):
                 import importlib.util
-                spec = importlib.util.spec_from_file_location("moaa_crew", os.path.join(root, "crew.py"))
-                _CREW = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(_CREW)
+                spec = importlib.util.spec_from_file_location("moaa_allies", os.path.join(root, "allies.py"))
+                _ALLIES = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(_ALLIES)
                 break
         else:
-            _CREW = False
-    return _CREW or None
+            _ALLIES = False
+    return _ALLIES or None
 
 
-_CREW = None
+_ALLIES = None
 
 
-def is_crew(w):
-    """A crew worker: another agent CLI the conductor drives task by task, with no Claude session of its own."""
-    return str(w.get("session_id") or "").startswith("crew-")
+def is_ally(w):
+    """A ally worker: another agent CLI the conductor drives task by task, with no Claude session of its own."""
+    return str(w.get("session_id") or "").startswith("ally-")
 
 
 def council_models():
@@ -366,13 +366,13 @@ def resolve_plan(plan, profiles, plugins_index, mcp_index, defaults=None, role_m
         if kind not in profiles["kinds"]:
             die(f"unknown kind {kind!r} for worker {name}")
         spec = profiles["kinds"][kind]
-        if w.get("engine"):  # a crew member (codex, gemini, kimi, deepseek, omniroute) instead of a Claude session
-            crew = crew_mod() or die("worker engines need the crew plugin (install crew@moaa)")
-            if w["engine"] not in crew.load_members():
-                die(f"worker {name}: unknown engine {w['engine']!r}; one of {', '.join(crew.load_members())}")
-            out.append({"name": name, "role": role, "kind": kind, "engine": w["engine"], "model": f"crew:{w['engine']}",
+        if w.get("engine"):  # an ally (codex, gemini, kimi, deepseek, omniroute) instead of a Claude session
+            ally = allies_mod() or die("worker engines need the allies plugin (install allies@moaa)")
+            if w["engine"] not in ally.load_members():
+                die(f"worker {name}: unknown engine {w['engine']!r}; one of {', '.join(ally.load_members())}")
+            out.append({"name": name, "role": role, "kind": kind, "engine": w["engine"], "model": f"ally:{w['engine']}",
                         "effort": "-", "write": bool(w.get("write", spec["write"])), "brief": w.get("brief", ""),
-                        "plugins": [], "plugin_dirs": [], "mcp": [], "permission_mode": "crew", "allow": [], "deny": []})
+                        "plugins": [], "plugin_dirs": [], "mcp": [], "permission_mode": "ally", "allow": [], "deny": []})
             continue
         pinned = (role_models or {}).get(role)  # the app's default model per role, below anything the plan sets
         if pinned:
@@ -550,8 +550,8 @@ TEMPLATES = {
                     {"name": "checker", "role": "peer-reviewer", "model": "opus", "brief": "Check every claim in the synthesis against its source; score it."}],
         "tasks": [{"title": "Collect and summarise sources, noting where they disagree", "assignee": "reader", "gate": 0},
                   {"title": "Write the synthesis document", "assignee": "writer"}]},
-    "mixed-crew": {
-        "label": "Mixed crew", "summary": "Claude plans, Codex builds, Gemini reviews (needs the crew plugin)",
+    "mixed-allies": {
+        "label": "Mixed allies", "summary": "Claude plans, Codex builds, Gemini reviews (needs the allies plugin)",
         "workers": [{"name": "lead", "role": "project-planner", "brief": "Split the goal into reviewable tasks for forge."},
                     {"name": "forge", "role": "builder", "engine": "codex", "brief": "Implement each task with tests."},
                     {"name": "judge", "role": "test-engineer", "engine": "gemini", "brief": "Review each commit and score it."}],
@@ -837,7 +837,7 @@ def cmd_launch(a):
         bus.post_task(t["title"], t.get("detail", ""), t.get("assignee"), t.get("gate", 1))
     for w in resolved["workers"]:
         if w.get("engine"):
-            continue  # crew workers start after the Claude workers, on the same base commit
+            continue  # ally workers start after the Claude workers, on the same base commit
         w["wait_seconds"] = resolved["budget"]["wait_seconds"]
         wdir = worker_files(rdir, w, a.run)
         argv = build_argv(w, resolved, a.run, wdir)
@@ -851,7 +851,7 @@ def cmd_launch(a):
         print(f"launched {w['name']:<14} {s['sessionId'][:8]}  {w['model']}/{w['effort']}  plugins={len(w['plugin_dirs'])}")
     base = writer_base(bus)
     for w in (w for w in resolved["workers"] if w.get("engine")):
-        launch_crew_worker(bus, w, resolved, a.run, base)
+        launch_ally_worker(bus, w, resolved, a.run, base)
     setup_integration(bus, resolved, a.run, base=base or writer_base(bus))
     if not a.no_console:
         bus.control("daemons", json.dumps({"watch": spawn_daemon(a.run, "watch")}))
@@ -864,27 +864,27 @@ def cmd_launch(a):
           f"Panic stop: python warroom.py stop {a.run}    Close everything: python warroom.py shutdown {a.run}")
 
 
-def launch_crew_worker(bus, w, resolved, run, base=None):
-    """Register a crew worker. A writer gets its own worktree and branch, like a Claude writer; the conductor then
-    feeds it tasks one at a time (crew_tick)."""
+def launch_ally_worker(bus, w, resolved, run, base=None):
+    """Register an ally worker. A writer gets its own worktree and branch, like a Claude writer; the conductor then
+    feeds it tasks one at a time (ally_tick)."""
     cwd = resolved["project"]
     if w["write"]:
         cwd = os.path.join(resolved["worktrees"], worktree_name(run, w))
         r = git("worktree", "add", "-b", f"worktree-{worktree_name(run, w)}", cwd, base or "HEAD", cwd=resolved["project"])
         if r.returncode:
-            die(f"worktree for crew worker {w['name']} failed: {r.stderr.strip()[-300:]}")
+            die(f"worktree for ally worker {w['name']} failed: {r.stderr.strip()[-300:]}")
     bus.put_worker(name=w["name"], role=w["role"], kind=w["kind"], model=w["model"], effort="-",
-                   session_id=f"crew-{w['name']}", cwd=cwd, argv="[]", resume_argv=None, state="running")
+                   session_id=f"ally-{w['name']}", cwd=cwd, argv="[]", resume_argv=None, state="running")
     bus_as(bus, w["name"]).heartbeat("parked: waiting for inbox")
-    bus.event("launch", f"{w['name']} crew {w['engine']}")
-    print(f"launched {w['name']:<14} crew     {w['engine']}  (driven by the conductor)")
+    bus.event("launch", f"{w['name']} ally {w['engine']}")
+    print(f"launched {w['name']:<14} ally     {w['engine']}  (driven by the conductor)")
 
 
-CREW_JOBS = {}  # worker name -> the thread running its current task, in the conductor process
+ALLY_JOBS = {}  # worker name -> the thread running its current task, in the conductor process
 
 
 def parse_verdict(answer):
-    """The JSON object after the last VERDICT marker in a crew reviewer's answer, or {}."""
+    """The JSON object after the last VERDICT marker in an ally reviewer's answer, or {}."""
     at = answer.rfind("VERDICT")
     start = answer.find("{", at) if at != -1 else -1
     try:
@@ -894,74 +894,74 @@ def parse_verdict(answer):
     return v if isinstance(v, dict) else {}
 
 
-def crew_tick(bus, run):
-    """Give every idle crew worker its next task. Each task runs in a thread so the conductor keeps ticking. A task a
-    crew worker holds with no live job here (its conductor died or was restarted) is reclaimed: the old member
+def ally_tick(bus, run):
+    """Give every idle ally worker its next task. Each task runs in a thread so the conductor keeps ticking. A task a
+    ally worker holds with no live job here (its conductor died or was restarted) is reclaimed: the old member
     process is killed and the task goes back on the board."""
     started = 0
     for w in bus.workers():
-        if not is_crew(w) or (CREW_JOBS.get(w["name"]) and CREW_JOBS[w["name"]].is_alive()):
+        if not is_ally(w) or (ALLY_JOBS.get(w["name"]) and ALLY_JOBS[w["name"]].is_alive()):
             continue
         held = [r["id"] for r in bus.db.execute("SELECT id FROM tasks WHERE status='claimed' AND owner=?", (w["name"],))]
         if held:
-            kill_crew_job(bus, w)
+            kill_ally_job(bus, w)
             for tid in held:
-                requeue_crew_task(bus, w["name"], tid, "reclaimed: its job was no longer running")
+                requeue_ally_task(bus, w["name"], tid, "reclaimed: its job was no longer running")
         wb = bus_as(bus, w["name"])
         got = wb.claim_task()
         if not got.get("task"):
             wb.heartbeat("parked: waiting for inbox")
             continue
-        wb.heartbeat(f"working: crew #{got['task']['id']}")
-        t = threading.Thread(target=crew_job, args=(run, w, got["task"]["id"]), daemon=True)
-        CREW_JOBS[w["name"]] = t
+        wb.heartbeat(f"working: ally #{got['task']['id']}")
+        t = threading.Thread(target=ally_job, args=(run, w, got["task"]["id"]), daemon=True)
+        ALLY_JOBS[w["name"]] = t
         t.start()
         started += 1
     return started
 
 
-def kill_crew_job(bus, w):
-    """Kill a crew worker's running member process, recorded in the bus so a stop from another process finds it."""
-    job = json.loads(bus.control(f"crew_job_{w['name']}") or "null")
+def kill_ally_job(bus, w):
+    """Kill an ally worker's running member process, recorded in the bus so a stop from another process finds it."""
+    job = json.loads(bus.control(f"ally_job_{w['name']}") or "null")
     if job and job.get("member_pid"):
         kill_pid(job["member_pid"], must_contain=job.get("hint") or "node")  # never a reused pid of another program
-    bus.control(f"crew_job_{w['name']}", clear=True)
+    bus.control(f"ally_job_{w['name']}", clear=True)
 
 
-def requeue_crew_task(bus, worker_name, task_id, why):
+def requeue_ally_task(bus, worker_name, task_id, why):
     """Back on the board without counting as a failure (a stop or a lost job), if this worker still holds it."""
     n = bus.db.execute("UPDATE tasks SET status='open', owner=NULL, updated=? WHERE id=? AND status='claimed' AND owner=?",
                        (time.time(), task_id, worker_name)).rowcount
     if n:
-        bus.event("crew", f"#{task_id} {why}")
+        bus.event("ally", f"#{task_id} {why}")
 
 
-def reopen_crew_task(bus, worker_name, task_id, why):
-    """A task the crew worker could not finish goes back on the board once; the second time it is blocked for the
+def reopen_ally_task(bus, worker_name, task_id, why):
+    """A task the ally worker could not finish goes back on the board once; the second time it is blocked for the
     human. Only while this worker still holds it: finished work is never reopened."""
     held = bus.db.execute("SELECT 1 FROM tasks WHERE id=? AND status='claimed' AND owner=?", (task_id, worker_name)).fetchone()
     if not held:
         return
-    key = f"crew_retry_{task_id}"
+    key = f"ally_retry_{task_id}"
     if bus.control(key):
         bus.db.execute("UPDATE tasks SET status='blocked', updated=? WHERE id=?", (time.time(), task_id))
-        bus.send("orchestrator", f"Task #{task_id} is blocked: the crew worker failed twice ({why}).")
+        bus.send("orchestrator", f"Task #{task_id} is blocked: the ally worker failed twice ({why}).")
     else:
         bus.control(key, "1")
         bus.db.execute("UPDATE tasks SET status='open', owner=NULL, updated=? WHERE id=?", (time.time(), task_id))
-    bus.event("crew", f"#{task_id} {why}")
+    bus.event("ally", f"#{task_id} {why}")
 
 
-def crew_job(run, w, task_id):
-    """Do one claimed task with the worker's crew engine, then report it through the bus like any worker."""
+def ally_job(run, w, task_id):
+    """Do one claimed task with the worker's ally engine, then report it through the bus like any worker."""
     bus, name = open_bus(run, w["name"]), w["name"]
-    key = f"crew_job_{name}"
+    key = f"ally_job_{name}"
     try:
-        crew = crew_mod()
+        ally = allies_mod()
         plan = load_json(os.path.join(run_dir(run), "plan.json"), {}) or {}
         pw = next((x for x in plan.get("workers", []) if x["name"] == name), {})
         engine, task = pw.get("engine") or w["model"].split(":", 1)[1], bus._task(task_id)
-        spec = crew.load_members().get(engine) or {}
+        spec = ally.load_members().get(engine) or {}
         hint = "claude" if spec.get("bin") == "claude" else engine  # what the member's command line contains
 
         def started(pid):
@@ -976,14 +976,14 @@ def crew_job(run, w, task_id):
             brief = (head + f"\nREVIEW TASK:\n{task['detail']}\n\nInspect the commit and run its tests if you can. "
                      "Do not modify anything. End your reply with exactly one line:\n"
                      'VERDICT {"decision": "pass" or "fail", "score": 0-100, "notes": "what to fix"}')
-            meta = crew.run(engine, brief, cwd=author.get("cwd") or plan.get("project") or ".", write=False,
+            meta = ally.run(engine, brief, cwd=author.get("cwd") or plan.get("project") or ".", write=False,
                             on_start=started)
         else:
             brief = head + f"\nTASK #{task_id}: {task['title']}\n{task['detail'] or ''}"
-            meta = crew.run(engine, brief, cwd=w["cwd"], write=bool(pw.get("write")),
+            meta = ally.run(engine, brief, cwd=w["cwd"], write=bool(pw.get("write")),
                             workdir=w["cwd"] if pw.get("write") else None, on_start=started)
         if bus.control("run") == "stop":  # stopped while the member worked: the result is not reported
-            return requeue_crew_task(bus, name, task_id, "run stopped while the crew member worked")
+            return requeue_ally_task(bus, name, task_id, "run stopped while the ally worked")
         answer = Path(meta["answer"]).read_text(encoding="utf-8").strip() if meta.get("answer") else ""
         if task["kind"] == "review":
             v = parse_verdict(answer)
@@ -992,22 +992,22 @@ def crew_job(run, w, task_id):
             except (ValueError, TypeError):
                 decision, score = None, None
             if decision not in ("pass", "fail") or score is None:
-                return reopen_crew_task(bus, name, task_id, f"{engine} gave no verdict")
+                return reopen_ally_task(bus, name, task_id, f"{engine} gave no verdict")
             out = bus.verdict(task_id, decision, max(0, min(100, score)), str(v.get("notes", ""))[:1500])
         else:
             if not meta.get("ok"):
-                return reopen_crew_task(bus, name, task_id, f"{engine} failed (exit {meta.get('exit')})")
+                return reopen_ally_task(bus, name, task_id, f"{engine} failed (exit {meta.get('exit')})")
             # A writer always reports its worktree HEAD: with no new commit that is the base, and the review judges it.
             out = bus.complete_task(task_id, answer[-1500:] or "done", commit=meta.get("head") if pw.get("write") else None)
             if not out.get("ok"):
-                return reopen_crew_task(bus, name, task_id, out.get("error", "complete_task refused"))
+                return reopen_ally_task(bus, name, task_id, out.get("error", "complete_task refused"))
         try:
-            bus.checkpoint(f"crew {engine}: #{task_id} {task['title'][:80]} -> {out.get('status') or out}")
+            bus.checkpoint(f"ally {engine}: #{task_id} {task['title'][:80]} -> {out.get('status') or out}")
         except Exception:  # the task is already reported; a failed checkpoint must not reopen it
             pass
-    except (Exception, SystemExit) as e:  # never let a crew failure (crew raises SystemExit) take the conductor down
-        bus.event("conductor-error", f"crew {name}: {str(e)[:200]}")
-        reopen_crew_task(bus, name, task_id, f"error: {str(e)[:100]}")
+    except (Exception, SystemExit) as e:  # never let an ally failure (allies raises SystemExit) take the conductor down
+        bus.event("conductor-error", f"ally {name}: {str(e)[:200]}")
+        reopen_ally_task(bus, name, task_id, f"error: {str(e)[:100]}")
     finally:
         bus.control(key, clear=True)
         bus.heartbeat("parked: waiting for inbox")
@@ -1126,7 +1126,7 @@ def transcript_path(cwd, session_id):
 def restart(bus, w, prompt):
     """Stop (if needed), wait for the process to exit, then resume with the stored launch flags.
     A worker that never finished a turn has no conversation to resume: relaunch it fresh instead."""
-    if is_crew(w):  # no session to restart: the conductor gives it its next task on its own
+    if is_ally(w):  # no session to restart: the conductor gives it its next task on its own
         bus_as(bus, w["name"]).heartbeat("parked: waiting for inbox")
         return None
     if not stop_session(w["session_id"]):
@@ -1189,7 +1189,7 @@ def resume_all(bus, names=None):
     for w in bus.workers():
         if names and w["name"] not in names:
             continue
-        if bus.control("demo") or is_crew(w):
+        if bus.control("demo") or is_ally(w):
             bus_as(bus, w["name"]).heartbeat("parked: waiting for inbox")
             bus.event("resume", f"{w['name']} {w['session_id'][:8]}")
             continue
@@ -1233,11 +1233,11 @@ def stop_all(bus, reason):
     bus.event("stop", reason)
     demo = bool(bus.control("demo"))
     for w in bus.workers():
-        if demo or is_crew(w):  # a demo or crew worker has no session of its own
-            if is_crew(w):
-                kill_crew_job(bus, w)  # the member process may belong to the conductor, another process
+        if demo or is_ally(w):  # a demo or ally worker has no session of its own
+            if is_ally(w):
+                kill_ally_job(bus, w)  # the member process may belong to the conductor, another process
             bus_as(bus, w["name"]).heartbeat("stopped by conductor")
-        ok = demo or is_crew(w) or stop_session(w["session_id"])
+        ok = demo or is_ally(w) or stop_session(w["session_id"])
         bus.update_worker(w["name"], state="stopped" if ok else "stop-failed")
         print(f"stopped {w['name']:<14} {'ok' if ok else 'TIMEOUT'}")
 
@@ -1376,7 +1376,7 @@ def watch_tick(bus, run, schedule, last_wake):
     sessions(0)
     if not stopped and sessions_ok():  # auto-wake idle workers with work waiting (never on a failed listing); watchdog
         paused = bus.control("claims") == "paused"
-        for w in (w for w in bus.workers() if not is_crew(w)):  # crew workers are fed by crew_tick
+        for w in (w for w in bus.workers() if not is_ally(w)):  # ally workers are fed by ally_tick
             s = session_of(w["session_id"])
             note, age = heartbeat(bus, w["name"])
             waiting = bus.unread(w["name"]) or (not paused and bus.open_tasks(w["name"]))
@@ -1393,7 +1393,7 @@ def watch_tick(bus, run, schedule, last_wake):
             elif note.startswith("working") and age > 1200:
                 bus.event("watchdog", f"{w['name']} silent for {int(age / 60)} min while working")
     if not stopped and bus.control("claims") != "paused":
-        crew_tick(bus, run)
+        ally_tick(bus, run)
     merged = process_merges(bus) if not stopped else 0
     if not stopped and budget.get("auto_finish", True):
         if is_complete(bus):
@@ -1752,7 +1752,7 @@ def state(run):
     workers, demo = [], bool(bus.control("demo"))
     for w in bus.workers():
         note, age = heartbeat(bus, w["name"])
-        s = demo_session(note, bus.control("run") == "stop") if demo or is_crew(w) else session_of(w["session_id"], max_age=3) or {}
+        s = demo_session(note, bus.control("run") == "stop") if demo or is_ally(w) else session_of(w["session_id"], max_age=3) or {}
         m = bus.db.execute("SELECT * FROM meter WHERE agent=?", (w["name"],)).fetchone()
         ck = bus.last_checkpoint(w["name"])["checkpoint"]
         task = bus.claimed_by(w["name"])
@@ -1891,8 +1891,8 @@ def focus_console(run, name):
     if bus.control("demo"):
         return {"ok": False, "error": "a demo worker has no console"}
     w = next((w for w in bus.workers() if w["name"] == name), None)
-    if w and is_crew(w):
-        return {"ok": False, "error": f"{name} is a crew worker with no console; its runs are in ~/.claude/crew/runs"}
+    if w and is_ally(w):
+        return {"ok": False, "error": f"{name} is an ally worker with no console; its runs are in ~/.claude/allies/runs"}
     if not w or not (session_of(w["session_id"]) or {}).get("status"):
         return {"ok": False, "error": f"{name} is not running; resume it first"}
     tile(bus, only_missing=True)
@@ -2069,7 +2069,7 @@ def cmd_hub(a):
                                        "installed": sorted(installed_plugins()), "roles": known_roles(profiles),
                                        "role_models": cfg.get("role_models") or {}, "presets": cfg.get("presets") or {},
                                        "tiers": list(FALLBACK_MODELS), "efforts": list(EFFORTS),
-                                       "engines": list((crew_mod() and crew_mod().load_members()) or [])})
+                                       "engines": list((allies_mod() and allies_mod().load_members()) or [])})
             if m and not path.startswith("/api/") and os.path.isdir(os.path.join(RUNS, m.group(1))):
                 page = pages["dashboard.html"].replace("__TITLE__", app_title(m.group(1))).replace("__RUN__", m.group(1))
                 return self.send(200, page, "text/html; charset=utf-8")

@@ -109,7 +109,7 @@ button.danger { color: var(--danger-ink); border-color: var(--danger); backgroun
 const TOKEN = "__TOKEN__";
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[c]);
-const tier = m => /^crew:/.test(m) ? "info" : /haiku/.test(m) ? "haiku" : /sonnet/.test(m) ? "sonnet" : /fable/.test(m) ? "fable" : "opus";
+const tier = m => /^ally:/.test(m) ? "info" : /haiku/.test(m) ? "haiku" : /sonnet/.test(m) ? "sonnet" : /fable/.test(m) ? "fable" : "opus";
 const dur = s => s == null || s < 0 ? "--" : s < 60 ? `${Math.floor(s)}s` : s < 3600 ? `${Math.floor(s / 60)}m ${Math.floor(s % 60)}s` : `${Math.floor(s / 3600)}h ${Math.floor(s % 3600 / 60)}m`;
 const day = t => t ? new Date(t * 1000).toLocaleString([], {month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"}) : "--";
 const money = v => v == null ? "--" : `$${v.toFixed(v < 1 ? 3 : 2)}`;

@@ -7,20 +7,20 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 ## [0.7.0] - 2026-10-17
 
 ### Added
-- **Crew 0.1.0 (new plugin): other agent CLIs on call.**
+- **Allies 0.1.0 (new plugin): other agent CLIs on call.**
   - Claude Code hands a bounded brief to OpenAI Codex, Google Gemini, Moonshot Kimi Code, DeepSeek (Claude Code with
     `--bare` on DeepSeek's Anthropic-format API) or a local OmniRoute gateway. It then reads and checks the answer.
   - Each member uses its own account, so the work spends that service's quota rather than Claude usage.
-  - `crew.py doctor` shows what is installed and signed in. `run` gives one member a read-only task, and `ask` sends
+  - `allies.py doctor` shows what is installed and signed in. `run` gives one member a read-only task, and `ask` sends
     the same brief to several members in parallel.
-  - `run --write` works in a separate git worktree. Crew commits the result on branch `crew/<member>-<id>` and never
+  - `run --write` works in a separate git worktree. Allies commits the result on branch `ally/<member>-<id>` and never
     touches your checkout.
-  - Every run is kept under `~/.claude/crew/runs/`.
+  - Every run is kept under `~/.claude/allies/runs/`.
   - The Claude-format members never read your Claude login.
-  - A `crew` skill covers briefing, verification, stretching Claude limits, and what never to send.
+  - An `allies` skill covers briefing, verification, stretching Claude limits, and what never to send.
   - Verified live with Codex: a read-only question (correct answer, no files changed) and a write task (bug fixed
     with a test, committed on its own branch).
-- **Layered memory 0.1.0 (new plugin): long-term memory across sessions.**
+- **Strata 0.1.0 (new plugin): layered long-term memory across sessions.**
   - Four layers, after the design of TencentDB Agent Memory: raw sessions, extracted notes with supersession,
     per-project scenes and a user profile.
   - Stored in local SQLite with FTS5, using standard-library Python.
@@ -28,24 +28,24 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
   - The SessionEnd hook stores the session and starts one background Haiku extraction. That call has all tools
     denied and saves no session, so it cannot recurse.
   - Secrets are redacted on the way in, and model output is validated before it is stored.
-  - The `memory` skill searches, shows, remembers, corrects and forgets.
+  - The `strata` skill searches, shows, remembers, corrects and forgets.
   - Verified on a real transcript: one Haiku call (71 s) produced 11 accurate notes, a project scene and a profile
     entry.
-- **War Room 0.5.0: crew workers.**
+- **War Room 0.5.0: ally workers.**
   - A plan worker can set `"engine": "codex"` (or gemini, kimi, deepseek, omniroute).
-  - The conductor claims that worker's tasks, runs them through crew in the worker's own worktree and completes them
+  - The conductor claims that worker's tasks, runs them through allies in the worker's own worktree and completes them
     with the commit. As a reviewer, the worker returns a parsed verdict.
   - Review gates and the merge queue are unchanged, so model families can review each other.
   - A reviewer without a verdict is retried once, then blocked for the human.
-  - Crew workers have no console, and stop and resume skip them.
+  - Ally workers have no console, and stop and resume skip them.
   - The plan editor offers the engines in its model list.
-  - New template: `mixed-crew` (Claude plans, Codex builds, Gemini reviews).
+  - New template: `mixed-allies` (Claude plans, Codex builds, Gemini reviews).
 - **`install.py --with-omniroute`:** installs a pinned `omniroute` from npm and records it, so `--uninstall`
   removes it.
-  - `crew.py omniroute start` runs it on 127.0.0.1 only, with an API key required, conversation tracking,
+  - `allies.py omniroute start` runs it on 127.0.0.1 only, with an API key required, conversation tracking,
     browser-cookie providers and paid-credit fallback off, and a generated password and JWT secret instead of
     `CHANGEME`.
-- Crew and layered-memory join the core profile (13 plugins). Their read-only subcommands run without prompts.
+- Allies and strata join the core profile (13 plugins). Their read-only subcommands run without prompts.
 
 ### Fixed
 - **Allow rules were too broad (security).** MOAA's no-prompt rules for `council.py` and `warroom.py` used
@@ -61,8 +61,8 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ### Security
 Hardening from an independent review before release:
-- **Crew:**
-  - npm `.cmd` shims are bypassed: crew runs the node script directly, because `cmd.exe` would re-parse task text
+- **Allies:**
+  - npm `.cmd` shims are bypassed: allies runs the node script directly, because `cmd.exe` would re-parse task text
     (BatBadBut).
   - Model names are validated.
   - Each member sees only its own credentials. Claude, cloud and other providers' keys are removed from its
@@ -70,14 +70,14 @@ Hardening from an independent review before release:
   - A timeout kills the member's whole process tree.
   - `omniroute stop` checks the pid's command line before killing it.
   - The secrets file is created owner-only.
-  - Crew's commits skip repository hooks.
-- **War Room crew workers:**
+  - Allies' commits skip repository hooks.
+- **War Room ally workers:**
   - A stop kills the running member process and does not report its result.
   - A task held by a job that no longer runs (for example after the conductor restarts) is reclaimed.
   - Finished work is never reopened.
   - A writer with no new commit reports its HEAD for review.
   - Verdicts are case-insensitive.
-- **Layered memory:**
+- **Strata:**
   - Redaction also catches JSON and quoted secrets, "password is ...", JWTs, credentials in URLs and AWS secret keys.
   - Extraction can no longer create global notes or supersede notes of other projects, so a transcript cannot plant
     notes in every project. Only `remember --global` makes global notes.

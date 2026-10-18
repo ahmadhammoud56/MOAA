@@ -40,13 +40,13 @@
       "description": "War Room: a team of real, parallel Claude Code workers with council roles, review gates, a merge queue, usage-limit failsafes and a live local app."
     },
     {
-      "name": "crew",
-      "source": "./plugins/crew",
-      "description": "Crew: hand bounded tasks from Claude Code to Codex, Gemini, Kimi, DeepSeek or a local OmniRoute gateway, each with its own account; read-only by default, writes land on their own branch."
+      "name": "allies",
+      "source": "./plugins/allies",
+      "description": "Allies: hand bounded tasks from Claude Code to Codex, Gemini, Kimi, DeepSeek or a local OmniRoute gateway, each with its own account; read-only by default, writes land on their own branch."
     },
     {
-      "name": "layered-memory",
-      "source": "./plugins/layered-memory",
+      "name": "strata",
+      "source": "./plugins/strata",
       "description": "Layered long-term memory (raw sessions, extracted notes, project scenes, user profile) in local SQLite with full-text search; recall at session start, consolidation at session end."
     },
     {

@@ -1,4 +1,4 @@
-"""Layered memory tests: python -m unittest discover -s tests"""
+"""Strata tests: python -m unittest discover -s tests"""
 import json
 import os
 from pathlib import Path
@@ -8,7 +8,7 @@ import unittest
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import memory  # noqa: E402
+import strata as memory  # noqa: E402
 
 
 def transcript(path, turns):
@@ -25,7 +25,7 @@ def transcript(path, turns):
 class Sandbox(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.mkdtemp()
-        env = mock.patch.dict(os.environ, {"MOAA_MEMORY_DIR": self.dir})
+        env = mock.patch.dict(os.environ, {"MOAA_STRATA_DIR": self.dir})
         env.start()
         self.addCleanup(env.stop)
         os.environ.pop(memory.CHILD, None)

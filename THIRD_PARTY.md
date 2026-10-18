@@ -19,7 +19,7 @@ MOAA's own code (the Specialist Council, the Agent Arena, the installer) is MIT 
 | `plugins/war-room/assets/fonts` | [IBM/plex](https://github.com/IBM/plex) (same files, bundled so the installed plugin renders offline) | SIL Open Font License 1.1 (`OFL.txt`) | ok |
 | `plugins/plot-deck` | [kyryl-shtefiienko/LPS](https://github.com/kyryl-shtefiienko/LPS) `mods/`, by Kyryl Shtefiienko | none upstream; redistributed **with the author's permission** (see `PERMISSION.md`) | ok |
 | `skills/agent-teams`, `skills/local-build`, `skills/path-safety`, `agents/code-improver.md` | own work (Ahmad Hammoud) | MIT (root LICENSE) | ok |
-| `plugins/crew`, `plugins/layered-memory` | own work (Ahmad Hammoud). layered-memory follows the four-layer design of [TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory) (MIT); no code from it is used | MIT (plugin LICENSE) | ok |
+| `plugins/allies`, `plugins/strata` | own work (Ahmad Hammoud). strata follows the four-layer design of [TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory) (MIT); no code from it is used | MIT (plugin LICENSE) | ok |
 
 ## Release check
 
@@ -45,6 +45,6 @@ The installer adds these marketplaces and installs from them. Their code is not 
 | typesafe-ai | [typesafe-ai/skills](https://github.com/typesafe-ai/skills) |
 | lps-marketplace | [kyryl-shtefiienko/LPS](https://github.com/kyryl-shtefiienko/LPS) |
 
-With `--with-omniroute`, the installer adds `omniroute@3.8.51` from npm ([diegosouzapw/OmniRoute](https://github.com/diegosouzapw/OmniRoute), MIT). The crew plugin calls the separately installed CLIs `@openai/codex`, `@google/gemini-cli` and `@moonshot-ai/kimi-code`; MOAA does not install or ship them.
+With `--with-omniroute`, the installer adds `omniroute@3.8.51` from npm ([diegosouzapw/OmniRoute](https://github.com/diegosouzapw/OmniRoute), MIT). The allies plugin calls the separately installed CLIs `@openai/codex`, `@google/gemini-cli` and `@moonshot-ai/kimi-code`; MOAA does not install or ship them.
 
 The MCP server `rea-agents@6.4.0` comes from npm ([morluto/rea](https://github.com/morluto/rea), MIT).

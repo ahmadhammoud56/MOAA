@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Crew: hand bounded tasks from Claude Code to other agent CLIs (Codex, Gemini, Kimi, DeepSeek, an OmniRoute
+"""Allies: hand bounded tasks from Claude Code to other agent CLIs (Codex, Gemini, Kimi, DeepSeek, an OmniRoute
 gateway), each signed in with its own account. Standard library only.
 
 Claude Code stays in charge: it writes the brief, a member works headless, and the answer comes back as a file for
 Claude to check. Read-only by default. With --write the member works in a fresh git worktree on its own branch, never
 in your checkout, and you merge what you accept.
 
-  python crew.py doctor [--json]                         which members are installed and signed in
-  python crew.py run MEMBER --task TEXT|--task-file F [--cwd DIR] [--write] [--model M] [--timeout S]
-  python crew.py ask MEMBER[,MEMBER...] --task ...        the same task to several members in parallel (read-only)
-  python crew.py pick --for code|review|research|debug|long-context|bulk [--exclude M,...]
-  python crew.py runs [--limit N]        python crew.py show RUN_ID
-  python crew.py omniroute start|stop|status              a local OmniRoute gateway with locked-down settings
+  python allies.py doctor [--json]                         which members are installed and signed in
+  python allies.py run MEMBER --task TEXT|--task-file F [--cwd DIR] [--write] [--model M] [--timeout S]
+  python allies.py ask MEMBER[,MEMBER...] --task ...        the same task to several members in parallel (read-only)
+  python allies.py pick --for code|review|research|debug|long-context|bulk [--exclude M,...]
+  python allies.py runs [--limit N]        python allies.py show RUN_ID
+  python allies.py omniroute start|stop|status              a local OmniRoute gateway with locked-down settings
 """
 import argparse
 import concurrent.futures
@@ -30,11 +30,11 @@ HERE = Path(__file__).resolve().parent
 IS_WIN = os.name == "nt"
 OMNI_PORT = 20128
 # OmniRoute settings MOAA always starts it with: loopback only, API key required, no conversation tracking, no
-# browser-cookie providers, no paid-credit fallback. Secrets are generated once and kept in the crew folder.
+# browser-cookie providers, no paid-credit fallback. Secrets are generated once and kept in the allies folder.
 OMNI_SAFE_ENV = {"PORT": str(OMNI_PORT), "HOST": "127.0.0.1", "HOSTNAME": "127.0.0.1", "OMNIROUTE_SERVER_HOST": "127.0.0.1",
                  "APP_BIND_HOST": "127.0.0.1", "REQUIRE_API_KEY": "true", "OMNIROUTE_DISABLE_CONVERSATION_TRACKING": "1",
                  "WEB_COOKIE_USE_BROWSER": "0", "ANTIGRAVITY_CREDITS": "off", "ALLOW_API_KEY_REVEAL": "false"}
-BRIEF = """You are a member of a crew working for Claude Code, which will check your answer before anyone relies on \
+BRIEF = """You are an ally working for Claude Code, which will check your answer before anyone relies on \
 it. Work only on the task below, inside the current working directory. Do not push, publish, delete files outside \
 your working directory, spend money, or change system settings. If you cannot finish, say exactly what is missing. \
 End with a short summary: what you did, what you checked, and anything uncertain.
@@ -45,15 +45,15 @@ TASK:
 {task}"""
 READ_NOTE = "You are in read-only mode: inspect and answer; do not modify files."
 WRITE_NOTE = ("You are working in a dedicated git worktree on its own branch. Make the change and run the relevant "
-              "checks. Do not commit and do not touch other branches: crew commits your changes when you finish.")
+              "checks. Do not commit and do not touch other branches: allies commits your changes when you finish.")
 
 
 def claude_home():
     return Path(os.environ.get("CLAUDE_CONFIG_DIR") or Path.home() / ".claude").expanduser()
 
 
-def crew_home():
-    return Path(os.environ.get("MOAA_CREW_DIR") or claude_home() / "crew").expanduser()
+def allies_home():
+    return Path(os.environ.get("MOAA_ALLIES_DIR") or claude_home() / "allies").expanduser()
 
 
 def load_members():
@@ -140,9 +140,9 @@ def run_proc(argv, stdin, cwd, env, timeout, on_start=None):
 
 
 def member_env(spec):
-    """(env overrides, missing variable names). '$NAME' values come from the environment or the crew env file."""
+    """(env overrides, missing variable names). '$NAME' values come from the environment or the allies env file."""
     out, missing = {}, []
-    saved = read_env_file(crew_home() / "keys.env")
+    saved = read_env_file(allies_home() / "keys.env")
     for k, v in (spec.get("env") or {}).items():
         if v.startswith("$"):
             val = os.environ.get(v[1:]) or saved.get(v[1:])
@@ -241,13 +241,13 @@ def git(cwd, *args):
 def make_worktree(cwd, run_id, member):
     top = git(cwd, "rev-parse", "--show-toplevel")
     if top.returncode:
-        raise SystemExit("crew: --write needs a git repository (the member works on its own branch)")
-    branch = f"crew/{member}-{run_id}"
-    path = crew_home() / "worktrees" / f"{Path(top.stdout.strip()).name}-{run_id}"
+        raise SystemExit("allies: --write needs a git repository (the member works on its own branch)")
+    branch = f"ally/{member}-{run_id}"
+    path = allies_home() / "worktrees" / f"{Path(top.stdout.strip()).name}-{run_id}"
     path.parent.mkdir(parents=True, exist_ok=True)
     out = git(top.stdout.strip(), "worktree", "add", "-b", branch, str(path), "HEAD")
     if out.returncode:
-        raise SystemExit(f"crew: git worktree add failed: {out.stderr.strip()[-300:]}")
+        raise SystemExit(f"allies: git worktree add failed: {out.stderr.strip()[-300:]}")
     return path, branch, top.stdout.strip()
 
 
@@ -257,8 +257,8 @@ def commit_worktree(wt, member, task, base):
     if git(wt, "status", "--porcelain").stdout.strip():
         git(wt, "add", "-A")
         title = " ".join(task.split())[:60]
-        git(wt, "-c", "user.name=MOAA crew", "-c", "user.email=crew@localhost", "commit", "-q", "--no-verify", "-m",
-            f"crew({member}): {title}", "-m", "Made by a crew member; review before merging.")
+        git(wt, "-c", "user.name=MOAA allies", "-c", "user.email=allies@localhost", "commit", "-q", "--no-verify", "-m",
+            f"ally({member}): {title}", "-m", "Made by an ally; review before merging.")
     return {"commits": git(wt, "rev-list", "--count", f"{base}..HEAD").stdout.strip(),
             "diffstat": git(wt, "diff", "--stat", f"{base}..HEAD").stdout.strip(),
             "uncommitted": bool(git(wt, "status", "--porcelain").stdout.strip())}
@@ -278,23 +278,23 @@ def new_run_id():
 
 def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=None, workdir=None, on_start=None):
     """Run one member. With write, it works in a fresh worktree, or in `workdir` (an existing worktree the caller
-    owns, such as a War Room writer's); either way crew commits what it leaves behind."""
+    owns, such as a War Room writer's); either way allies commits what it leaves behind."""
     members = load_members()
     if member not in members:
-        raise SystemExit(f"crew: unknown member {member!r}; one of {', '.join(members)}")
+        raise SystemExit(f"allies: unknown member {member!r}; one of {', '.join(members)}")
     spec = members[member]
     exe = which(spec["bin"])
     if not exe:
-        raise SystemExit(f"crew: {member} is not installed ({spec['install']})")
+        raise SystemExit(f"allies: {member} is not installed ({spec['install']})")
     env_over, missing = member_env(spec)
     if missing:
-        raise SystemExit(f"crew: {member} needs {', '.join(missing)} ({spec['login']})")
+        raise SystemExit(f"allies: {member} needs {', '.join(missing)} ({spec['login']})")
     if model and not MODEL_RE.match(model):
-        raise SystemExit(f"crew: not a model name: {model!r}")
+        raise SystemExit(f"allies: not a model name: {model!r}")
     if spec.get("needs_url") and not reachable(spec["needs_url"]):
-        raise SystemExit(f"crew: {member} is not reachable ({spec['login']})")
+        raise SystemExit(f"allies: {member} is not reachable ({spec['login']})")
     run_id = run_id or new_run_id()
-    rdir = crew_home() / "runs" / run_id
+    rdir = allies_home() / "runs" / run_id
     rdir.mkdir(parents=True, exist_ok=True)
     cwd = Path(cwd).resolve()
     meta = {"id": run_id, "member": member, "write": write, "model": model or spec.get("default_model"), "cwd": str(cwd),
@@ -302,7 +302,7 @@ def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=Non
     if write and workdir:
         wt = Path(workdir).resolve()
         if git(wt, "rev-parse", "--is-inside-work-tree").stdout.strip() != "true":
-            raise SystemExit(f"crew: {wt} is not a git worktree")
+            raise SystemExit(f"allies: {wt} is not a git worktree")
         meta.update(worktree=str(wt), branch=git(wt, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip(),
                     base=git(wt, "rev-parse", "HEAD").stdout.strip())
         cwd = wt
@@ -316,7 +316,7 @@ def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=Non
     prefix, via_cmd = launcher(exe)
     argv = prefix + build_argv(spec, exe, write, model, prompt if not spec.get("stdin") else "", out_file)[1:]
     if via_cmd and any(CMD_META.search(a) for a in argv[1:]):
-        raise SystemExit(f"crew: {member} is a .cmd shim crew could not unwrap, and the task has characters cmd.exe "
+        raise SystemExit(f"allies: {member} is a .cmd shim allies could not unwrap, and the task has characters cmd.exe "
                          "would interpret; give it on stdin or simplify it")
     env = child_env(spec, env_over)
     t0 = time.time()
@@ -347,7 +347,7 @@ def ask(members, task, cwd=".", model=None, timeout=1200):
 
 
 def list_runs(limit=20):
-    base = crew_home() / "runs"
+    base = allies_home() / "runs"
     items = []
     for d in sorted(base.iterdir(), reverse=True) if base.is_dir() else []:
         for meta in sorted(d.glob("meta*.json")) or []:
@@ -372,23 +372,23 @@ def cmdline(pid):
 
 # ---------------------------------------------------------------- OmniRoute
 def omni_env():
-    path = crew_home() / "omniroute.env"
+    path = allies_home() / "omniroute.env"
     saved = read_env_file(path)
     if not saved.get("INITIAL_PASSWORD") or not saved.get("JWT_SECRET"):
         saved.update(INITIAL_PASSWORD=secrets.token_urlsafe(18), JWT_SECRET=secrets.token_urlsafe(48))
         path.parent.mkdir(parents=True, exist_ok=True)
         fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)  # owner-only from the start (POSIX)
         with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write("# Generated by MOAA crew. INITIAL_PASSWORD is the OmniRoute dashboard password on first boot.\n"
+            f.write("# Generated by MOAA allies. INITIAL_PASSWORD is the OmniRoute dashboard password on first boot.\n"
                     + "".join(f"{k}={v}\n" for k, v in saved.items()))
     return {**saved, **OMNI_SAFE_ENV}
 
 
 def omniroute(action):
-    pid_file = crew_home() / "omniroute.pid"
+    pid_file = allies_home() / "omniroute.pid"
     url = f"http://127.0.0.1:{OMNI_PORT}/v1/models"
     if action == "status":
-        return {"running": reachable(url), "dashboard": f"http://127.0.0.1:{OMNI_PORT}", "secrets": str(crew_home() / "omniroute.env")}
+        return {"running": reachable(url), "dashboard": f"http://127.0.0.1:{OMNI_PORT}", "secrets": str(allies_home() / "omniroute.env")}
     if action == "stop":
         pid = pid_file.read_text().strip() if pid_file.is_file() else ""
         ok = pid.isdigit() and "omniroute" in cmdline(int(pid)).lower()  # never a reused pid of another program
@@ -398,21 +398,21 @@ def omniroute(action):
         return {"stopped": ok}
     exe = which("omniroute")
     if not exe:
-        raise SystemExit("crew: omniroute is not installed (python scripts/install.py --with-omniroute)")
+        raise SystemExit("allies: omniroute is not installed (python scripts/install.py --with-omniroute)")
     if reachable(url):
         return {"running": True, "note": "already running; settings are those it was started with"}
-    log = open(crew_home() / "omniroute.log", "a", encoding="utf-8")
+    log = open(allies_home() / "omniroute.log", "a", encoding="utf-8")
     kw = {"creationflags": 0x08000000 | 0x00000200} if IS_WIN else {"start_new_session": True}
     argv = [exe]
     proc = subprocess.Popen(argv, env=child_env({}, omni_env()), stdout=log, stderr=subprocess.STDOUT,
-                            stdin=subprocess.DEVNULL, cwd=str(crew_home()), **kw)
+                            stdin=subprocess.DEVNULL, cwd=str(allies_home()), **kw)
     pid_file.write_text(str(proc.pid))
     for _ in range(60):
         if reachable(url):
             return {"running": True, "dashboard": f"http://127.0.0.1:{OMNI_PORT}",
-                    "password_file": str(crew_home() / "omniroute.env")}
+                    "password_file": str(allies_home() / "omniroute.env")}
         time.sleep(1)
-    return {"running": False, "log": str(crew_home() / "omniroute.log")}
+    return {"running": False, "log": str(allies_home() / "omniroute.log")}
 
 
 # ---------------------------------------------------------------- CLI
@@ -463,7 +463,7 @@ def main(argv=None):
     if a.cmd == "show":
         if not re.fullmatch(r"[0-9]{8}-[0-9]{6}-[0-9a-f]{4}", a.run_id):
             p.error("not a run id")
-        d = crew_home() / "runs" / a.run_id
+        d = allies_home() / "runs" / a.run_id
         for meta in sorted(d.glob("meta*.json")):
             print(meta.read_text(encoding="utf-8"))
         for ans in sorted(d.glob("*.answer.md")):

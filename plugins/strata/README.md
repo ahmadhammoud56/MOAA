@@ -1,4 +1,4 @@
-# Layered memory
+# Strata
 
 Long-term memory for Claude Code across sessions and projects. It follows the four-layer design of
 [TencentDB Agent Memory](https://github.com/TencentCloud/TencentDB-Agent-Memory) (MIT). The design is used here,
@@ -26,16 +26,16 @@ A project is its git repository root, so all worktrees of one repo share memory.
 ## Commands
 
 ```
-python memory.py search "QUERY" [--all]       python memory.py show
-python memory.py remember "TEXT" [--kind preference] [--global]
-python memory.py scene "TITLE" "BODY"         python memory.py profile KEY "TEXT"
-python memory.py forget ID | --session ID | --scene ID | --profile KEY
-python memory.py consolidate --pending [--dry-run]
-python memory.py config auto off              (no background extraction)
-python memory.py stats
+python strata.py search "QUERY" [--all]       python strata.py show
+python strata.py remember "TEXT" [--kind preference] [--global]
+python strata.py scene "TITLE" "BODY"         python strata.py profile KEY "TEXT"
+python strata.py forget ID | --session ID | --scene ID | --profile KEY
+python strata.py consolidate --pending [--dry-run]
+python strata.py config auto off              (no background extraction)
+python strata.py stats
 ```
 
-Data lives in `~/.claude/layered-memory/memory.sqlite3` (or `$MOAA_MEMORY_DIR`). Nothing leaves your machine
+Data lives in `~/.claude/strata/memory.sqlite3` (or `$MOAA_STRATA_DIR`). Nothing leaves your machine
 except the Haiku extraction call to Anthropic, which is the same service your sessions already use.
 
 ## Safety

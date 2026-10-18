@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """MOAA (Mother of All Agents) installer. Standard library only; safe to rerun.
 
-  python scripts/install.py                 core profile: 13 plugins, council, arena, crew, memory, skills, rea MCP
+  python scripts/install.py                 core profile: 13 plugins, council, arena, allies, strata, skills, rea MCP
   python scripts/install.py --full          everything: 96 plugins (98 with --with-claude-mem) + ansys MCP
-  python scripts/install.py --with-omniroute  also the OmniRoute gateway (npm), for crew's free-tier fallback
+  python scripts/install.py --with-omniroute  also the OmniRoute gateway (npm), for the allies' free-tier fallback
   python scripts/install.py --with-claude-mem
   python scripts/install.py --skip-mcp      no rea/ansys MCP servers
   python scripts/install.py --skip-ansys    keep rea, skip the ansys MCP server
@@ -61,13 +61,13 @@ class Runner:
 
 
 # Subcommands that run without a permission prompt. War Room's toggle, launch, integrate, finish, shutdown and approve,
-# crew's run/ask (they spend other services' quotas and can write) and memory's remember/forget/consolidate are left
+# allies' run/ask (they spend other services' quotas and can write) and strata's remember/forget/consolidate are left
 # out on purpose: those stay the user's own decision. "*" means every subcommand (the council's resolve/check/...).
 ALLOWED = {"specialist-council": ("council.py", ("*",)),
            "war-room": ("warroom.py", ("plan", "status", "post", "send", "wake", "app", "list", "measure", "tile",
                                        "merge", "pause", "unpause", "stop", "resume", "demo", "template")),
-           "crew": ("crew.py", ("doctor", "runs", "show", "pick")),
-           "layered-memory": ("memory.py", ("search", "show", "stats"))}
+           "allies": ("allies.py", ("doctor", "runs", "show", "pick")),
+           "strata": ("strata.py", ("search", "show", "stats"))}
 BARE = {"app", "list", "demo", "template", "doctor", "runs", "stats", "show"}  # also run with no arguments
 
 
@@ -81,7 +81,7 @@ def plugin_root(home, plugin):
 def council_permissions(home):
     """Allow rules pinned to each installed script's exact path, as Claude calls it (forward slashes, quoted), with the
     subcommand right after it and only arguments after that. No wildcard comes before the subcommand, so
-    `python -c ... warroom.py list` or `crew.py run --task "... crew.py doctor"` never match. When Claude Code updates a
+    `python -c ... warroom.py list` or `allies.py run --task "... allies.py doctor"` never match. When Claude Code updates a
     plugin outside the installer, the path changes and the rules simply stop matching (prompts come back) until the
     installer runs again and replaces them."""
     rules = []
@@ -512,7 +512,7 @@ def doctor_checks():
     py = sys.executable
     plugins = KIT / "plugins"
     checks = [("installer tests", [py, "-m", "unittest", "discover", "-s", "tests"], KIT)]
-    for name in ("specialist-council", "agent-arena-mode", "war-room", "crew", "layered-memory"):
+    for name in ("specialist-council", "agent-arena-mode", "war-room", "allies", "strata"):
         checks.append((f"{name} tests", [py, "-m", "unittest", "discover", "-s", "tests"], plugins / name))
     checks += [
         ("war-room bus test", [py, "tests/test_bus.py"], plugins / "war-room"),
@@ -548,7 +548,7 @@ def doctor(args):
 
 
 def install_omniroute(r, spec, record):
-    """npm install of the pinned OmniRoute. It is not started: `crew.py omniroute start` runs it with locked-down
+    """npm install of the pinned OmniRoute. It is not started: `allies.py omniroute start` runs it with locked-down
     settings (loopback only, API key required, generated dashboard password)."""
     if not shutil.which("npm"):
         log("omniroute: npm not found; skipped")
@@ -556,7 +556,7 @@ def install_omniroute(r, spec, record):
     pkg = f"{spec['npm']}@{spec['version']}"
     npm = ["npm"] if not WINDOWS else ["cmd", "/c", "npm"]
     had = r.run(npm + ["ls", "-g", spec["npm"], "--depth=0"]).returncode == 0 and "omniroute" not in record["tools"]
-    log(f"omniroute: npm install -g {pkg} (start it with crew.py omniroute start)")
+    log(f"omniroute: npm install -g {pkg} (start it with allies.py omniroute start)")
     result = r.run(["npm", "install", "-g", pkg] if not WINDOWS else ["cmd", "/c", "npm", "install", "-g", pkg])
     if result.returncode:
         log("  omniroute install failed: " + (result.stderr or result.stdout).strip()[-300:])
@@ -609,7 +609,7 @@ def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--with-claude-mem", action="store_true")
     p.add_argument("--with-omniroute", action="store_true",
-                   help="also install the OmniRoute gateway (npm) used by crew for free-tier fallback; not started")
+                   help="also install the OmniRoute gateway (npm) used by allies for free-tier fallback; not started")
     p.add_argument("--full", action="store_true",
                    help="install all 96 plugins and the ansys MCP server (default: the 13-plugin core profile)")
     p.add_argument("--upstream", action="store_true",
