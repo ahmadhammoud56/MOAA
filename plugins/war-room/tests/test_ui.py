@@ -79,15 +79,23 @@ class Hub(Sandbox):
     """The hub over HTTP: shared assets, the token on POST, and deciding a human gate."""
     def setUp(self):
         super().setUp()
-        threading.Thread(target=warroom.cmd_hub, args=(argparse.Namespace(port=0),), daemon=True).start()
-        port = None
-        for _ in range(100):
+        crash = []
+
+        def hub():
+            try:
+                warroom.cmd_hub(argparse.Namespace(port=0))
+            except BaseException as e:  # surfaced below instead of dying silently in the thread
+                crash.append(e)
+        threading.Thread(target=hub, daemon=True).start()
+        port, deadline = None, time.time() + 30  # slow CI runners (macOS) can take seconds to start it
+        while port is None and not crash and time.time() < deadline:
             try:
                 with open(warroom.HUB, encoding="utf-8") as f:
                     port = json.load(f)["port"]
-                break
-            except (OSError, ValueError):
-                time.sleep(.05)
+            except (OSError, ValueError, KeyError):
+                time.sleep(.1)
+        self.assertFalse(crash, f"the hub crashed: {crash[:1]!r}")
+        self.assertIsNotNone(port, "the hub did not start within 30 s")
         self.base = f"http://127.0.0.1:{port}"
         self.token = re.search(r'const TOKEN = "([^"]+)"', self.get("/").decode()).group(1)
 
