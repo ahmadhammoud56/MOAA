@@ -1,6 +1,6 @@
 {
   "name": "allies",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Allies: Claude Code hands bounded tasks to other agent CLIs (OpenAI Codex, Google Gemini, Moonshot Kimi, DeepSeek through Claude Code, or a local OmniRoute gateway), each signed in with its own account, and checks what comes back. Read-only by default; write tasks run in a separate git worktree and land on their own branch. Use it for second opinions and to stretch your Claude usage limits.",
   "author": { "name": "Ahmad Hammoud", "url": "https://github.com/ahmadhammoud56" },
   "homepage": "https://github.com/ahmadhammoud56/MOAA",

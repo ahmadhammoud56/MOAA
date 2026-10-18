@@ -4,6 +4,13 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-10-18
+
+### Fixed
+- **Allies 0.1.1:** the npm shim parser now splits the script path the shim gives (written with backslashes) into
+  folders, so it is correct on every OS. 0.7.0's CI failed on Linux and macOS because of this; Windows, where shims
+  are used, was not affected. All suites were also run on Linux (WSL) before this release.
+
 ## [0.7.0] - 2026-10-17
 
 ### Added

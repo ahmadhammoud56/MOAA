@@ -96,7 +96,7 @@ def launcher(exe):
     except OSError:
         m = None
     if m:
-        script = Path(exe).parent / m.group(1)
+        script = Path(exe).parent.joinpath(*m.group(1).split("\\"))  # the shim spells the path with backslashes
         node = Path(exe).parent / "node.exe"
         node = str(node) if node.is_file() else shutil.which("node")
         if node and script.is_file():
