@@ -149,6 +149,11 @@ class Hardening(Sandbox):
         with self.assertRaises(SystemExit):
             allies.run("alpha", "x", cwd=self.tmp, model="--dangerous-flag")
 
+    def test_short_windows_paths_are_expanded(self):
+        long = allies.long_path(self.tmp)
+        self.assertNotIn("~", str(long) if os.name == "nt" else "")
+        self.assertEqual(allies.long_path(str(self.tmp)), long)
+
     def test_members_only_see_their_own_credentials(self):
         with mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "a", "CLAUDE_CODE_OAUTH_TOKEN": "b", "GITHUB_TOKEN": "c",
                                           "OPENAI_API_KEY": "d", "AWS_SECRET_ACCESS_KEY": "e", "PATH": "p"}):

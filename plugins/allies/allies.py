@@ -141,6 +141,18 @@ def run_proc(argv, stdin, cwd, env, timeout, on_start=None):
         return "timeout", out or "", err or ""
 
 
+def long_path(path):
+    """Absolute path with Windows 8.3 short names (C:/Users/DEATHS~1) expanded: agent sandboxes such as Codex's deny
+    access to a workspace given in short form."""
+    p = Path(path).resolve()
+    if IS_WIN:
+        import ctypes
+        buf = ctypes.create_unicode_buffer(32768)
+        if ctypes.windll.kernel32.GetLongPathNameW(str(p), buf, len(buf)):
+            return Path(buf.value)
+    return p
+
+
 def member_env(spec):
     """(env overrides, missing variable names). '$NAME' values come from the environment or the allies env file."""
     out, missing = {}, []
@@ -305,11 +317,11 @@ def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=Non
     run_id = run_id or new_run_id()
     rdir = allies_home() / "runs" / run_id
     rdir.mkdir(parents=True, exist_ok=True)
-    cwd = Path(cwd).resolve()
+    cwd = long_path(cwd)
     meta = {"id": run_id, "member": member, "write": write, "model": model or spec.get("default_model"), "cwd": str(cwd),
             "started": time.time()}
     if write and workdir:
-        wt = Path(workdir).resolve()
+        wt = long_path(workdir)
         if git(wt, "rev-parse", "--is-inside-work-tree").stdout.strip() != "true":
             raise SystemExit(f"allies: {wt} is not a git worktree")
         meta.update(worktree=str(wt), branch=git(wt, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip(),
