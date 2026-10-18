@@ -2261,7 +2261,13 @@ def cmd_hub(a):
             except Fatal as e:  # die() inside plan resolution: report it, keep the hub up
                 return self.send(400, {"error": e.msg})
 
-    srv = ThreadingHTTPServer(("127.0.0.1", a.port), H)
+    class Server(ThreadingHTTPServer):
+        def server_bind(self):  # skip HTTPServer's socket.getfqdn(): a reverse DNS lookup that can stall for 30 s+ on macOS
+            import socketserver
+            socketserver.TCPServer.server_bind(self)
+            self.server_name, self.server_port = self.server_address[:2]
+
+    srv = Server(("127.0.0.1", a.port), H)
     save_json(HUB, {"pid": os.getpid(), "port": srv.server_address[1], "started": time.time()})
     print(f"War Room hub on http://127.0.0.1:{srv.server_address[1]}/ (127.0.0.1 only)", flush=True)
     srv.serve_forever()
