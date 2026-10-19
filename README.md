@@ -322,7 +322,7 @@ Every agent's model and effort are stored inside the plugins themselves; see [MO
 
 ### Third-party plugins
 
-<details><summary><b>ruvnet/ruflo</b>: 39 plugins (pinned <code>ea0ea3d</code>)</summary>
+<details><summary><b>ruvnet/ruflo</b>: 39 plugins (pinned <code>b931448</code>)</summary>
 
 | Install | Description |
 |---|---|
