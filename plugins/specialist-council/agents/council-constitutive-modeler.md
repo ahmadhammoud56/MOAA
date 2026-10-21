@@ -1,7 +1,7 @@
 ---
 name: "council-constitutive-modeler"
 description: "Constitutive Modeler. Stress-strain laws, time dependence, internal variables, and calibration. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-opus-5-5"
 effort: "high"
 ---

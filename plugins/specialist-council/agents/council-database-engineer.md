@@ -1,7 +1,7 @@
 ---
 name: "council-database-engineer"
 description: "Database Engineer. Schemas, queries, transactions, and data migrations. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-opus-5-5"
 effort: "high"
 ---

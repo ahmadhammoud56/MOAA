@@ -1,7 +1,7 @@
 ---
 name: "council-retrieval-engineer"
 description: "Retrieval Engineer. Search, indexing, retrieval-augmented generation, and evidence access. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "medium"
 ---

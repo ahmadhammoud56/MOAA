@@ -1,7 +1,7 @@
 ---
 name: "council-additive-manufacturing-specialist"
 description: "Additive Manufacturing Specialist. Deposition, buildability, interlayer effects, toolpaths, and geometric quality. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "medium"
 ---

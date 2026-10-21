@@ -4,6 +4,38 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-22
+
+Context cost, after Cloudflare's write-up of their AI code reviewer ("obsessive inference optimization"): most of
+their savings came from sending fewer tokens and making fewer calls, not from cheaper models.
+
+### Added
+- **moaa-catalog 0.1.0** (core plugin): skills on demand. A cached index of the skills in installed but disabled
+  plugins (rebuilt only when plugins or settings change; lookups take milliseconds), `catalog.py search`, a
+  `UserPromptSubmit` hook that names up to three strong matches (ordinary prompts add nothing), and
+  `catalog.py use`, which loads one skill into the current session and suggests enabling a pack used three times in
+  30 days. Its read-only subcommands run without prompts.
+- **`install.py --prune [--days N] [--yes]` and `--restore`:** list, and optionally disable, enabled plugins with no
+  recorded use (skill, agent, MCP or slash-command use in the transcripts). Plugins with hooks or MCP servers and
+  MOAA's own are kept. `--restore` re-enables what was pruned.
+- **Context budget:** `--status` and `--doctor` report how many skills and agents every session lists and warn above
+  300.
+- **README:** a "Context cost: skills on demand" section.
+
+### Changed
+- **`--full` installs the big skill packs disabled:** agentic-awesome-skills and its bundles, and every ruflo plugin
+  except `ruflo-core` (73 plugins). They stay installed; `claude plugin enable <id>` loads one from the next session.
+  Existing installs keep their current choices.
+- **Specialist Council 1.5.0:** workers carry an explicit core tool list instead of `disallowedTools: [Agent]`, so no
+  call carries MCP tool definitions. The runtime guide orders briefs for prompt caching (identical common part
+  first, role-specific part last) and dispatches same-type ensemble workers after the first has started.
+- **Agent Arena 0.5.1:** forged council members get the same core tool list.
+- **War Room 0.7.0:** an ally task that times out is retried once with double the limit (up to 60 min) instead of the
+  same one; a task taken away from an ally worker stops its member process within 15 s; workers are told to batch
+  file reads into one turn and to end without a closing summary.
+- **Allies 0.2.0:** runs poll for cancellation while the member works, and each run records why it failed
+  (`timeout`, `cancelled`, `exit`, `empty`).
+
 ## [0.8.1] - 2026-10-18
 
 ### Fixed

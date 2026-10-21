@@ -1,7 +1,7 @@
 ---
 name: "council-backend-engineer"
 description: "Backend Engineer. Server-side business logic, state transitions, and service behavior. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "high"
 ---

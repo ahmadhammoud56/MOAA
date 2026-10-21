@@ -1,6 +1,6 @@
 {
   "name": "moaa",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "marketplaces": {
     "ecc": "https://github.com/affaan-m/ECC.git",
     "karpathy-skills": "https://github.com/multica-ai/andrej-karpathy-skills.git",
@@ -26,216 +26,216 @@
     {
       "id": "agent-arena-mode@moaa",
       "enabled": true,
-      "tested_version": "0.5.0",
+      "tested_version": "0.5.1",
       "profile": "core"
     },
     {
       "id": "agentic-awesome-skills@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-accessibility-inclusive-ux@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-agent-mcp-builder@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-ai-product-evaluation-ops@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-api-platform-builder@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-automation-builder@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-data-analytics@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-data-engineering-platform@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-devops-cloud@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-documents-presentations@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-localization-international-growth@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-marketing-seo-growth@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-mobile-app-builder@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-observability-ir@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-privacy-compliance-engineering@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-product-design-studio@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-python-api-builder@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-qa-test-automation@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-saas-launch-revenue@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-secure-app-builder@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-security-engineer@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-aas-web-app-builder@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-agent-architect@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-apple-platform-design@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-architecture-design@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-automation-builder@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-azure-ai-cloud@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-business-analyst@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-commerce-payments@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-creative-director@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-data-analytics@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-data-engineering@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-ddd-evented-architecture@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-devops-cloud@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
     {
       "id": "agentic-bundle-essentials@agentic-awesome-skills",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "16.9.0",
       "profile": "full"
     },
@@ -274,7 +274,7 @@
     {
       "id": "allies@moaa",
       "enabled": true,
-      "tested_version": "0.1.1",
+      "tested_version": "0.2.0",
       "profile": "core"
     },
     {
@@ -345,61 +345,61 @@
     },
     {
       "id": "ruflo-adr@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.5.6",
       "profile": "full"
     },
     {
       "id": "ruflo-agent@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.3",
       "profile": "full"
     },
     {
       "id": "ruflo-agentdb@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.4.8",
       "profile": "full"
     },
     {
       "id": "ruflo-agntcy@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.2.4",
       "profile": "full"
     },
     {
       "id": "ruflo-aidefence@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.2",
       "profile": "full"
     },
     {
       "id": "ruflo-arena@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.2.5",
       "profile": "full"
     },
     {
       "id": "ruflo-autopilot@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.2",
       "profile": "full"
     },
     {
       "id": "ruflo-bbs-federation@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.3",
       "profile": "full"
     },
     {
       "id": "ruflo-browser@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.5",
       "profile": "full"
     },
     {
       "id": "ruflo-business-pods@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.2.3",
       "profile": "full"
     },
@@ -411,176 +411,176 @@
     },
     {
       "id": "ruflo-cost-tracker@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.28.1",
       "profile": "full"
     },
     {
       "id": "ruflo-daa@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.3",
       "profile": "full"
     },
     {
       "id": "ruflo-ddd@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.5",
       "profile": "full"
     },
     {
       "id": "ruflo-docs@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.3",
       "profile": "full"
     },
     {
       "id": "ruflo-federation@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.5",
       "profile": "full"
     },
     {
       "id": "ruflo-goals@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.4.4",
       "profile": "full"
     },
     {
       "id": "ruflo-graph-intelligence@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.2.0-alpha.5",
       "profile": "full"
     },
     {
       "id": "ruflo-intelligence@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.4.3",
       "profile": "full"
     },
     {
       "id": "ruflo-iot-cognitum@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.3",
       "profile": "full"
     },
     {
       "id": "ruflo-jujutsu@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.4",
       "profile": "full"
     },
     {
       "id": "ruflo-knowledge-graph@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.4",
       "profile": "full"
     },
     {
       "id": "ruflo-loop-workers@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.4",
       "profile": "full"
     },
     {
       "id": "ruflo-market-data@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.4",
       "profile": "full"
     },
     {
       "id": "ruflo-metaharness@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.2.5",
       "profile": "full"
     },
     {
       "id": "ruflo-migrations@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.4",
       "profile": "full"
     },
     {
       "id": "ruflo-music@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.2.4",
       "profile": "full"
     },
     {
       "id": "ruflo-neural-trader@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.5",
       "profile": "full"
     },
     {
       "id": "ruflo-observability@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.4",
       "profile": "full"
     },
     {
       "id": "ruflo-plugin-creator@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.4.3",
       "profile": "full"
     },
     {
       "id": "ruflo-rag-memory@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.5",
       "profile": "full"
     },
     {
       "id": "ruflo-ruvector@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.4",
       "profile": "full"
     },
     {
       "id": "ruflo-ruvllm@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.4",
       "profile": "full"
     },
     {
       "id": "ruflo-rvf@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.6",
       "profile": "full"
     },
     {
       "id": "ruflo-security-audit@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.4",
       "profile": "full"
     },
     {
       "id": "ruflo-sparc@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.4",
       "profile": "full"
     },
     {
       "id": "ruflo-swarm@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.7",
       "profile": "full"
     },
     {
       "id": "ruflo-testgen@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.3.2",
       "profile": "full"
     },
     {
       "id": "ruflo-workflows@ruflo",
-      "enabled": true,
+      "enabled": false,
       "tested_version": "0.6.6",
       "profile": "full"
     },
     {
       "id": "specialist-council@moaa",
       "enabled": true,
-      "tested_version": "1.4.0",
+      "tested_version": "1.5.0",
       "profile": "core"
     },
     {
@@ -604,7 +604,13 @@
     {
       "id": "war-room@moaa",
       "enabled": true,
-      "tested_version": "0.6.1",
+      "tested_version": "0.7.0",
+      "profile": "core"
+    },
+    {
+      "id": "moaa-catalog@moaa",
+      "enabled": true,
+      "tested_version": "0.1.0",
       "profile": "core"
     }
   ],
@@ -704,8 +710,9 @@
     "agents/code-improver.md",
     "plugins/agent-arena-mode",
     "plugins/allies",
-    "plugins/strata",
+    "plugins/moaa-catalog",
     "plugins/specialist-council",
+    "plugins/strata",
     "plugins/war-room",
     "skills/agent-teams",
     "skills/local-build",

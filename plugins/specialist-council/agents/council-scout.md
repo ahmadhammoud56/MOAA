@@ -1,7 +1,7 @@
 ---
 name: "council-scout"
 description: "Scout. Research, documentation, sources Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-haiku-5-5"
 effort: "low"
 ---

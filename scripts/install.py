@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """MOAA (Mother of All Agents) installer. Standard library only; safe to rerun.
 
-  python scripts/install.py                 core profile: 13 plugins, council, arena, allies, strata, skills, rea MCP
-  python scripts/install.py --full          everything: 96 plugins (98 with --with-claude-mem) + ansys MCP
+  python scripts/install.py                 core profile: 14 plugins, council, arena, allies, strata, skills, rea MCP
+  python scripts/install.py --full          everything: 97 plugins (99 with --with-claude-mem) + ansys MCP; the big
+                                            skill packs (agentic-awesome-skills, ruflo extras) install disabled
+  python scripts/install.py --prune [--days N] [--yes]  list (and with --yes disable) plugins unused for N days
+  python scripts/install.py --restore       re-enable what --prune disabled
   python scripts/install.py --with-omniroute  also the OmniRoute gateway (npm), for the allies' free-tier fallback
   python scripts/install.py --with-claude-mem
   python scripts/install.py --skip-mcp      no rea/ansys MCP servers
@@ -67,8 +70,9 @@ ALLOWED = {"specialist-council": ("council.py", ("*",)),
            "war-room": ("warroom.py", ("plan", "status", "post", "send", "wake", "app", "list", "measure", "tile",
                                        "merge", "pause", "unpause", "stop", "resume", "demo", "template")),
            "allies": ("allies.py", ("doctor", "runs", "show", "pick")),
-           "strata": ("strata.py", ("search", "show", "stats"))}
-BARE = {"app", "list", "demo", "template", "doctor", "runs", "stats", "show"}  # also run with no arguments
+           "strata": ("strata.py", ("search", "show", "stats")),
+           "moaa-catalog": ("catalog.py", ("search", "use", "packs"))}  # read-only; `use` only serves indexed skills
+BARE = {"app", "list", "demo", "template", "doctor", "runs", "stats", "show", "packs"}  # also run with no arguments
 
 
 def plugin_root(home, plugin):
@@ -488,6 +492,7 @@ def status_rows(home, kit):
         ours = str(home / "kit-tools" / "ansys-mcp-server").replace("\\", "/") in servers["ansys"].get("command", "")
         rows.append(("mcp", "ansys", "ok" if ours else "modified",
                      "" if ours else "configured outside MOAA; the installer leaves it alone"))
+    rows.append(context_row(home))
     return rows
 
 
@@ -507,12 +512,117 @@ def status(args):
     return 1 if counts.get("missing") or counts.get("outdated") else 0
 
 
+SKILL_BUDGET = 300  # skills listed in every session's context before --status/--doctor warn
+
+
+def enabled_plugins(home):
+    """{plugin id: install path} for every plugin enabled in settings.json and installed."""
+    on = {k for k, v in read_json(home / "settings.json", {}).get("enabledPlugins", {}).items() if v}
+    installed = read_json(home / "plugins" / "installed_plugins.json", {}).get("plugins", {})
+    return {pid: Path((installed[pid] or [{}])[0].get("installPath", "")) for pid in sorted(on) if pid in installed}
+
+
+def context_budget(home):
+    """(skills, agents) that enabled plugins and the user's own folders add to every session's context."""
+    roots = [p for p in enabled_plugins(home).values() if p.is_dir()]
+    skills = sum(1 for r in roots for _ in r.rglob("SKILL.md")) + sum(1 for _ in (home / "skills").glob("*/SKILL.md"))
+    agents = sum(1 for r in roots for _ in (r / "agents").glob("*.md")) + sum(1 for _ in (home / "agents").glob("*.md"))
+    return skills, agents
+
+
+def context_row(home):
+    try:
+        skills, agents = context_budget(home)
+    except ValueError:  # a corrupt settings or plugin record; status reports the file itself
+        return ("context", "every session", "info", "not counted: a Claude config file is not valid JSON")
+    state = "heavy" if skills > SKILL_BUDGET else "ok"
+    hint = f"; over {SKILL_BUDGET}: `install.py --prune` lists unused plugins to disable" if state == "heavy" else ""
+    return ("context", "every session", state, f"{skills} skills, {agents} agents listed{hint}")
+
+
+def plugin_usage(home, days):
+    """{plugin name: uses} from transcripts touched in the last `days`: Skill and Agent tool calls named
+    `plugin:...`, plugin MCP tools (`mcp__plugin_<name>_...`) and slash commands typed as `/plugin:skill`."""
+    cut, uses = time.time() - days * 86400, {}
+    slash = re.compile(r"<command-name>/?([\w.-]+):")
+    for f in (home / "projects").glob("**/*.jsonl"):
+        if f.stat().st_mtime < cut:
+            continue
+        for line in f.open(encoding="utf-8", errors="replace"):
+            names = slash.findall(line) if "<command-name>" in line else []
+            if '"tool_use"' in line:
+                try:
+                    content = json.loads(line).get("message", {}).get("content")
+                except ValueError:
+                    content = None
+                for c in content if isinstance(content, list) else []:
+                    if c.get("type") != "tool_use":
+                        continue
+                    name, args = c.get("name", ""), c.get("input") or {}
+                    ref = str(args.get("skill") or args.get("subagent_type") or "") if name in ("Skill", "Agent", "Task") else ""
+                    if ":" in ref:
+                        names.append(ref.split(":")[0])
+                    elif name.startswith("mcp__plugin_"):
+                        names.append(name.split("__")[1][len("plugin_"):].rsplit("_", 1)[0])
+            for n in names:
+                uses[n] = uses.get(n, 0) + 1
+    return uses
+
+
+def passive(path):
+    """True when a plugin works without being called by name (hooks, output styles, MCP servers): usage counts miss it."""
+    meta = read_json(path / ".claude-plugin" / "plugin.json", {}) if path.is_dir() else {}
+    return any((path / d).exists() for d in ("hooks", "output-styles", ".mcp.json")) or \
+        any(k in meta for k in ("hooks", "mcpServers", "outputStyles"))
+
+
+def prune_candidates(enabled, uses, kit_name):
+    """Enabled plugins with no recorded use, minus passive ones and MOAA's own (the kit decides those)."""
+    return [pid for pid, path in enabled.items()
+            if not pid.endswith("@" + kit_name) and not uses.get(pid.split("@")[0]) and not passive(path)]
+
+
+def prune(args):
+    """List enabled plugins unused for --days; with --yes, disable them and record them for --restore."""
+    home, r = claude_home(), Runner(args.dry_run)
+    kit = read_json(KIT / "config" / "kit.json", None)
+    candidates = prune_candidates(enabled_plugins(home), plugin_usage(home, args.days), kit["name"])
+    before = context_budget(home)
+    log(f"{len(candidates)} enabled plugin(s) unused in {args.days} days (hook/MCP plugins and MOAA's own are kept):")
+    for pid in candidates:
+        print("  " + pid)
+    if not candidates or not args.yes:
+        log("nothing changed" + ("; rerun with --yes to disable them (--restore undoes it)" if candidates else ""))
+        return 0
+    record = read_json(home / MANIFEST, {})
+    for pid in candidates:
+        r.run(["claude", "plugin", "disable", pid, "--scope", "user"])
+        if pid not in record.setdefault("pruned", []):
+            record["pruned"].append(pid)
+    write_json(home / MANIFEST, record, args.dry_run)
+    after = context_budget(home)
+    log(f"disabled {len(candidates)}; skills listed per session {before[0]} -> {after[0]}. Restart Claude Code.")
+    return 0
+
+
+def restore(args):
+    """Re-enable every plugin an earlier --prune disabled."""
+    home, r = claude_home(), Runner(args.dry_run)
+    record = read_json(home / MANIFEST, {})
+    for pid in record.get("pruned", []):
+        log(f"enabling {pid}")
+        r.run(["claude", "plugin", "enable", pid, "--scope", "user"])
+    record["pruned"] = []
+    write_json(home / MANIFEST, record, args.dry_run)
+    return 0
+
+
 def doctor_checks():
     """(label, argv, cwd) for every check the release routine runs before a commit."""
     py = sys.executable
     plugins = KIT / "plugins"
     checks = [("installer tests", [py, "-m", "unittest", "discover", "-s", "tests"], KIT)]
-    for name in ("specialist-council", "agent-arena-mode", "war-room", "allies", "strata"):
+    for name in ("specialist-council", "agent-arena-mode", "war-room", "allies", "strata", "moaa-catalog"):
         checks.append((f"{name} tests", [py, "-m", "unittest", "discover", "-s", "tests"], plugins / name))
     checks += [
         ("war-room bus test", [py, "tests/test_bus.py"], plugins / "war-room"),
@@ -543,6 +653,9 @@ def doctor(args):
             failed.append(label)
             tail = (result.stdout + result.stderr).strip().splitlines()[-15:]
             print("        " + "\n        ".join(tail))
+    if (claude_home() / "plugins" / "installed_plugins.json").is_file():  # informational; never fails the doctor
+        _, _, state, detail = context_row(claude_home())
+        print(f"  {'WARN' if state == 'heavy' else 'INFO'}  context budget: {detail}")
     print(f"[moaa] doctor: {'all checks pass' if not failed else 'failed: ' + ', '.join(failed)}")
     return 1 if failed else 0
 
@@ -611,7 +724,7 @@ def main(argv=None):
     p.add_argument("--with-omniroute", action="store_true",
                    help="also install the OmniRoute gateway (npm) used by allies for free-tier fallback; not started")
     p.add_argument("--full", action="store_true",
-                   help="install all 96 plugins and the ansys MCP server (default: the 13-plugin core profile)")
+                   help="install all 97 plugins and the ansys MCP server (default: the 14-plugin core profile)")
     p.add_argument("--upstream", action="store_true",
                    help="install third-party plugins from their own marketplaces (latest) instead of the pinned moaa catalog")
     p.add_argument("--skip-mcp", action="store_true")
@@ -622,11 +735,20 @@ def main(argv=None):
                    help="compare what is installed with this repo (changes nothing; exit 1 if anything is missing or outdated)")
     p.add_argument("--verbose", action="store_true", help="with --status: also list third-party plugins that match")
     p.add_argument("--doctor", action="store_true", help="run every pre-commit check of the release routine")
+    p.add_argument("--prune", action="store_true",
+                   help="list enabled plugins unused for --days (changes nothing without --yes)")
+    p.add_argument("--days", type=int, default=45, help="with --prune: usage window in days (default 45)")
+    p.add_argument("--yes", action="store_true", help="with --prune: disable the listed plugins")
+    p.add_argument("--restore", action="store_true", help="re-enable every plugin --prune disabled")
     a = p.parse_args(argv)
     if a.status:
         return status(a)
     if a.doctor:
         return doctor(a)
+    if a.prune:
+        return prune(a)
+    if a.restore:
+        return restore(a)
     return uninstall(a) if a.uninstall else install(a)
 
 

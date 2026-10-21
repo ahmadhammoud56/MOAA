@@ -1,7 +1,7 @@
 ---
 name: "council-frontend-engineer"
 description: "Frontend Engineer. Interactive client behavior and application state. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "medium"
 ---

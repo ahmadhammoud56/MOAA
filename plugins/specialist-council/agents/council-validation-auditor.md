@@ -1,7 +1,7 @@
 ---
 name: "council-validation-auditor"
 description: "Validation Auditor. ML generalization claims, splits, leakage, and tuning. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-opus-5-5"
 effort: "high"
 ---

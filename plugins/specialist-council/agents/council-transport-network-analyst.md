@@ -1,7 +1,7 @@
 ---
 name: "council-transport-network-analyst"
 description: "Transport Network Analyst. Network disruption, accessibility, assignment, and resilience metrics. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "high"
 ---

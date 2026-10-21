@@ -1,7 +1,7 @@
 ---
 name: "council-reproducibility-auditor"
 description: "Reproducibility Auditor. Whether a result can be recreated from its raw inputs. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-opus-5-5"
 effort: "medium"
 ---

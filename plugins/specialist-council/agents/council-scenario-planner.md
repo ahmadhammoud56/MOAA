@@ -1,7 +1,7 @@
 ---
 name: "council-scenario-planner"
 description: "Scenario Planner. Robust plans under alternative plausible futures. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-opus-5-5"
 effort: "medium"
 ---

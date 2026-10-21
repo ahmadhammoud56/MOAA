@@ -1,7 +1,7 @@
 ---
 name: "council-project-planner"
 description: "Project Planner. Dependencies, sequencing, milestones, and feasible schedules. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "medium"
 ---

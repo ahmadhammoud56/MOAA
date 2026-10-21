@@ -1,7 +1,7 @@
 ---
 name: "council-interpretability-analyst"
 description: "Interpretability Analyst. Understanding predictions, feature influence, and model failure patterns. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-opus-5-5"
 effort: "high"
 ---

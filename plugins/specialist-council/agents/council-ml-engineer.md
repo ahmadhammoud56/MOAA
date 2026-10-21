@@ -1,7 +1,7 @@
 ---
 name: "council-ml-engineer"
 description: "ML Engineer. Model training, inference, baselines, and deployment feasibility. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "high"
 ---

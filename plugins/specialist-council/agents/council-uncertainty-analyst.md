@@ -1,7 +1,7 @@
 ---
 name: "council-uncertainty-analyst"
 description: "Uncertainty Analyst. Sensitivity, parameter uncertainty, robustness, and predictive intervals. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-opus-5-5"
 effort: "high"
 ---

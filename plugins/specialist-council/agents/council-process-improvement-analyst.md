@@ -1,7 +1,7 @@
 ---
 name: "council-process-improvement-analyst"
 description: "Process Improvement Analyst. Reducing waste, handoffs, rework, and bottlenecks in workflows. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "medium"
 ---

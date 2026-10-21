@@ -1,7 +1,7 @@
 ---
 name: "council-decision-analyst"
 description: "Decision Analyst. Choosing among competing options under stated priorities. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-opus-5-5"
 effort: "high"
 ---

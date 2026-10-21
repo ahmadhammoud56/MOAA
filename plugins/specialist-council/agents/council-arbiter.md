@@ -1,7 +1,7 @@
 ---
 name: "council-arbiter"
 description: "Arbiter. Evaluation and integration Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-fable-5-1"
 effort: "xhigh"
 ---

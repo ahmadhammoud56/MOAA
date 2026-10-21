@@ -241,6 +241,28 @@ The `local-build` skill walks you through a build guide one step at a time. It f
 
 To add a build, drop a new `builds/<slug>.md` file in the same format.
 
+## Context cost: skills on demand
+
+Every enabled plugin lists each of its skills (name and one-line description) in every request Claude Code sends,
+whether the skill is used or not; only a used skill's full instructions are loaded. With all 97 plugins enabled that
+is about 2,500 listed skills on every turn, every subagent call and every council worker. Prompt caching makes the
+repeats cheap but not free, and anything that changes early in the prompt (the tool set, a CLAUDE.md edit) rewrites
+the whole cached prefix. The cache also expires after about five minutes idle.
+
+MOAA 0.9.0 therefore keeps the long tail installed but out of the prompt:
+
+- **`--full` installs the big packs disabled**: agentic-awesome-skills and its bundles, and every ruflo plugin except
+  `ruflo-core`. They stay on disk; `claude plugin enable <id>` turns one on from the next session.
+- **[moaa-catalog](plugins/moaa-catalog/README.md)** (core) indexes the skills of disabled plugins. Claude searches it
+  when no listed skill fits, a prompt hook names up to three strong matches (ordinary prompts add nothing), and
+  `catalog.py use` loads one skill into the current session. A pack used three times in 30 days gets an enable
+  suggestion.
+- **`--prune`** lists enabled plugins with no recorded use in `--days` (default 45), keeping plugins that work through
+  hooks or MCP servers and MOAA's own; `--yes` disables them and `--restore` undoes it.
+- **`--status` and `--doctor`** report how many skills and agents every session lists, and warn above 300.
+- **Council workers** carry an explicit core tool list instead of every MCP tool, and the council and War Room briefs
+  keep the shared part first and identical so parallel workers of one type reuse the cache.
+
 ## Security, in short
 
 MOAA installs third-party plugins, and some of them run hooks, meaning commands that fire on prompts, tool calls or session start, with your user permissions. Every third-party plugin is pinned to a tested commit, but pinning is not an audit.
@@ -260,7 +282,7 @@ Both wrappers pass these flags through to `scripts/install.py`:
 
 | Flag | Effect |
 |---|---|
-| `--full` | Install all 96 plugins and the ansys MCP server. The default is the core profile. |
+| `--full` | Install all 97 plugins and the ansys MCP server; the big skill packs install disabled (see [Context cost](#context-cost-skills-on-demand)). The default is the core profile. |
 | `--with-omniroute` | Also install the [OmniRoute](https://github.com/diegosouzapw/OmniRoute) gateway from npm (pinned) for the allies' free-tier fallback. It is not started; `allies.py omniroute start` runs it with locked-down settings. |
 | `--with-claude-mem` | Also install claude-mem and claude-mem-cowork (with `--full`). They need a model-provider key, which you set up through claude-mem's own setup, and they run a background worker on port 37777. |
 | `--upstream` | Install third-party plugins from their own marketplaces at the latest version, instead of the pinned `moaa` catalog. |
@@ -268,6 +290,8 @@ Both wrappers pass these flags through to `scripts/install.py`:
 | `--dry-run` | Print every command without changing anything. |
 | `--uninstall` | Reverse everything recorded in `~/.claude/.moaa-manifest.json`. |
 | `--status` | Change nothing; compare the install with this repo. It lists MOAA plugins, skills, agents and MCP servers that are outdated, missing or edited after install, third-party plugins whose version differs from the tested one, and old plugin versions left in the cache. Add `--verbose` to list every plugin. Exits 1 if anything is missing or outdated. |
+| `--prune [--days N] [--yes]` | List enabled plugins with no recorded use in N days (default 45); with `--yes`, disable them. Hook and MCP plugins and MOAA's own are kept. |
+| `--restore` | Re-enable every plugin `--prune` disabled. |
 | `--doctor` | Run every pre-commit check: all test suites, `MODELS.md`, the catalog, the public-release scan and `claude plugin validate`. For maintainers. |
 
 Restart Claude Code afterwards. The installer respects `CLAUDE_CONFIG_DIR`, so you can trial it in a throwaway config directory:
@@ -278,16 +302,16 @@ CLAUDE_CONFIG_DIR=/tmp/moaa-test ./install.sh --dry-run
 
 ## Use it as a plugin marketplace
 
-The `moaa` marketplace lists all 96 plugins of the setup: the 6 MOAA plugins plus 90 third-party plugins. The third-party ones are referenced at the exact commit tested here, never copied.
+The `moaa` marketplace lists all 99 plugins of the setup: the 9 MOAA plugins plus 90 third-party plugins. The third-party ones are referenced at the exact commit tested here, never copied.
 
 ```
 /plugin marketplace add ahmadhammoud56/MOAA
 /plugin install specialist-council@moaa
 /plugin install agent-arena-mode@moaa
-/plugin install superpowers@moaa        # any of the 96, e.g. ruflo-core@moaa, ecc@moaa
+/plugin install superpowers@moaa        # any of the 99, e.g. ruflo-core@moaa, ecc@moaa
 ```
 
-- **MOAA plugins:** `specialist-council`, `agent-arena-mode`, `war-room`, `flightdeck`, `plot-deck` and `prismantis`. Install the first two together to get the full council → arena → forging loop; add `war-room` to run whole teams of council workers in parallel (see [War Room](plugins/war-room/README.md)).
+- **MOAA plugins:** `specialist-council`, `agent-arena-mode`, `war-room`, `allies`, `strata`, `moaa-catalog`, `flightdeck`, `plot-deck` and `prismantis`. Install the first two together to get the full council → arena → forging loop; add `war-room` to run whole teams of council workers in parallel (see [War Room](plugins/war-room/README.md)).
 - **Third-party plugins** keep their upstream names. The exceptions are three names that are reserved for Anthropic's own plugins and so can't appear in a third-party marketplace:
 
   | Upstream name | Name in `moaa` |
@@ -305,7 +329,7 @@ Every agent's model and effort are stored inside the plugins themselves; see [MO
 
 <!-- PLUGIN-LIST:START (generated by scripts/sync_catalog.py) -->
 
-**98 plugins**: 8 MOAA plugins and 90 third-party plugins pinned to tested commits. Install any of them with `/plugin install <name>@moaa`.
+**99 plugins**: 9 MOAA plugins and 90 third-party plugins pinned to tested commits. Install any of them with `/plugin install <name>@moaa`.
 
 ### MOAA plugins
 
@@ -319,6 +343,7 @@ Every agent's model and effort are stored inside the plugins themselves; see [MO
 | `war-room@moaa` | War Room: a team of real, parallel Claude Code workers with council roles, review gates, a merge queue, usage… |
 | `allies@moaa` | Allies: hand bounded tasks from Claude Code to Codex, Gemini, Kimi, DeepSeek or a local OmniRoute gateway, ea… |
 | `strata@moaa` | Layered long-term memory (raw sessions, extracted notes, project scenes, user profile) in local SQLite with f… |
+| `moaa-catalog@moaa` | Skills on demand: big skill packs stay installed but disabled; a cached index, a prompt hook and one-call loa… |
 
 ### Third-party plugins
 

@@ -1,6 +1,6 @@
 # Claude Code runtime
 
-Use the main conversation as coordinator. This package installs native leaf agents named `council-<role-id>` and one inline `/specialist-council` skill. The coordinator has no `context: fork` field. Workers have `disallowedTools: [Agent]` and must not delegate. This is the council's chosen topology, not a claim that all Claude Code versions prohibit nested agents.
+Use the main conversation as coordinator. This package installs native leaf agents named `council-<role-id>` and one inline `/specialist-council` skill. The coordinator has no `context: fork` field. Workers have an explicit core `tools:` list (no Agent, no MCP tools, so every call skips hundreds of unused tool definitions) and must not delegate. This is the council's chosen topology, not a claim that all Claude Code versions prohibit nested agents.
 
 ## Discover and dispatch
 
@@ -11,6 +11,15 @@ Use the main conversation as coordinator. This package installs native leaf agen
 5. Track returned IDs and statuses. Use the advertised task/output, resume, or messaging tools for that version. Do not assume a resume creates fresh context: use a new agent for an independent initial candidate. A failed or partial result is not a completed candidate.
 
 In ensemble mode use fresh custom-agent sessions with the same neutral source packet. Do not choose a conversation-fork shortcut that reveals the parent's preferred answer. Each candidate owes a complete solution, even when their styles differ. Do not share initial candidate results until submission. For hybrid work, identify which jobs depend on earlier results and launch only independent jobs together.
+
+Prompt caching (cost and latency). The provider caches by exact prefix and drops an entry after about five minutes
+unused. Build every worker brief in the same order: the common input (task, sources, rubric, return contract) byte for
+byte identical across workers, then the role-specific assignment, personality overlay and ownership last. Put nothing
+that varies (timestamps, worker numbers, run IDs) in the common part. Workers of the same registered type, as in
+ensemble mode, then share one cached prefix: dispatch the first, and dispatch its siblings once it has started
+working, so they read the cache instead of each writing it. Different roles have different system prompts, so they
+cannot share a cache entry; do not delay them for that. Keep briefs to what the worker needs, and ask for short
+returns: every extra call re-reads the whole conversation.
 
 For a newly invented role, keep its task-local identity separate from the registered agent type. Use the nearest registered council agent as a carrier, or a currently advertised general-purpose agent, and provide the custom role's complete responsibility, method, evidence criteria, personality, and countercheck in its brief. Never fabricate a `council-<new-id>` registered type. If an existing card conflicts with the new role, use the general-purpose carrier. Do not persist a new agent definition unless the user requests it. The same registered type can be invoked more than once for independent variants, each with a distinct task identity and fresh context.
 

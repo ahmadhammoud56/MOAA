@@ -1,7 +1,7 @@
 ---
 name: "council-performance-engineer"
 description: "Performance Engineer. Measured latency, throughput, memory, or compute bottlenecks. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "high"
 ---

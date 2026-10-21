@@ -1,7 +1,7 @@
 ---
 name: "council-cost-analyst"
 description: "Cost Analyst. Resource budgets, total cost, and cost-quality tradeoffs. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "medium"
 ---

@@ -1,7 +1,7 @@
 ---
 name: "council-peer-reviewer"
 description: "Peer Reviewer. Scientific validity and whether a manuscript supports its claims. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-opus-5-5"
 effort: "high"
 ---

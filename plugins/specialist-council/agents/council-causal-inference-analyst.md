@@ -1,7 +1,7 @@
 ---
 name: "council-causal-inference-analyst"
 description: "Causal Inference Analyst. Claims about interventions, mechanisms, or effects beyond association. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-fable-5-1"
 effort: "high"
 ---

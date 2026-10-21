@@ -1,7 +1,7 @@
 ---
 name: "council-api-designer"
 description: "API Designer. Public contracts between clients, services, or modules. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-opus-5-5"
 effort: "high"
 ---

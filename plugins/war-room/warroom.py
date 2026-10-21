@@ -734,6 +734,8 @@ Protocol:
 - For each task: do the work, complete_task with a concise result, then checkpoint (done / next / open questions).
 - Hand-offs and findings go to other workers with send(to, body). Other workers: {roster}. The human orchestrator is "orchestrator".
 - When claim_task returns no task, stop. You are woken automatically when a message or a task arrives.
+- Keep turns few: read every file you need in one turn with parallel tool calls, and after complete_task and
+  checkpoint end the turn without a closing summary (each extra turn re-reads the whole conversation).
 - If claim_task reports paused, checkpoint at once and stop (usage-limit guard).
 - Never push, publish, delete branches or tags, or spend money. Ask the orchestrator with send() instead.
 - Shell commands run unattended against an allow-list: run them from your working directory, one command per call,
@@ -936,9 +938,13 @@ def requeue_ally_task(bus, worker_name, task_id, why):
         bus.event("ally", f"#{task_id} {why}")
 
 
-def reopen_ally_task(bus, worker_name, task_id, why):
+ALLY_TIMEOUT, ALLY_TIMEOUT_MAX = 1200, 3600  # seconds; a timed-out task is retried with double the limit
+
+
+def reopen_ally_task(bus, worker_name, task_id, why, timed_out_after=None):
     """A task the ally worker could not finish goes back on the board once; the second time it is blocked for the
-    human. Only while this worker still holds it: finished work is never reopened."""
+    human. Only while this worker still holds it: finished work is never reopened. A timeout is retried with a longer
+    limit, not the same one that just ran out."""
     held = bus.db.execute("SELECT 1 FROM tasks WHERE id=? AND status='claimed' AND owner=?", (task_id, worker_name)).fetchone()
     if not held:
         return
@@ -948,6 +954,10 @@ def reopen_ally_task(bus, worker_name, task_id, why):
         bus.send("orchestrator", f"Task #{task_id} is blocked: the ally worker failed twice ({why}).")
     else:
         bus.control(key, "1")
+        if timed_out_after:
+            longer = min(2 * int(timed_out_after), ALLY_TIMEOUT_MAX)
+            bus.control(f"ally_timeout_{task_id}", str(longer))
+            why += f"; retrying with a {longer // 60} min limit"
         bus.db.execute("UPDATE tasks SET status='open', owner=NULL, updated=? WHERE id=?", (time.time(), task_id))
     bus.event("ally", f"#{task_id} {why}")
 
@@ -966,6 +976,11 @@ def ally_job(run, w, task_id):
 
         def started(pid):
             bus.control(key, json.dumps({"conductor": os.getpid(), "task": task_id, "member_pid": pid, "hint": hint}))
+
+        def cancelled():  # polled by allies while the member runs: a stopped run or a task taken away ends it early
+            return bus.control("run") == "stop" or not bus.db.execute(
+                "SELECT 1 FROM tasks WHERE id=? AND status='claimed' AND owner=?", (task_id, name)).fetchone()
+        limit = int(bus.control(f"ally_timeout_{task_id}") or ALLY_TIMEOUT)
         notes = "\n".join(f"- from {m['sender']}: {m['body']}" for m in bus.inbox()["messages"])
         head = (f"You are {name} (Specialist Council role {w['role']}) in a War Room team run by Claude Code.\n"
                 f"Run goal: {plan.get('goal', '')}\nYour brief: {pw.get('brief') or 'Take tasks that fit your role.'}\n"
@@ -977,14 +992,17 @@ def ally_job(run, w, task_id):
                      "Do not modify anything. End your reply with exactly one line:\n"
                      'VERDICT {"decision": "pass" or "fail", "score": 0-100, "notes": "what to fix"}')
             meta = ally.run(engine, brief, cwd=author.get("cwd") or plan.get("project") or ".", write=False,
-                            on_start=started)
+                            on_start=started, timeout=limit, cancelled=cancelled)
         else:
             brief = head + f"\nTASK #{task_id}: {task['title']}\n{task['detail'] or ''}"
             meta = ally.run(engine, brief, cwd=w["cwd"], write=bool(pw.get("write")),
                             workdir=w["cwd"] if pw.get("write") else None, on_start=started,
-                            title=f"#{task_id} {task['title']}")
-        if bus.control("run") == "stop":  # stopped while the member worked: the result is not reported
-            return requeue_ally_task(bus, name, task_id, "run stopped while the ally worked")
+                            title=f"#{task_id} {task['title']}", timeout=limit, cancelled=cancelled)
+        if bus.control("run") == "stop" or meta.get("failure") == "cancelled":  # the result is not reported
+            return requeue_ally_task(bus, name, task_id, "stopped or taken away while the ally worked")
+        if meta.get("failure") == "timeout":
+            return reopen_ally_task(bus, name, task_id, f"{engine} timed out after {limit // 60} min",
+                                    timed_out_after=limit)
         answer = Path(meta["answer"]).read_text(encoding="utf-8").strip() if meta.get("answer") else ""
         if task["kind"] == "review":
             v = parse_verdict(answer)

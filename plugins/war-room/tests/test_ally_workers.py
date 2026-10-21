@@ -27,19 +27,24 @@ def git(cwd, *args):
 class FakeAllies:
     """Stands in for allies.py: a writer commits a file in its worktree; a reviewer answers with a scripted verdict."""
     def __init__(self, tmp, verdicts):
-        self.tmp, self.verdicts, self.calls, self.before = Path(tmp), list(verdicts), [], None
+        self.tmp, self.verdicts, self.calls, self.before, self.timeouts = Path(tmp), list(verdicts), [], None, 0
 
     def load_members(self):
         return {"codex": {}, "gemini": {}}
 
     def run(self, member, task, cwd=".", write=False, model=None, timeout=1200, run_id=None, workdir=None, on_start=None,
-            title=None):
+            title=None, cancelled=None):
         if on_start:
             on_start(999999)  # a pid no real process has
         if self.before:
             self.before()
-        self.calls.append({"member": member, "task": task, "cwd": str(cwd), "write": write, "workdir": workdir})
+        self.calls.append({"member": member, "task": task, "cwd": str(cwd), "write": write, "workdir": workdir,
+                           "timeout": timeout})
         answer = self.tmp / f"answer-{len(self.calls)}.md"
+        if self.timeouts:  # the member ran out of time: allies reports why
+            self.timeouts -= 1
+            answer.write_text("")
+            return {"ok": False, "exit": "timeout", "failure": "timeout", "answer": str(answer)}
         if write:
             (Path(workdir) / f"f{len(self.calls)}.txt").write_text("x\n")
             git(workdir, "add", "-A")
@@ -139,6 +144,14 @@ class AllyWorkers(Sandbox):
         row = bus.db.execute("SELECT status, owner FROM tasks WHERE title='Second feature'").fetchone()
         self.assertEqual((row["status"], row["owner"]), ("open", None))
         self.assertIsNone(bus.control("ally_retry_" + str(bus.db.execute("SELECT id FROM tasks WHERE title='Second feature'").fetchone()[0])))
+
+    def test_a_timeout_is_retried_with_a_longer_limit_not_the_same_one(self):
+        self.fake.timeouts = 1
+        run, bus, _ = self.launch()
+        self.drain(bus, run)
+        writes = [c["timeout"] for c in self.fake.calls if c["write"]]
+        self.assertEqual(writes[:2], [warroom.ALLY_TIMEOUT, 2 * warroom.ALLY_TIMEOUT])
+        self.assertEqual(bus.db.execute("SELECT status FROM tasks WHERE title='Add a feature'").fetchone()[0], "approved")
 
     def test_a_task_held_by_a_dead_job_is_reclaimed_and_its_process_killed(self):
         run, bus, _ = self.launch()

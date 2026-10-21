@@ -1,7 +1,7 @@
 ---
 name: "council-geospatial-analyst"
 description: "Geospatial Analyst. Spatial joins, distances, coordinates, and geographic patterns. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "medium"
 ---

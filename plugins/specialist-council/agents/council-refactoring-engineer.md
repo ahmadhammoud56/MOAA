@@ -1,7 +1,7 @@
 ---
 name: "council-refactoring-engineer"
 description: "Refactoring Engineer. Behavior-preserving restructuring of existing code. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "medium"
 ---

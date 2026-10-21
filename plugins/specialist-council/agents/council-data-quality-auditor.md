@@ -1,7 +1,7 @@
 ---
 name: "council-data-quality-auditor"
 description: "Data Quality Auditor. Whether source data is fit for a particular analysis. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "medium"
 ---

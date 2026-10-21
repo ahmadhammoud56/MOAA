@@ -1,7 +1,7 @@
 ---
 name: "council-product-strategist"
 description: "Product Strategist. User value, feature priorities, and product direction. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "medium"
 ---

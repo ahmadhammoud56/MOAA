@@ -1,7 +1,7 @@
 ---
 name: "council-accessibility-reviewer"
 description: "Accessibility Reviewer. Inclusive use of interfaces, documents, and visual content. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "medium"
 ---

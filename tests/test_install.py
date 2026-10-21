@@ -222,11 +222,45 @@ class StatusTests(unittest.TestCase):
             self.assertIn(name, labels)
 
 
+class PruneTests(unittest.TestCase):
+    def test_usage_counts_skills_agents_mcp_and_slash_commands(self):
+        import json, tempfile
+        with tempfile.TemporaryDirectory() as d:
+            home = Path(d)
+            (home / "projects" / "p").mkdir(parents=True)
+            calls = [{"type": "tool_use", "name": "Skill", "input": {"skill": "alpha:do"}},
+                     {"type": "tool_use", "name": "Agent", "input": {"subagent_type": "beta:role"}},
+                     {"type": "tool_use", "name": "mcp__plugin_gamma-core_gamma__tool", "input": {}},
+                     {"type": "tool_use", "name": "Read", "input": {"file_path": "x"}}]
+            lines = [json.dumps({"message": {"content": calls}}),
+                     json.dumps({"message": {"content": "<command-name>/delta:run</command-name>"}})]
+            (home / "projects" / "p" / "s.jsonl").write_text("\n".join(lines), encoding="utf-8")
+            uses = install.plugin_usage(home, 7)
+        self.assertEqual(uses, {"alpha": 1, "beta": 1, "gamma-core": 1, "delta": 1})
+
+    def test_candidates_skip_used_passive_and_moaa_plugins(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            hooked = Path(d) / "hooked"
+            (hooked / "hooks").mkdir(parents=True)
+            plain = Path(d) / "plain"
+            plain.mkdir()
+            enabled = {"used@x": plain, "idle@x": plain, "hooked@x": hooked, "council@moaa": plain}
+            self.assertEqual(install.prune_candidates(enabled, {"used": 3}, "moaa"), ["idle@x"])
+
+    def test_full_profile_ships_heavy_packs_disabled(self):
+        kit = install.read_json(install.KIT / "config" / "kit.json", None)
+        heavy = [p for p in kit["plugins"] if p["id"].endswith("@agentic-awesome-skills")
+                 or (p["id"].endswith("@ruflo") and p["id"] != "ruflo-core@ruflo")]
+        self.assertTrue(heavy)
+        self.assertFalse(any(p["enabled"] for p in heavy))
+
+
 class ProfileTests(unittest.TestCase):
     def test_core_profile_is_small_and_contains_the_moaa_loop(self):
         kit = install.read_json(install.KIT / "config" / "kit.json", None)
         core = {p["id"] for p in kit["plugins"] if p.get("profile") == "core"}
         self.assertTrue({"specialist-council@moaa", "agent-arena-mode@moaa"} <= core)
-        self.assertLessEqual(len(core), 13)
+        self.assertLessEqual(len(core), 14)  # 14th: moaa-catalog, which lets the full profile ship packs disabled
         self.assertTrue(all(p.get("profile") in ("core", "full") for p in kit["plugins"]))
         self.assertFalse(any(p.get("optional") for p in kit["plugins"] if p["id"] in core))

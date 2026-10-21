@@ -1,7 +1,7 @@
 ---
 name: "council-materials-specialist"
 description: "Materials Specialist. Composition, processing, structure, properties, and degradation. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-opus-5-5"
 effort: "medium"
 ---

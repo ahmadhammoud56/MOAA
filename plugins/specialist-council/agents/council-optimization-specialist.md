@@ -1,7 +1,7 @@
 ---
 name: "council-optimization-specialist"
 description: "Optimization Specialist. Choosing feasible decisions under an explicit objective. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-opus-5-5"
 effort: "high"
 ---

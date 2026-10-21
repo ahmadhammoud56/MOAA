@@ -125,24 +125,41 @@ def kill_tree(proc):
             proc.kill()
 
 
-def run_proc(argv, stdin, cwd, env, timeout, on_start=None):
-    """Run a member in its own process group; on timeout kill the whole tree (node children included)."""
+POLL = 15  # seconds between cancellation checks while a member runs
+
+
+def run_proc(argv, stdin, cwd, env, timeout, on_start=None, cancelled=None):
+    """Run a member in its own process group. On timeout, or when `cancelled()` turns true (checked every POLL
+    seconds), kill the whole tree (node children included). Exit is the return code, "timeout" or "cancelled"."""
     kw = {"creationflags": 0x00000200} if IS_WIN else {"start_new_session": True}
     proc = subprocess.Popen(argv, stdin=subprocess.PIPE if stdin is not None else subprocess.DEVNULL,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, env=env, text=True,
                             encoding="utf-8", errors="replace", **kw)
     if on_start:
         on_start(proc.pid)
-    try:
-        out, err = proc.communicate(stdin, timeout=timeout)
-        return proc.returncode, out, err
-    except subprocess.TimeoutExpired:
-        kill_tree(proc)
+    deadline, first = time.time() + timeout, True
+    while True:
         try:
-            out, err = proc.communicate(timeout=30)
+            out, err = proc.communicate(stdin if first else None, timeout=max(0.1, min(POLL, deadline - time.time())))
+            return proc.returncode, out, err
         except subprocess.TimeoutExpired:
-            out, err = "", ""
-        return "timeout", out or "", err or ""
+            first = False
+            why = "timeout" if time.time() >= deadline else "cancelled" if cancelled and cancelled() else None
+            if not why:
+                continue
+            kill_tree(proc)
+            try:
+                out, err = proc.communicate(timeout=30)
+            except subprocess.TimeoutExpired:
+                out, err = "", ""
+            return why, out or "", err or ""
+
+
+def failure(code, answer):
+    """Why a run did not succeed, so callers retry the right way: a timeout needs a longer limit, a cancel no retry."""
+    if code == 0:
+        return None if answer else "empty"
+    return code if code in ("timeout", "cancelled") else "exit"
 
 
 def long_path(path):
@@ -303,9 +320,10 @@ def new_run_id():
 
 
 def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=None, workdir=None, on_start=None,
-        title=None):
+        title=None, cancelled=None):
     """Run one member. With write, it works in a fresh worktree, or in `workdir` (an existing worktree the caller
-    owns, such as a War Room writer's); either way allies commits what it leaves behind."""
+    owns, such as a War Room writer's); either way allies commits what it leaves behind. `cancelled` is polled while
+    the member runs; meta["failure"] says why a run failed (timeout, cancelled, exit, empty)."""
     members = load_members()
     if member not in members:
         raise SystemExit(f"allies: unknown member {member!r}; one of {', '.join(members)}")
@@ -352,13 +370,15 @@ def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=Non
             f.write_text(json.dumps(content, indent=2) + "\n", encoding="utf-8")
     env = child_env(spec, env_over)
     t0 = time.time()
-    code, stdout, stderr = run_proc(argv, prompt if spec.get("stdin") else None, str(cwd), env, timeout, on_start)
+    code, stdout, stderr = run_proc(argv, prompt if spec.get("stdin") else None, str(cwd), env, timeout, on_start,
+                                    cancelled)
     answer = out_file.read_text(encoding="utf-8", errors="replace").strip() if out_file.is_file() else ""
     answer = answer or stdout.strip()
     out_file.write_text(answer + "\n", encoding="utf-8")
     (rdir / f"{member}.log").write_text(f"$ {' '.join(argv[:12])} ...\n\n--- stdout\n{stdout}\n--- stderr\n{stderr}",
                                         encoding="utf-8")
-    meta.update(exit=code, seconds=round(time.time() - t0, 1), answer=str(out_file), ok=code == 0 and bool(answer))
+    meta.update(exit=code, seconds=round(time.time() - t0, 1), answer=str(out_file), ok=code == 0 and bool(answer),
+                failure=failure(code, answer), timeout=timeout)
     if write:
         meta.update(commit_worktree(cwd, member, title or task, meta["base"]), head=git(cwd, "rev-parse", "HEAD").stdout.strip())
     (rdir / f"meta-{member}.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")

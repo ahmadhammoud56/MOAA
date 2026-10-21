@@ -171,6 +171,21 @@ class Hardening(Sandbox):
         self.assertLess(__import__("time").time() - t0, 40)  # communicate did not hang on the grandchild's pipes
 
 
+class Lifecycle(unittest.TestCase):
+    def test_failure_kinds_tell_timeouts_from_provider_errors(self):
+        self.assertIsNone(allies.failure(0, "answer"))
+        self.assertEqual([allies.failure(*a) for a in ((0, ""), (3, "x"), ("timeout", ""), ("cancelled", ""))],
+                         ["empty", "exit", "timeout", "cancelled"])
+
+    def test_a_cancel_stops_a_running_member_early(self):
+        sleeper = [sys.executable, "-c", "import time; time.sleep(60)"]
+        with mock.patch.object(allies, "POLL", 0.2):
+            t0 = __import__("time").time()
+            code, _, _ = allies.run_proc(sleeper, None, ".", dict(os.environ), 30, cancelled=lambda: True)
+        self.assertEqual(code, "cancelled")
+        self.assertLess(__import__("time").time() - t0, 15)
+
+
 class ShippedMembers(unittest.TestCase):
     def test_members_file_is_well_formed_and_claude_members_never_use_the_users_login(self):
         members = json.loads((Path(allies.__file__).parent / "members.json").read_text(encoding="utf-8"))["members"]

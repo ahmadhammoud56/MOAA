@@ -50,6 +50,11 @@
       "description": "Layered long-term memory (raw sessions, extracted notes, project scenes, user profile) in local SQLite with full-text search; recall at session start, consolidation at session end."
     },
     {
+      "name": "moaa-catalog",
+      "source": "./plugins/moaa-catalog",
+      "description": "Skills on demand: big skill packs stay installed but disabled; a cached index, a prompt hook and one-call loading bring in a single skill when a task needs it."
+    },
+    {
       "name": "academy-guide",
       "source": {
         "source": "github",

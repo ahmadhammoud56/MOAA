@@ -1,7 +1,7 @@
 ---
 name: "council-security-reviewer"
 description: "Security Reviewer. Authorized review of trust boundaries, permissions, and sensitive data flows. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-fable-5-1"
 effort: "xhigh"
 ---

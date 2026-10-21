@@ -1,7 +1,7 @@
 ---
 name: "council-instructional-designer"
 description: "Instructional Designer. Lessons, exercises, assessment alignment, and learning sequence. Use when delegated this specialist responsibility."
-disallowedTools: [Agent]
+tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
 model: "claude-sonnet-5-5"
 effort: "medium"
 ---
