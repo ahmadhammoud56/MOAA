@@ -232,8 +232,9 @@ class PruneTests(unittest.TestCase):
                      {"type": "tool_use", "name": "Agent", "input": {"subagent_type": "beta:role"}},
                      {"type": "tool_use", "name": "mcp__plugin_gamma-core_gamma__tool", "input": {}},
                      {"type": "tool_use", "name": "Read", "input": {"file_path": "x"}}]
-            lines = [json.dumps({"message": {"content": calls}}),
-                     json.dumps({"message": {"content": "<command-name>/delta:run</command-name>"}})]
+            quoted = {"type": "tool_use", "name": "Edit", "input": {"new_string": "<command-name>/omega:x"}}
+            lines = [json.dumps({"type": "assistant", "message": {"content": calls + [quoted]}}),
+                     json.dumps({"type": "user", "message": {"content": "<command-name>/delta:run</command-name>"}})]
             (home / "projects" / "p" / "s.jsonl").write_text("\n".join(lines), encoding="utf-8")
             uses = install.plugin_usage(home, 7)
         self.assertEqual(uses, {"alpha": 1, "beta": 1, "gamma-core": 1, "delta": 1})
@@ -248,12 +249,38 @@ class PruneTests(unittest.TestCase):
             enabled = {"used@x": plain, "idle@x": plain, "hooked@x": hooked, "council@moaa": plain}
             self.assertEqual(install.prune_candidates(enabled, {"used": 3}, "moaa"), ["idle@x"])
 
+    def test_listing_tokens_counts_name_and_description(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            skill = Path(d) / "skills" / "abcd"
+            skill.mkdir(parents=True)
+            (skill / "SKILL.md").write_text("---\nname: abcd\ndescription: " + "x" * 36 + "\n---\nlong body " * 50)
+            self.assertEqual(install.listing_tokens([Path(d), Path(d) / "missing"]), (1, 10))  # (4 + 36) / 4
+
     def test_full_profile_ships_heavy_packs_disabled(self):
         kit = install.read_json(install.KIT / "config" / "kit.json", None)
         heavy = [p for p in kit["plugins"] if p["id"].endswith("@agentic-awesome-skills")
                  or (p["id"].endswith("@ruflo") and p["id"] != "ruflo-core@ruflo")]
         self.assertTrue(heavy)
         self.assertFalse(any(p["enabled"] for p in heavy))
+
+
+class WorkProfileTests(unittest.TestCase):
+    def test_profiles_add_their_packs_enabled_on_top_of_core(self):
+        kit = install.read_json(install.KIT / "config" / "kit.json", None)
+        ids = {p["id"] for p in kit["plugins"]}
+        for name, prof in kit["work_profiles"].items():
+            self.assertTrue(prof["summary"] and prof["plugins"], name)
+            self.assertTrue(set(prof["plugins"]) <= ids, name)
+        core = install.select_plugins(kit, False, [], False)
+        web = install.select_plugins(kit, False, ["web"], False)
+        added = [p for p in web if p["id"] not in {c["id"] for c in core}]
+        self.assertEqual({p["id"] for p in added}, set(kit["work_profiles"]["web"]["plugins"]))
+        self.assertTrue(all(p["enabled"] and p["work"] for p in added))
+        self.assertTrue(all(p["enabled"] is False for p in kit["plugins"] if p["id"] in {a["id"] for a in added}))
+        with self.assertRaises(SystemExit):
+            install.parse_profiles(kit, "web,nope")
+        self.assertEqual(install.parse_profiles(kit, " web , data "), ["web", "data"])
 
 
 class ProfileTests(unittest.TestCase):

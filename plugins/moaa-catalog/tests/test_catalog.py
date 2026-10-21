@@ -51,6 +51,18 @@ class Catalog(unittest.TestCase):
         self.assertIn("stripe-integration", hit or "")
         self.assertIsNone(catalog.hook_prompt(self.home, {"prompt": "fix the typo in my notes please"}))
         self.assertIsNone(catalog.hook_prompt(self.home, {"prompt": "/stripe-integration now"}))  # slash commands
+        notice = "<task-notification>Stripe subscription webhooks billing job completed</task-notification>"
+        self.assertIsNone(catalog.hook_prompt(self.home, {"prompt": notice}))  # harness notices
+
+    def test_short_forms_expand_and_project_files_boost_but_never_trigger(self):
+        self.assertEqual([r[2]["name"] for r in catalog.search(self.home, "tf aws")], ["terraform-aws-modules"])
+        proj = Path(tempfile.mkdtemp())
+        (proj / "main.tf").write_text("")
+        self.assertEqual(catalog.project_hints(proj), ["terraform"])
+        self.assertEqual(catalog.search(self.home, "readme", cwd=proj)[0][2]["name"], "readme")  # hint alone: no match
+        plain = catalog.search(self.home, "aws lambda", cwd=Path(tempfile.mkdtemp()))[0][0]
+        boosted = catalog.search(self.home, "aws lambda", cwd=proj)[0][0]
+        self.assertGreater(boosted, plain)
 
     def test_use_serves_indexed_skills_logs_and_suggests_enabling(self):
         for _ in range(catalog.PROMOTE_USES):

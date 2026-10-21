@@ -20,6 +20,10 @@ Restart Claude Code, then try:
 /agent-arena-mode:judge --quick -- Write fib(n) with fib(1)=fib(2)=1 and give fib(20).
 ```
 
+Add the packs for your kind of work with `--profile web` (or `data`, `devops`, `research`, `science`). New here? The
+[5-minute guide](docs/GETTING_STARTED.md) walks through council, arena, War Room and keeping the context lean, and
+`/moaa-catalog:moaa-help` answers "what can MOAA do?" from inside Claude Code.
+
 Prefer to pick plugins yourself? Run `/plugin marketplace add ahmadhammoud56/MOAA` inside Claude Code; see [Use it as a plugin marketplace](#use-it-as-a-plugin-marketplace).
 
 ## What a council run looks like
@@ -263,6 +267,9 @@ MOAA 0.9.0 therefore keeps the long tail installed but out of the prompt:
 - **`--status` and `--doctor`** report how many skills and agents every session lists, and warn above 300.
 - **Council workers** carry an explicit core tool list instead of every MCP tool, and the council and War Room briefs
   keep the shared part first and identical so parallel workers of one type reuse the cache.
+- **Effort is measured, not guessed:** `/agent-arena-mode:effort-trial` runs council roles at two efforts on tasks
+  with checkable findings, judges them blind and suggests a preset only when the dearer effort earns it.
+- **`--report`** shows what every request costs you and what the catalog saved.
 
 ## Security, in short
 
@@ -292,6 +299,8 @@ Both wrappers pass these flags through to `scripts/install.py`:
 | `--uninstall` | Reverse everything recorded in `~/.claude/.moaa-manifest.json`. |
 | `--status` | Change nothing; compare the install with this repo. It lists MOAA plugins, skills, agents and MCP servers that are outdated, missing or edited after install, third-party plugins whose version differs from the tested one, and old plugin versions left in the cache. Add `--verbose` to list every plugin. Exits 1 if anything is missing or outdated. |
 | `--prune [--days N] [--yes]` | List enabled plugins with no recorded use in N days (default 45); with `--yes`, disable them. Hook and MCP plugins and MOAA's own are kept. |
+| `--profile NAME[,NAME]` | Add the packs for a kind of work on top of core (or full), installed and enabled: `web`, `data`, `devops`, `research`, `science` (also the ansys MCP server). |
+| `--report` | Local summary: skills listed per request and their rough token cost, most used plugins, skills the catalog served, pruned plugins. Nothing leaves the machine. |
 | `--lean` | On an install made before 0.9.0, disable the packs the catalog now ships disabled. |
 | `--restore` | Re-enable every plugin `--prune` or `--lean` disabled. |
 | `--doctor` | Run every pre-commit check: all test suites, `MODELS.md`, the catalog, the public-release scan and `claude plugin validate`. For maintainers. |

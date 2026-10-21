@@ -4,6 +4,32 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-22
+
+Making MOAA easier to start with and cheaper to run.
+
+### Added
+- **Work profiles:** `install.py --profile web|data|devops|research|science` (comma-separated for several) adds
+  that kind of work's packs to core or full, installed and enabled; `science` also sets up the ansys MCP server.
+- **`install.py --report`:** a local summary of the skills listed in every request and their rough token cost, what
+  disabled plugins keep out of the prompt, the most used plugins, the skills moaa-catalog served and what was pruned.
+  Each run adds a dated line, so the trend shows over time. Nothing leaves the machine.
+- **Agent Arena 0.6.0, effort trial:** `/agent-arena-mode:effort-trial` and `scripts/effort.py` measure whether a
+  council role finds more at a higher effort, blind-judged, and suggest a preset only when the dearer effort earns
+  it (at least 5 points of score or 25% more findings). It never edits `profile.json`.
+- **Getting started:** `docs/GETTING_STARTED.md` (a 5-minute walkthrough) and `/moaa-catalog:moaa-help`, which
+  explains what is installed and which MOAA tool fits a task.
+
+### Changed
+- **moaa-catalog 0.2.0:** short forms expand (k8s, tf, js, ts, py, db, docs, xlsx, pptx, a11y and others), marker
+  files in the project (`package.json`, `pyproject.toml`, `main.tf`, `Chart.yaml` and others) boost matching skills
+  without ever triggering a suggestion on their own, and harness notices (background tasks) no longer reach the
+  hook.
+
+### Fixed
+- **`--prune` usage counting:** a slash command now counts only when a user typed it, not when the same text
+  appears inside code or a tool call in a transcript.
+
 ## [0.9.0] - 2026-10-22
 
 Context cost, after Cloudflare's write-up of their AI code reviewer ("obsessive inference optimization"): most of

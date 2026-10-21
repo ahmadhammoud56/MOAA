@@ -4,8 +4,11 @@
   python scripts/install.py                 core profile: 14 plugins, council, arena, allies, strata, skills, rea MCP
   python scripts/install.py --full          everything: 97 plugins (99 with --with-claude-mem) + ansys MCP; the big
                                             skill packs (agentic-awesome-skills, ruflo extras) install disabled
+  python scripts/install.py --profile web   core plus the packs for one kind of work (web, data, devops, research,
+                                            science; comma-separated for several), installed and enabled
   python scripts/install.py --prune [--days N] [--yes]  list (and with --yes disable) plugins unused for N days
-  python scripts/install.py --lean          on an existing install, disable the packs the catalog ships disabled
+  python scripts/install.py --report        local summary: listed skills and tokens, usage, catalog hits, pruned
+  python scripts/install.py --lean         on an existing install, disable the packs the catalog ships disabled
   python scripts/install.py --restore       re-enable what --prune or --lean disabled
   python scripts/install.py --with-omniroute  also the OmniRoute gateway (npm), for the allies' free-tier fallback
   python scripts/install.py --with-claude-mem
@@ -199,6 +202,29 @@ def installed_plugins(home):
     return set(read_json(home / "plugins" / "installed_plugins.json", {}).get("plugins", {}))
 
 
+def parse_profiles(kit, value):
+    """['web', 'data'] from '--profile web,data'; unknown names stop the install with the list of valid ones."""
+    names = [n.strip() for n in (value or "").split(",") if n.strip()]
+    unknown = [n for n in names if n not in kit["work_profiles"]]
+    if unknown:
+        raise SystemExit(f"[moaa] unknown profile {', '.join(unknown)}; choose from: " + ", ".join(
+            f"{k} ({v['summary']})" for k, v in kit["work_profiles"].items()))
+    return names
+
+
+def select_plugins(kit, full, work, with_claude_mem):
+    """Catalog entries to install: core (or everything with full), plus each work profile's packs, which are also
+    enabled even where the catalog ships them disabled. Copies, so kit stays untouched."""
+    wanted = {pid for w in work for pid in kit["work_profiles"][w]["plugins"]}
+    out = []
+    for p in kit["plugins"]:
+        if p.get("optional") and not (with_claude_mem and p["optional"] == "claude-mem"):
+            continue
+        if full or p.get("profile") == "core" or p["id"] in wanted:
+            out.append(dict(p, enabled=True, work=True) if p["id"] in wanted else dict(p))
+    return out
+
+
 def install(args):
     preflight(args)
     home = claude_home()
@@ -210,10 +236,9 @@ def install(args):
               "skills": manifest.get("skills", []), "agents": manifest.get("agents", []),
               "mcp": manifest.get("mcp", []), "tools": manifest.get("tools", []),
               "settings_added": manifest.get("settings_added", {})}
-    plugins = [p for p in kit["plugins"]
-               if (args.full or p.get("profile") == "core")
-               and (not p.get("optional") or (args.with_claude_mem and p["optional"] == "claude-mem"))]
-    log(f"profile: {'full' if args.full else 'core'} ({len(plugins)} plugins)")
+    work = parse_profiles(kit, args.profile)
+    plugins = select_plugins(kit, args.full, work, args.with_claude_mem)
+    log(f"profile: {'full' if args.full else 'core'}{' + ' + ', '.join(work) if work else ''} ({len(plugins)} plugins)")
     before = installed_plugins(home)
 
     def target(p):
@@ -258,6 +283,9 @@ def install(args):
             record["plugins"].append(pid)
         if not p["enabled"]:
             r.run(["claude", "plugin", "disable", pid, "--scope", "user"])
+    for p in plugins:  # a profile asked for these: switch them on even if an earlier install or --lean turned them off
+        if p.get("work") and p["target"] not in failed:
+            r.run(["claude", "plugin", "enable", p["target"], "--scope", "user"])
 
     skills_dir = home / "skills"
     for name in kit["skills"]:
@@ -308,7 +336,8 @@ def install(args):
     log("settings merged (backup written next to settings.json)")
 
     if not args.skip_mcp:
-        install_mcp(r, kit["mcp"], record, home, skip_ansys=args.skip_ansys or not args.full, dry=args.dry_run)
+        wants_ansys = args.full or any(kit["work_profiles"][w].get("ansys") for w in work)
+        install_mcp(r, kit["mcp"], record, home, skip_ansys=args.skip_ansys or not wants_ansys, dry=args.dry_run)
     if args.with_omniroute:
         install_omniroute(r, kit["tools"]["omniroute"], record)
 
@@ -550,12 +579,16 @@ def plugin_usage(home, days):
         if f.stat().st_mtime < cut:
             continue
         for line in f.open(encoding="utf-8", errors="replace"):
-            names = slash.findall(line) if "<command-name>" in line else []
+            if "<command-name>" not in line and '"tool_use"' not in line:
+                continue
+            try:
+                entry = json.loads(line)
+                content = entry.get("message", {}).get("content")
+            except (ValueError, AttributeError):
+                continue
+            # a typed slash command is a user message whose text holds the tag; the same text quoted in code doesn't count
+            names = slash.findall(content) if entry.get("type") == "user" and isinstance(content, str) else []
             if '"tool_use"' in line:
-                try:
-                    content = json.loads(line).get("message", {}).get("content")
-                except ValueError:
-                    content = None
                 for c in content if isinstance(content, list) else []:
                     if c.get("type") != "tool_use":
                         continue
@@ -603,6 +636,63 @@ def prune(args):
     write_json(home / MANIFEST, record, args.dry_run)
     after = context_budget(home)
     log(f"disabled {len(candidates)}; skills listed per session {before[0]} -> {after[0]}. Restart Claude Code.")
+    return 0
+
+
+def listing_tokens(roots):
+    """(skills, rough tokens) the skill listing of these plugin folders adds to every request: name plus description,
+    about four characters per token."""
+    n = chars = 0
+    for root in roots:
+        for md in root.rglob("SKILL.md") if root.is_dir() else []:
+            head = md.read_text(encoding="utf-8", errors="replace").split("---", 2)
+            meta = head[1] if len(head) > 2 else ""
+            found = re.search(r"^description:\s*(.+)$", meta, re.M)
+            n, chars = n + 1, chars + len(md.parent.name) + len(found.group(1) if found else "")
+    return n, chars // 4
+
+
+def report(args):
+    """Local, read-only summary: what every session lists, what is used, what the catalog served, what was pruned.
+    Nothing leaves the machine. Each run adds a dated budget line to the manifest so the trend shows over time."""
+    home = claude_home()
+    kit = read_json(KIT / "config" / "kit.json", None)
+    enabled = enabled_plugins(home)
+    skills, tokens = listing_tokens(list(enabled.values()) + [home / "skills"])
+    installed = read_json(home / "plugins" / "installed_plugins.json", {}).get("plugins", {})
+    off = [Path((v or [{}])[0].get("installPath", "")) for k, v in installed.items() if k not in enabled]
+    kept_out, saved = listing_tokens(off)
+    record = read_json(home / MANIFEST, {})
+    history = record.setdefault("budget_history", [])
+    history.append({"date": time.strftime("%Y-%m-%d"), "skills": skills, "tokens": tokens})
+    del history[:-50]
+    write_json(home / MANIFEST, record, False)
+    print(f"[moaa] report for {home} (MOAA {kit['version']}; local only)\n")
+    print(f"Every request lists {skills} skills from {len(enabled)} enabled plugins: about {tokens:,} tokens "
+          f"(characters/4). Budget warning above {SKILL_BUDGET} skills.")
+    print(f"Kept out of the prompt: {kept_out} skills in {len(off)} installed but disabled plugins, about {saved:,} "
+          "tokens per request; moaa-catalog serves them on demand.")
+    if len(history) > 1:
+        print("Trend: " + "  ".join(f"{h['date']} {h['skills']}" for h in history[-6:]))
+    uses = plugin_usage(home, args.days)
+    top = sorted(((n, name) for name, n in uses.items()), reverse=True)[:10]
+    print(f"\nMost used in {args.days} days (skill, agent, MCP and slash-command calls):")
+    print("\n".join(f"  {n:5d}  {name}" for n, name in top) or "  none recorded")
+    log_file = home / "moaa-catalog" / "usage.jsonl"
+    served = {}
+    for line in log_file.read_text(encoding="utf-8").splitlines() if log_file.is_file() else []:
+        try:
+            e = json.loads(line)
+        except ValueError:
+            continue
+        served[e.get("skill", "?")] = served.get(e.get("skill", "?"), 0) + 1
+    print("\nServed by moaa-catalog: " + (", ".join(f"{k} x{v}" for k, v in sorted(served.items(), key=lambda kv: -kv[1])[:10])
+                                         or "nothing yet"))
+    pruned = record.get("pruned", [])
+    print(f"Disabled by --prune/--lean: {len(pruned)} plugin(s)" + ("; `--restore` re-enables them" if pruned else ""))
+    idle = prune_candidates(enabled, uses, kit["name"])
+    if idle:
+        print(f"Still enabled but unused in {args.days} days: {len(idle)} (`--prune --yes` disables them)")
     return 0
 
 
@@ -749,6 +839,9 @@ def main(argv=None):
                    help="also install the OmniRoute gateway (npm) used by allies for free-tier fallback; not started")
     p.add_argument("--full", action="store_true",
                    help="install all 97 plugins and the ansys MCP server (default: the 14-plugin core profile)")
+    p.add_argument("--profile", default="",
+                   help="add packs for a kind of work on top of core (or full), enabled: web, data, devops, research, "
+                        "science; comma-separated for several")
     p.add_argument("--upstream", action="store_true",
                    help="install third-party plugins from their own marketplaces (latest) instead of the pinned moaa catalog")
     p.add_argument("--skip-mcp", action="store_true")
@@ -764,6 +857,8 @@ def main(argv=None):
     p.add_argument("--days", type=int, default=45, help="with --prune: usage window in days (default 45)")
     p.add_argument("--yes", action="store_true", help="with --prune: disable the listed plugins")
     p.add_argument("--restore", action="store_true", help="re-enable every plugin --prune or --lean disabled")
+    p.add_argument("--report", action="store_true",
+                   help="local summary: listed skills and tokens, most used plugins, catalog hits, pruned plugins")
     p.add_argument("--lean", action="store_true",
                    help="disable the plugins the catalog ships disabled (big skill packs) on an existing install")
     a = p.parse_args(argv)
@@ -777,6 +872,8 @@ def main(argv=None):
         return restore(a)
     if a.lean:
         return lean(a)
+    if a.report:
+        return report(a)
     return uninstall(a) if a.uninstall else install(a)
 
 

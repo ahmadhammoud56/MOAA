@@ -20,6 +20,20 @@ import time
 STOP = set("""a an and are as at be by can do for from get how i in into is it its me my of on or our please that the
 their them then this to use using want we what when where which will with you your make need help new add file files
 code project task work like just also some any all not""".split())
+# Short forms people type -> the words skill descriptions use. Applied to queries and prompts, not to the index.
+SYNONYMS = {"k8s": "kubernetes", "tf": "terraform", "js": "javascript", "ts": "typescript", "py": "python",
+            "postgres": "postgresql", "pg": "postgresql", "db": "database",
+            "ml": "machine-learning", "llm": "language-model", "ui": "interface", "ux": "usability",
+            "docs": "documentation", "doc": "documentation", "xlsx": "excel", "spreadsheet": "excel",
+            "docx": "word", "pptx": "powerpoint", "slides": "powerpoint", "deck": "powerpoint", "ci": "pipeline",
+            "e2e": "end-to-end", "auth": "authentication", "a11y": "accessibility", "i18n": "localization",
+            "rn": "react-native", "gha": "github-actions", "regex": "regular-expression", "sql": "database"}
+# Files that tell what a project is; their words boost (never trigger) matches in that project.
+PROJECT_HINTS = {"package.json": "javascript node", "tsconfig.json": "typescript", "pyproject.toml": "python",
+                 "requirements.txt": "python", "Cargo.toml": "rust", "go.mod": "go", "pom.xml": "java",
+                 "build.gradle": "java kotlin", "Gemfile": "ruby", "composer.json": "php", "Dockerfile": "docker",
+                 "next.config.js": "nextjs react", "vite.config.ts": "vite", "pubspec.yaml": "flutter dart",
+                 "main.tf": "terraform", "Chart.yaml": "helm kubernetes", "manage.py": "django python"}
 HOOK_MIN, HOOK_MAX = 2.0, 3  # hook: minimum score in units of one unique-word hit (tuned on 2,500 skills so generic
 #                              prompts stay quiet), and at most this many lines
 PROMOTE_USES, PROMOTE_DAYS = 3, 30  # suggest enabling a pack used this often
@@ -44,6 +58,23 @@ def words(text):
         if w not in STOP:
             out.append(w)
     return out
+
+
+def expand(tokens):
+    """Query tokens plus the long form of any short form (k8s -> kubernetes), order kept, no duplicates."""
+    out = []
+    for w in tokens:
+        long = SYNONYMS.get(w)
+        out += [w] + (words(long.replace("-", " ")) + [long] if long else [])
+    return list(dict.fromkeys(out))
+
+
+def project_hints(cwd):
+    """Words describing the project at `cwd`, from marker files in its top folder."""
+    root = Path(cwd) if cwd else None
+    if not root or not root.is_dir():
+        return []
+    return list(dict.fromkeys(w for f, ws in PROJECT_HINTS.items() if (root / f).exists() for w in ws.split()))
 
 
 def disabled_plugins(home):
@@ -94,10 +125,11 @@ def load_index(home):
     return index
 
 
-def rank(index, query):
+def rank(index, query, hints=()):
     """(query words, [(score, matched, skill, name hits)] best first). A query word scores its rarity (idf), doubled
-    when it is in the skill's name."""
-    q = list(dict.fromkeys(words(query)))
+    when it is in the skill's name. Project hint words add half their idf to skills that already match the query."""
+    q = expand(dict.fromkeys(words(query)))
+    hints = [h for h in hints if h not in q]
     idf, out, seen = index["idf"], [], set()
     for s in index["skills"]:
         if s["name"] in seen:  # bundles repeat the same skill; keep the first copy
@@ -106,16 +138,17 @@ def rank(index, query):
         nw, dw = set(s["nw"]), set(s["dw"])
         hit = [w for w in q if w in nw or w in dw]
         if hit:
-            out.append((sum(idf.get(w, 1) * (2 if w in nw else 1) for w in hit), len(hit), s,
+            boost = sum(idf.get(h, 1) / 2 for h in hints if h in nw or h in dw)
+            out.append((sum(idf.get(w, 1) * (2 if w in nw else 1) for w in hit) + boost, len(hit), s,
                         sum(w in nw for w in hit)))
     out.sort(key=lambda r: (-r[1], -r[0]))
     return q, out
 
 
-def search(home, query, limit=8):
-    """Skills matching the most query words (at least half of them), best first."""
-    q, ranked = rank(load_index(home), query)
-    need = max(1, math.ceil(len(q) / 2))
+def search(home, query, limit=8, cwd=None):
+    """Skills matching the most query words (at least half of the typed ones), best first, boosted for the project."""
+    q, ranked = rank(load_index(home), query, project_hints(cwd or os.getcwd()))
+    need = max(1, math.ceil(len(dict.fromkeys(words(query))) / 2))
     return [r for r in ranked if r[1] >= need][:limit]
 
 
@@ -160,12 +193,12 @@ def use(home, path):
 def hook_prompt(home, payload):
     """additionalContext naming up to HOOK_MAX strong matches, or None. Short prompts and slash commands are skipped."""
     prompt = (payload or {}).get("prompt") or ""
-    if prompt.lstrip().startswith("/") or len(words(prompt)) < 3:
-        return None
+    if prompt.lstrip().startswith(("/", "[SYSTEM", "<")) or "<task-notification>" in prompt or len(words(prompt)) < 3:
+        return None  # slash commands and harness notices (background tasks, side sessions) are not requests
     index = load_index(home)
     if not index["skills"]:
         return None
-    _, ranked = rank(index, prompt)
+    _, ranked = rank(index, prompt, project_hints(payload.get("cwd")))
     unit = math.log(1 + len(index["skills"]))  # idf of a word found in one skill only; makes HOOK_MIN corpus-independent
     best = [r for r in ranked if r[0] >= HOOK_MIN * unit and r[1] >= 2 and r[3] >= 1][:HOOK_MAX]  # needs a name hit
     if not best:
