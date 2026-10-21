@@ -252,7 +252,8 @@ the whole cached prefix. The cache also expires after about five minutes idle.
 MOAA 0.9.0 therefore keeps the long tail installed but out of the prompt:
 
 - **`--full` installs the big packs disabled**: agentic-awesome-skills and its bundles, and every ruflo plugin except
-  `ruflo-core`. They stay on disk; `claude plugin enable <id>` turns one on from the next session.
+  `ruflo-core`. They stay on disk; `claude plugin enable <id>` turns one on from the next session. An install from
+  before 0.9.0 gets the same with `install.py --lean` (here it cut the listed skills from 3,630 to 1,148).
 - **[moaa-catalog](plugins/moaa-catalog/README.md)** (core) indexes the skills of disabled plugins. Claude searches it
   when no listed skill fits, a prompt hook names up to three strong matches (ordinary prompts add nothing), and
   `catalog.py use` loads one skill into the current session. A pack used three times in 30 days gets an enable
@@ -291,7 +292,8 @@ Both wrappers pass these flags through to `scripts/install.py`:
 | `--uninstall` | Reverse everything recorded in `~/.claude/.moaa-manifest.json`. |
 | `--status` | Change nothing; compare the install with this repo. It lists MOAA plugins, skills, agents and MCP servers that are outdated, missing or edited after install, third-party plugins whose version differs from the tested one, and old plugin versions left in the cache. Add `--verbose` to list every plugin. Exits 1 if anything is missing or outdated. |
 | `--prune [--days N] [--yes]` | List enabled plugins with no recorded use in N days (default 45); with `--yes`, disable them. Hook and MCP plugins and MOAA's own are kept. |
-| `--restore` | Re-enable every plugin `--prune` disabled. |
+| `--lean` | On an install made before 0.9.0, disable the packs the catalog now ships disabled. |
+| `--restore` | Re-enable every plugin `--prune` or `--lean` disabled. |
 | `--doctor` | Run every pre-commit check: all test suites, `MODELS.md`, the catalog, the public-release scan and `claude plugin validate`. For maintainers. |
 
 Restart Claude Code afterwards. The installer respects `CLAUDE_CONFIG_DIR`, so you can trial it in a throwaway config directory:

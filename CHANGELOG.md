@@ -18,6 +18,8 @@ their savings came from sending fewer tokens and making fewer calls, not from ch
 - **`install.py --prune [--days N] [--yes]` and `--restore`:** list, and optionally disable, enabled plugins with no
   recorded use (skill, agent, MCP or slash-command use in the transcripts). Plugins with hooks or MCP servers and
   MOAA's own are kept. `--restore` re-enables what was pruned.
+- **`install.py --lean`:** brings an install made before 0.9.0 in line with the catalog by disabling the packs it
+  now ships disabled; `--restore` undoes it.
 - **Context budget:** `--status` and `--doctor` report how many skills and agents every session lists and warn above
   300.
 - **README:** a "Context cost: skills on demand" section.

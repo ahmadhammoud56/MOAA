@@ -5,7 +5,8 @@
   python scripts/install.py --full          everything: 97 plugins (99 with --with-claude-mem) + ansys MCP; the big
                                             skill packs (agentic-awesome-skills, ruflo extras) install disabled
   python scripts/install.py --prune [--days N] [--yes]  list (and with --yes disable) plugins unused for N days
-  python scripts/install.py --restore       re-enable what --prune disabled
+  python scripts/install.py --lean          on an existing install, disable the packs the catalog ships disabled
+  python scripts/install.py --restore       re-enable what --prune or --lean disabled
   python scripts/install.py --with-omniroute  also the OmniRoute gateway (npm), for the allies' free-tier fallback
   python scripts/install.py --with-claude-mem
   python scripts/install.py --skip-mcp      no rea/ansys MCP servers
@@ -605,6 +606,29 @@ def prune(args):
     return 0
 
 
+def lean(args):
+    """Bring an existing install in line with the catalog: disable every plugin kit.json ships disabled (the big
+    skill packs) that is still enabled here. Recorded like --prune, so --restore undoes it."""
+    home, r = claude_home(), Runner(args.dry_run)
+    kit = read_json(KIT / "config" / "kit.json", None)
+    enabled = enabled_plugins(home)
+    off = [p["id"] for p in kit["plugins"] if not p["enabled"] and p["id"] in enabled]
+    before = context_budget(home)
+    record = read_json(home / MANIFEST, {})
+    if args.dry_run:
+        log(f"would disable {len(off)}: " + ", ".join(off))
+        return 0
+    for pid in off:
+        log(f"disabling {pid}")
+        r.run(["claude", "plugin", "disable", pid, "--scope", "user"])
+        if pid not in record.setdefault("pruned", []):
+            record["pruned"].append(pid)
+    write_json(home / MANIFEST, record, args.dry_run)
+    log(f"disabled {len(off)}; skills listed per session {before[0]} -> {context_budget(home)[0]}. "
+        "moaa-catalog still finds their skills. Restart Claude Code.")
+    return 0
+
+
 def restore(args):
     """Re-enable every plugin an earlier --prune disabled."""
     home, r = claude_home(), Runner(args.dry_run)
@@ -739,7 +763,9 @@ def main(argv=None):
                    help="list enabled plugins unused for --days (changes nothing without --yes)")
     p.add_argument("--days", type=int, default=45, help="with --prune: usage window in days (default 45)")
     p.add_argument("--yes", action="store_true", help="with --prune: disable the listed plugins")
-    p.add_argument("--restore", action="store_true", help="re-enable every plugin --prune disabled")
+    p.add_argument("--restore", action="store_true", help="re-enable every plugin --prune or --lean disabled")
+    p.add_argument("--lean", action="store_true",
+                   help="disable the plugins the catalog ships disabled (big skill packs) on an existing install")
     a = p.parse_args(argv)
     if a.status:
         return status(a)
@@ -749,6 +775,8 @@ def main(argv=None):
         return prune(a)
     if a.restore:
         return restore(a)
+    if a.lean:
+        return lean(a)
     return uninstall(a) if a.uninstall else install(a)
 
 
