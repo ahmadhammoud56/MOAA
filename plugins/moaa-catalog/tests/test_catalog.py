@@ -44,7 +44,9 @@ class Catalog(unittest.TestCase):
         settings = self.home / "settings.json"
         settings.write_text(json.dumps({"enabledPlugins": {"off@m": True, "on@m": True}}))
         os.utime(settings, (index["stamp"][0] + 5, index["stamp"][0] + 5))
-        self.assertEqual(catalog.load_index(self.home)["skills"], [])  # everything enabled now: nothing to serve
+        rebuilt = catalog.load_index(self.home)["skills"]
+        self.assertTrue(rebuilt and all(s["on"] for s in rebuilt))  # rebuilt: everything is enabled now
+        self.assertEqual(catalog.search(self.home, "stripe"), [])  # and listed in full, so nothing to suggest
 
     def test_hook_fires_on_a_strong_match_and_stays_quiet_otherwise(self):
         hit = catalog.hook_prompt(self.home, {"prompt": "Set up Stripe subscription webhooks for billing"})
@@ -63,6 +65,16 @@ class Catalog(unittest.TestCase):
         plain = catalog.search(self.home, "aws lambda", cwd=Path(tempfile.mkdtemp()))[0][0]
         boosted = catalog.search(self.home, "aws lambda", cwd=proj)[0][0]
         self.assertGreater(boosted, plain)
+
+    def test_all_on_mode_also_suggests_enabled_skills_through_the_skill_tool(self):
+        self.assertEqual([r[2]["name"] for r in catalog.search(self.home, "stripe")], ["stripe-integration"])
+        settings = self.home / "settings.json"
+        settings.write_text(json.dumps({"enabledPlugins": {"off@m": False, "on@m": True}, "skillListingMaxDescChars": 200}))
+        os.utime(settings, (settings.stat().st_mtime + 5,) * 2)
+        names = {r[2]["name"]: r[2] for r in catalog.search(self.home, "stripe")}
+        self.assertEqual(set(names), {"stripe-integration", "stripe-listed"})
+        self.assertIn('Skill tool, skill "on:stripe-listed"', catalog.how(names["stripe-listed"], "catalog.py"))
+        self.assertIn("catalog.py\" use", catalog.how(names["stripe-integration"], "catalog.py"))
 
     def test_use_serves_indexed_skills_logs_and_suggests_enabling(self):
         for _ in range(catalog.PROMOTE_USES):

@@ -4,6 +4,23 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-10-22
+
+### Added
+- **`install.py --mode all-on|lean`.** `all-on` enables every catalog plugin (packs included, opt-in ones such as
+  claude-mem excepted), so every hook, agent, MCP server and command is live, and sets the skill listing to names
+  plus short descriptions (`skillListingMaxDescChars` 200, `skillListingBudgetFraction` 0.003). `lean` disables the
+  big packs and restores the earlier listing limits. Settings are backed up; `--uninstall` also restores them.
+- **moaa-catalog 0.3.0:** in all-on mode the index and the prompt hook also cover enabled skills whose descriptions
+  the listing trims, and point to the Skill tool for them.
+- **kit.json `pack` marker** on the 73 big skill packs that `--lean` and the modes switch.
+
+### Fixed
+- **`--report` token estimate:** it now follows Claude Code's own listing caps (every name, descriptions cut per
+  skill and to a share of the context window) instead of counting full descriptions, which overstated the cost
+  several times over. It shows 200k- and 1M-context figures and points to `/context` for exact numbers.
+- **Reinstalling kept `pruned`, `mode` and the report history** in the manifest instead of dropping them.
+
 ## [0.10.0] - 2026-10-22
 
 Making MOAA easier to start with and cheaper to run.

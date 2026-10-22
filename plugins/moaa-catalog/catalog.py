@@ -77,11 +77,22 @@ def project_hints(cwd):
     return list(dict.fromkeys(w for f, ws in PROJECT_HINTS.items() if (root / f).exists() for w in ws.split()))
 
 
-def disabled_plugins(home):
-    """{plugin id: install path} for installed plugins that are not enabled in settings.json."""
+def installed_plugins(home):
+    """{plugin id: (install path, enabled)} for every installed plugin."""
     on = {k for k, v in read_json(home / "settings.json").get("enabledPlugins", {}).items() if v}
     installed = read_json(home / "plugins" / "installed_plugins.json").get("plugins", {})
-    return {pid: Path((e or [{}])[0].get("installPath", "")) for pid, e in sorted(installed.items()) if pid not in on}
+    return {pid: (Path((e or [{}])[0].get("installPath", "")), pid in on) for pid, e in sorted(installed.items())}
+
+
+def disabled_plugins(home):
+    """{plugin id: install path} for installed plugins that are not enabled in settings.json."""
+    return {pid: path for pid, (path, on) in installed_plugins(home).items() if not on}
+
+
+def trimmed(home):
+    """True when the skill listing is cut short (MOAA's all-on mode: names plus short descriptions), so enabled
+    skills are worth suggesting too: Claude no longer sees their full descriptions."""
+    return read_json(home / "settings.json").get("skillListingMaxDescChars", 1536) <= 300
 
 
 def frontmatter(path):
@@ -99,10 +110,10 @@ def stamp(home):
 
 def build_index(home):
     skills = []
-    for pid, root in disabled_plugins(home).items():
+    for pid, (root, on) in sorted(installed_plugins(home).items(), key=lambda kv: kv[1][1]):  # disabled first
         for md in sorted(root.rglob("SKILL.md")) if root.is_dir() else []:
             name, desc = frontmatter(md)
-            skills.append({"pid": pid, "name": name, "desc": desc, "path": md.as_posix(),
+            skills.append({"pid": pid, "on": on, "name": name, "desc": desc, "path": md.as_posix(),
                            "nw": sorted(set(words(name.replace("-", " ") + " " + name))), "dw": sorted(set(words(desc)))})
     df = {}
     for s in skills:
@@ -125,13 +136,15 @@ def load_index(home):
     return index
 
 
-def rank(index, query, hints=()):
+def rank(index, query, hints=(), include_on=False):
     """(query words, [(score, matched, skill, name hits)] best first). A query word scores its rarity (idf), doubled
     when it is in the skill's name. Project hint words add half their idf to skills that already match the query."""
     q = expand(dict.fromkeys(words(query)))
     hints = [h for h in hints if h not in q]
     idf, out, seen = index["idf"], [], set()
     for s in index["skills"]:
+        if s.get("on") and not include_on:  # an enabled skill is already listed with its description
+            continue
         if s["name"] in seen:  # bundles repeat the same skill; keep the first copy
             continue
         seen.add(s["name"])
@@ -147,7 +160,7 @@ def rank(index, query, hints=()):
 
 def search(home, query, limit=8, cwd=None):
     """Skills matching the most query words (at least half of the typed ones), best first, boosted for the project."""
-    q, ranked = rank(load_index(home), query, project_hints(cwd or os.getcwd()))
+    q, ranked = rank(load_index(home), query, project_hints(cwd or os.getcwd()), trimmed(home))
     need = max(1, math.ceil(len(dict.fromkeys(words(query))) / 2))
     return [r for r in ranked if r[1] >= need][:limit]
 
@@ -198,24 +211,30 @@ def hook_prompt(home, payload):
     index = load_index(home)
     if not index["skills"]:
         return None
-    _, ranked = rank(index, prompt, project_hints(payload.get("cwd")))
+    _, ranked = rank(index, prompt, project_hints(payload.get("cwd")), trimmed(home))
     unit = math.log(1 + len(index["skills"]))  # idf of a word found in one skill only; makes HOOK_MIN corpus-independent
     best = [r for r in ranked if r[0] >= HOOK_MIN * unit and r[1] >= 2 and r[3] >= 1][:HOOK_MAX]  # needs a name hit
     if not best:
         return None
     catalog = Path(__file__).resolve().as_posix()
-    lines = [f"- {s['name']} [{s['pid']}]: {s['desc'][:140]}\n  python \"{catalog}\" use \"{s['path']}\""
-             for _, _, s, _ in best]
-    return ("moaa-catalog: skills from disabled plugins that may fit this request (not loaded; use one only if it "
-            "clearly helps):\n" + "\n".join(lines))
+    lines = [f"- {s['name']} [{s['pid']}]: {s['desc'][:140]}\n  " + how(s, catalog) for _, _, s, _ in best]
+    return ("moaa-catalog: skills that may fit this request (use one only if it clearly helps):\n" + "\n".join(lines))
+
+
+def how(skill, catalog):
+    """How to use a hit: an enabled plugin's skill through the Skill tool, a disabled one through `catalog.py use`."""
+    if skill.get("on"):
+        return f"enabled: Skill tool, skill \"{skill['pid'].split('@')[0]}:{skill['name']}\""
+    return f"disabled, load it with: python \"{catalog}\" use \"{skill['path']}\""
 
 
 def main(argv):
     home = claude_home()
     if argv[:1] == ["search"] and len(argv) > 1:
         found = search(home, " ".join(argv[1:]))
+        catalog = Path(__file__).resolve().as_posix()
         for score, _, s, _ in found:
-            print(f"{s['name']}  [{s['pid']}]  score {score:.1f}\n  {s['desc'][:200]}\n  {s['path']}")
+            print(f"{s['name']}  [{s['pid']}]  score {score:.1f}\n  {s['desc'][:200]}\n  {how(s, catalog)}")
         if not found:
             print("no disabled-plugin skill matches; try other words")
         return 0
@@ -224,7 +243,8 @@ def main(argv):
     if argv[:1] == ["packs"]:
         counts = {}
         for s in load_index(home)["skills"]:
-            counts[s["pid"]] = counts.get(s["pid"], 0) + 1
+            if not s.get("on"):
+                counts[s["pid"]] = counts.get(s["pid"], 0) + 1
         for pid, n in sorted(counts.items(), key=lambda kv: -kv[1]):
             print(f"{n:5d}  {pid}")
         return 0

@@ -1,6 +1,6 @@
 ---
 name: moaa-catalog
-description: Find and use a skill from an installed but disabled plugin when the task needs a capability none of the listed skills cover (a framework, file format, cloud service or workflow), or when a moaa-catalog hook note names one. Search first; never enable plugins just to look.
+description: Find the right skill when none of the listed ones clearly fits a task (a framework, file format, cloud service or workflow), or when a moaa-catalog hook note names one; covers disabled plugins, and enabled ones whose descriptions are trimmed. Search first; never enable plugins just to look.
 ---
 
 # MOAA catalog: skills on demand
@@ -9,14 +9,15 @@ MOAA installs big skill packs (agentic-awesome-skills, ruflo extras) disabled, s
 request. Their files stay on disk, indexed in `~/.claude/moaa-catalog/index.json` (rebuilt only when plugins or
 settings change; a search takes milliseconds).
 
-1. A hook may already have named matches for the user's prompt ("moaa-catalog: skills from disabled plugins...").
+1. A hook may already have named matches for the user's prompt ("moaa-catalog: skills that may fit...").
    Otherwise search with 1 to 4 specific words:
 
    ```
    python "${CLAUDE_PLUGIN_ROOT}/catalog.py" search <words>
    ```
 
-2. Load the best match into this session with one call, which also logs the use:
+2. A hit from an enabled plugin says `Skill tool, skill "plugin:name"`: invoke it that way. A hit from a disabled
+   plugin is loaded into this session with one call, which also logs the use:
 
    ```
    python "${CLAUDE_PLUGIN_ROOT}/catalog.py" use "<path to its SKILL.md>"

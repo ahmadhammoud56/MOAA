@@ -54,6 +54,8 @@ python scripts/install.py --report
 ```
 
 - `--prune` lists plugins you have not used in 45 days; `--prune --yes` disables them, `--restore` undoes it.
+- `--mode all-on` keeps every plugin enabled (all hooks, agents and MCP servers live) and trims the skill listing
+  to names plus short descriptions; `--mode lean` disables the big packs instead.
 - `--lean` brings an install from before 0.9.0 in line (big packs disabled).
 - Disabled skills are still found: the **moaa-catalog** plugin suggests a matching one when your prompt clearly needs
   it, and Claude can load it into the session with one call.

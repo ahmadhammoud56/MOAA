@@ -22,6 +22,7 @@ Installer commands (run in the MOAA repo; `--dry-run` previews any of them):
 
 - `--profile web|data|devops|research|science`: add packs for a kind of work.
 - `--report`: skills listed per request, rough token cost, most used plugins, catalog hits.
+- `--mode all-on|lean`: every plugin on with a trimmed skill listing, or the big packs off.
 - `--prune [--yes]`, `--lean`, `--restore`: keep the skill listing small, and undo it.
 - `--status` (compare with the repo), `--uninstall` (reverse everything recorded).
 

@@ -1,6 +1,6 @@
 {
   "name": "moaa-catalog",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Skills on demand: keeps big skill packs installed but disabled, searches them from a cached index, suggests a strong match for the prompt, and serves one skill into the current session without loading the rest into every request.",
   "author": { "name": "Ahmad Hammoud", "url": "https://github.com/ahmadhammoud56" },
   "homepage": "https://github.com/ahmadhammoud56/MOAA",

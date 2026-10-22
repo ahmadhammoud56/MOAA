@@ -255,7 +255,11 @@ class PruneTests(unittest.TestCase):
             skill = Path(d) / "skills" / "abcd"
             skill.mkdir(parents=True)
             (skill / "SKILL.md").write_text("---\nname: abcd\ndescription: " + "x" * 36 + "\n---\nlong body " * 50)
-            self.assertEqual(install.listing_tokens([Path(d), Path(d) / "missing"]), (1, 10))  # (4 + 36) / 4
+            self.assertEqual(install.listing_tokens([Path(d), Path(d) / "missing"]), (1, 12))  # 4/4 + 2 + 36/4
+            self.assertEqual(install.listing_tokens([Path(d)], max_desc=8), (1, 5))  # description cut to 8 chars
+            self.assertEqual(install.listing_tokens([Path(d)], fraction=0.00001, window=200_000), (1, 5))  # budget cap
+        self.assertLess(install.ALL_ON_LISTING["skillListingMaxDescChars"],
+                        install.LISTING_DEFAULTS["skillListingMaxDescChars"])
 
     def test_full_profile_ships_heavy_packs_disabled(self):
         kit = install.read_json(install.KIT / "config" / "kit.json", None)

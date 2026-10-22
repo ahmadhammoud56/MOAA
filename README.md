@@ -253,7 +253,19 @@ is about 2,500 listed skills on every turn, every subagent call and every counci
 repeats cheap but not free, and anything that changes early in the prompt (the tool set, a CLAUDE.md edit) rewrites
 the whole cached prefix. The cache also expires after about five minutes idle.
 
-MOAA 0.9.0 therefore keeps the long tail installed but out of the prompt:
+Claude Code already caps the listing: every skill name is always listed, but descriptions are cut to
+`skillListingMaxDescChars` (default 1536) and to `skillListingBudgetFraction` of the context window (default 1%),
+least-used first. Names alone for about 3,600 skills still come to roughly 20,000 tokens per request.
+
+MOAA offers two modes, switched with `install.py --mode`:
+
+- **`all-on`**: every plugin enabled, so every hook, agent, MCP server and command is live, with the listing
+  cut to names plus short descriptions (200 characters, 0.3% of the window). moaa-catalog then supplies the full
+  description of an enabled skill too when a prompt matches it.
+- **`lean`** (what `--full` installs): the big packs below are disabled; their skills are served on demand.
+
+Either way:
+
 
 - **`--full` installs the big packs disabled**: agentic-awesome-skills and its bundles, and every ruflo plugin except
   `ruflo-core`. They stay on disk; `claude plugin enable <id>` turns one on from the next session. An install from
@@ -300,6 +312,7 @@ Both wrappers pass these flags through to `scripts/install.py`:
 | `--status` | Change nothing; compare the install with this repo. It lists MOAA plugins, skills, agents and MCP servers that are outdated, missing or edited after install, third-party plugins whose version differs from the tested one, and old plugin versions left in the cache. Add `--verbose` to list every plugin. Exits 1 if anything is missing or outdated. |
 | `--prune [--days N] [--yes]` | List enabled plugins with no recorded use in N days (default 45); with `--yes`, disable them. Hook and MCP plugins and MOAA's own are kept. |
 | `--profile NAME[,NAME]` | Add the packs for a kind of work on top of core (or full), installed and enabled: `web`, `data`, `devops`, `research`, `science` (also the ansys MCP server). |
+| `--mode all-on` / `--mode lean` | Switch between every plugin enabled with a trimmed skill listing, and the big packs disabled. Settings are backed up; `lean` restores the earlier listing limits. |
 | `--report` | Local summary: skills listed per request and their rough token cost, most used plugins, skills the catalog served, pruned plugins. Nothing leaves the machine. |
 | `--lean` | On an install made before 0.9.0, disable the packs the catalog now ships disabled. |
 | `--restore` | Re-enable every plugin `--prune` or `--lean` disabled. |

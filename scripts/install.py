@@ -7,7 +7,9 @@
   python scripts/install.py --profile web   core plus the packs for one kind of work (web, data, devops, research,
                                             science; comma-separated for several), installed and enabled
   python scripts/install.py --prune [--days N] [--yes]  list (and with --yes disable) plugins unused for N days
-  python scripts/install.py --report        local summary: listed skills and tokens, usage, catalog hits, pruned
+  python scripts/install.py --mode all-on   every pack enabled; skill listing cut to names + short descriptions
+  python scripts/install.py --mode lean     big packs disabled, listing limits restored (moaa-catalog serves them)
+  python scripts/install.py --report      local summary: listed skills and tokens, usage, catalog hits, pruned
   python scripts/install.py --lean         on an existing install, disable the packs the catalog ships disabled
   python scripts/install.py --restore       re-enable what --prune or --lean disabled
   python scripts/install.py --with-omniroute  also the OmniRoute gateway (npm), for the allies' free-tier fallback
@@ -235,7 +237,8 @@ def install(args):
               "marketplaces": manifest.get("marketplaces", []), "plugins": manifest.get("plugins", []),
               "skills": manifest.get("skills", []), "agents": manifest.get("agents", []),
               "mcp": manifest.get("mcp", []), "tools": manifest.get("tools", []),
-              "settings_added": manifest.get("settings_added", {})}
+              "settings_added": manifest.get("settings_added", {}),
+              **{k: manifest[k] for k in ("pruned", "mode", "mode_prev", "budget_history") if k in manifest}}
     work = parse_profiles(kit, args.profile)
     plugins = select_plugins(kit, args.full, work, args.with_claude_mem)
     log(f"profile: {'full' if args.full else 'core'}{' + ' + ', '.join(work) if work else ''} ({len(plugins)} plugins)")
@@ -565,8 +568,11 @@ def context_row(home):
         skills, agents = context_budget(home)
     except ValueError:  # a corrupt settings or plugin record; status reports the file itself
         return ("context", "every session", "info", "not counted: a Claude config file is not valid JSON")
+    if listing_settings(home)["skillListingMaxDescChars"] <= 300:  # all-on: many names, short descriptions, by design
+        return ("context", "every session", "ok", f"{skills} skills (names + short descriptions), {agents} agents listed")
     state = "heavy" if skills > SKILL_BUDGET else "ok"
-    hint = f"; over {SKILL_BUDGET}: `install.py --prune` lists unused plugins to disable" if state == "heavy" else ""
+    hint = (f"; over {SKILL_BUDGET}: `--mode all-on` trims the listing, `--prune` lists unused plugins"
+            if state == "heavy" else "")
     return ("context", "every session", state, f"{skills} skills, {agents} agents listed{hint}")
 
 
@@ -639,17 +645,29 @@ def prune(args):
     return 0
 
 
-def listing_tokens(roots):
-    """(skills, rough tokens) the skill listing of these plugin folders adds to every request: name plus description,
-    about four characters per token."""
-    n = chars = 0
+LISTING_DEFAULTS = {"skillListingMaxDescChars": 1536, "skillListingBudgetFraction": 0.01}  # Claude Code's defaults
+ALL_ON_LISTING = {"skillListingMaxDescChars": 200, "skillListingBudgetFraction": 0.003}  # names + short descriptions
+
+
+def listing_settings(home):
+    """The skill-listing limits in effect: settings.json values over Claude Code's defaults."""
+    s = read_json(home / "settings.json", {})
+    return {k: s.get(k, v) for k, v in LISTING_DEFAULTS.items()}
+
+
+def listing_tokens(roots, max_desc=1536, fraction=0.01, window=200_000):
+    """(skills, rough tokens) the skill listing of these plugin folders adds to every request. Claude Code always
+    lists every name; each description is cut to `max_desc` characters and all descriptions together to `fraction`
+    of the context window (least-used dropped first). About four characters per token, two per entry for markup."""
+    n = names = descs = 0
     for root in roots:
         for md in root.rglob("SKILL.md") if root.is_dir() else []:
             head = md.read_text(encoding="utf-8", errors="replace").split("---", 2)
             meta = head[1] if len(head) > 2 else ""
             found = re.search(r"^description:\s*(.+)$", meta, re.M)
-            n, chars = n + 1, chars + len(md.parent.name) + len(found.group(1) if found else "")
-    return n, chars // 4
+            n, names = n + 1, names + len(md.parent.name)
+            descs += min(len(found.group(1)) if found else 0, max_desc)
+    return n, names // 4 + 2 * n + min(descs // 4, int(fraction * window))
 
 
 def report(args):
@@ -658,20 +676,27 @@ def report(args):
     home = claude_home()
     kit = read_json(KIT / "config" / "kit.json", None)
     enabled = enabled_plugins(home)
-    skills, tokens = listing_tokens(list(enabled.values()) + [home / "skills"])
+    lim = listing_settings(home)
+    cap = (lim["skillListingMaxDescChars"], lim["skillListingBudgetFraction"])
+    roots = list(enabled.values()) + [home / "skills"]
+    skills, tokens = listing_tokens(roots, *cap)
+    big = listing_tokens(roots, *cap, window=1_000_000)[1]
     installed = read_json(home / "plugins" / "installed_plugins.json", {}).get("plugins", {})
     off = [Path((v or [{}])[0].get("installPath", "")) for k, v in installed.items() if k not in enabled]
-    kept_out, saved = listing_tokens(off)
+    kept_out, _ = listing_tokens(off)
+    all_on = listing_tokens(roots + off, *cap)[1]
     record = read_json(home / MANIFEST, {})
     history = record.setdefault("budget_history", [])
     history.append({"date": time.strftime("%Y-%m-%d"), "skills": skills, "tokens": tokens})
     del history[:-50]
     write_json(home / MANIFEST, record, False)
-    print(f"[moaa] report for {home} (MOAA {kit['version']}; local only)\n")
-    print(f"Every request lists {skills} skills from {len(enabled)} enabled plugins: about {tokens:,} tokens "
-          f"(characters/4). Budget warning above {SKILL_BUDGET} skills.")
-    print(f"Kept out of the prompt: {kept_out} skills in {len(off)} installed but disabled plugins, about {saved:,} "
-          "tokens per request; moaa-catalog serves them on demand.")
+    print(f"[moaa] report for {home} (MOAA {kit['version']}, mode {record.get('mode', 'default')}; local only)\n")
+    print(f"Every request lists {skills} skills from {len(enabled)} enabled plugins: about {tokens:,} tokens on a "
+          f"200k-context model, {big:,} on a 1M one (names always; descriptions capped at "
+          f"{cap[0]} characters and {cap[1]:.1%} of the window). Budget warning above {SKILL_BUDGET} skills.")
+    print(f"Disabled plugins keep {kept_out} skills out of the listing; enabling everything under the current "
+          f"limits would list about {all_on:,} tokens (200k model). moaa-catalog serves disabled skills on demand.")
+    print("Exact figures: run /context in a fresh session (the Skills row).")
     if len(history) > 1:
         print("Trend: " + "  ".join(f"{h['date']} {h['skills']}" for h in history[-6:]))
     uses = plugin_usage(home, args.days)
@@ -702,7 +727,7 @@ def lean(args):
     home, r = claude_home(), Runner(args.dry_run)
     kit = read_json(KIT / "config" / "kit.json", None)
     enabled = enabled_plugins(home)
-    off = [p["id"] for p in kit["plugins"] if not p["enabled"] and p["id"] in enabled]
+    off = [p["id"] for p in kit["plugins"] if p.get("pack") and p["id"] in enabled]
     before = context_budget(home)
     record = read_json(home / MANIFEST, {})
     if args.dry_run:
@@ -716,6 +741,56 @@ def lean(args):
     write_json(home / MANIFEST, record, args.dry_run)
     log(f"disabled {len(off)}; skills listed per session {before[0]} -> {context_budget(home)[0]}. "
         "moaa-catalog still finds their skills. Restart Claude Code.")
+    return 0
+
+
+def mode(args):
+    """--mode all-on: every MOAA pack and pruned plugin enabled (hooks, agents, MCP, commands all live) with the skill
+    listing cut to names plus short descriptions; moaa-catalog supplies full descriptions on a matching prompt.
+    --mode lean: packs disabled, listing limits back to what they were. Settings are backed up first."""
+    home, r = claude_home(), Runner(args.dry_run)
+    kit = read_json(KIT / "config" / "kit.json", None)
+    record = read_json(home / MANIFEST, {})
+    settings_path = home / "settings.json"
+    settings = read_json(settings_path, {})
+    if args.mode == "all-on":
+        if record.get("mode") != "all-on":
+            record["mode_prev"] = {k: settings.get(k) for k in ALL_ON_LISTING}
+        installed, enabled = installed_plugins(home), enabled_plugins(home)
+        # every catalog plugin meant to be on (packs included), not optional ones the user opts into (claude-mem)
+        turn_on = [p["id"] for p in kit["plugins"] if (p.get("pack") or p["enabled"]) and not p.get("optional")
+                   and p["id"] in installed and p["id"] not in enabled]
+        turn_on += [pid for pid in record.get("pruned", []) if pid in installed and pid not in turn_on + list(enabled)]
+        if args.dry_run:
+            log(f"would enable {len(turn_on)} plugin(s) and set {ALL_ON_LISTING}")
+            return 0
+        for pid in turn_on:
+            log(f"enabling {pid}")
+            r.run(["claude", "plugin", "enable", pid, "--scope", "user"])
+        settings = read_json(settings_path, {})  # the CLI just rewrote enabledPlugins
+        shutil.copy2(settings_path, settings_path.with_name(f"settings.json.bak-{time.strftime('%Y%m%d-%H%M%S')}"))
+        settings.update(ALL_ON_LISTING)
+        record["pruned"], record["mode"] = [], "all-on"
+    else:
+        lean(args)
+        if args.dry_run:
+            return 0
+        record = read_json(home / MANIFEST, {})  # lean() recorded what it disabled
+        settings = read_json(settings_path, {})
+        shutil.copy2(settings_path, settings_path.with_name(f"settings.json.bak-{time.strftime('%Y%m%d-%H%M%S')}"))
+        for k, v in record.pop("mode_prev", {}).items():
+            if v is None:
+                settings.pop(k, None)
+            else:
+                settings[k] = v
+        record["mode"] = "lean"
+    write_json(settings_path, settings, False)
+    write_json(home / MANIFEST, record, False)
+    lim = listing_settings(home)
+    n, tokens = listing_tokens(list(enabled_plugins(home).values()) + [home / "skills"],
+                               lim["skillListingMaxDescChars"], lim["skillListingBudgetFraction"])
+    log(f"mode {record['mode']}: {n} skills listed, about {tokens:,} tokens per request (200k model). "
+        "Restart Claude Code.")
     return 0
 
 
@@ -824,7 +899,10 @@ def uninstall(args):
         if target.is_file() and not args.dry_run:
             target.unlink()
     settings_path = home / "settings.json"
-    write_json(settings_path, unmerge_settings(read_json(settings_path, {}), record.get("settings_added", {})), args.dry_run)
+    settings = unmerge_settings(read_json(settings_path, {}), record.get("settings_added", {}))
+    for k, v in record.get("mode_prev", {}).items():  # undo --mode all-on's listing limits
+        settings.pop(k, None) if v is None else settings.__setitem__(k, v)
+    write_json(settings_path, settings, args.dry_run)
     if not args.dry_run:
         (home / MANIFEST).unlink(missing_ok=True)
         (home / LEGACY_MANIFEST).unlink(missing_ok=True)
@@ -857,6 +935,9 @@ def main(argv=None):
     p.add_argument("--days", type=int, default=45, help="with --prune: usage window in days (default 45)")
     p.add_argument("--yes", action="store_true", help="with --prune: disable the listed plugins")
     p.add_argument("--restore", action="store_true", help="re-enable every plugin --prune or --lean disabled")
+    p.add_argument("--mode", choices=("all-on", "lean"),
+                   help="all-on: every pack enabled, skill listing cut to names + short descriptions; "
+                        "lean: big packs disabled, listing limits restored")
     p.add_argument("--report", action="store_true",
                    help="local summary: listed skills and tokens, most used plugins, catalog hits, pruned plugins")
     p.add_argument("--lean", action="store_true",
@@ -870,6 +951,8 @@ def main(argv=None):
         return prune(a)
     if a.restore:
         return restore(a)
+    if a.mode:
+        return mode(a)
     if a.lean:
         return lean(a)
     if a.report:
