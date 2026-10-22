@@ -21,6 +21,7 @@ ALLOW = [
     re.compile(r"^/c/Users/(\.\.\.|\[\^)$"),            # comments and this file's own regex
     re.compile(r"^C:\\\\Users\\\\me$"),                # flightdeck test fixture
     re.compile(r"^/home/snp$"),                        # path quoted in the Paper2Agent paper
+    re.compile(r"(?i)^(?:[a-z]:[\\/]+users[\\/]+|/home/)(?:me|demo|dev|mara(?:%20schwartz)?)$"),  # prismantis fixtures
 ]
 
 

@@ -32,7 +32,19 @@
     "~/jade-palace/training.md"
   <Text>
     ", scroll at "
-  <Link>
+  <Text>
+    <Link>
+<Text>
+  <Text>
+    "Type "
+  <Text>
+    "/kick"
+  <Text>
+    " to start; "
+  <Text>
+    "/srv/dojo/moves.md"
+  <Text>
+    " has the moves."
 <Box>
   <Text bold>
     <Text>
@@ -255,10 +267,10 @@
         " "
       <Text>
         <Text>
-          "   │                            16"
+          " 18┤···························16···"
       <Text>
         <Text>
-          " 16┤·························██████·"
+          " 16┤·························▄▄▄▄▄▄·"
       <Text>
         <Text>
           " 14┤·························██████·"
@@ -273,19 +285,16 @@
           "  8┤·························██████·"
       <Text>
         <Text>
-          "  6┤············3·······4····██████·"
+          "  6┤····················4····██████·"
       <Text>
         <Text>
-          "  4┤····2····██████··██████··██████·"
+          "  4┤····2·······3····▄▄▄▄▄▄··██████·"
       <Text>
         <Text>
-          "  2┤·██████··██████··██████··██████·"
+          "  2┤·▄▄▄▄▄▄··██████··██████··██████·"
       <Text>
         <Text>
-          "  0┼·██████··██████··██████··██████·"
-      <Text>
-        <Text>
-          "   ┼────┬───────┬───────┬───────┬───"
+          "  0┼─▀▀▀▀▀▀──▀▀▀▀▀▀──▀▀▀▀▀▀──▀▀▀▀▀▀─"
       <Text>
         <Text>
           "       Dog    Human  Pigeon  Shrimp"
@@ -298,34 +307,125 @@
         " "
       <Text>
         <Text>
-          "  │"
+          " 10┤····························"
       <Text>
         <Text>
-          " 8┤·····················╭────··"
+          "   │                     ╭────"
       <Text>
         <Text>
-          "  │                     │"
+          "  8┤·····················│······"
       <Text>
         <Text>
-          " 6┤··············╭──────╯······"
+          "   │                     │"
       <Text>
         <Text>
-          " 4┤·······╭──────╯·············"
+          "  6┤··············╭──────╯······"
       <Text>
         <Text>
-          "  │       │"
+          "   │              │"
       <Text>
         <Text>
-          " 2┤··─────╯····················"
+          "  4┤·······╭──────╯·············"
       <Text>
         <Text>
-          " 0┼····························"
+          "   │       │"
       <Text>
         <Text>
-          "  ┼───┬──────┬──────┬──────┬───"
+          "  2┤··─────╯····················"
       <Text>
         <Text>
-          "    GotG2   IW     EG    GotG3"
+          "   │"
+      <Text>
+        <Text>
+          "  0┼───┬──────┬──────┬──────┬───"
+      <Text>
+        <Text>
+          "     GotG2   IW     EG    GotG3"
+  <Box>
+    <Box>
+      <Text>
+        <Text>
+          "┌───────┐   ┌──────┐"
+      <Text>
+        <Text>
+          "│ "
+        <Text italic>
+          "Reply"
+        <Text>
+          " ├──►│ "
+        <Text bold>
+          "Draw"
+        <Text>
+          " │"
+      <Text>
+        <Text>
+          "└───────┘   └──────┘"
+<Box>
+  <Text>
+    "diagram is 180 cols, terminal is 100"
+  <Box row>
+    <Text>
+      "── mermaid"
+  <Box>
+    <Text>
+      "flowchart TD"
+    <Text>
+      "  Q[Queue] --> W1[Worker 1] & W2[Worker 2] & W3[Worker 3] & W4[Worker 4] & W5[Worker 5] & W6[Worker 6] & W7[Worker 7] & W8[Worker 8] & W9[Worker 9] & W10[Worker 10] & W11[Worker 11] & W12[Worker 12]"
+<Box>
+  <Text>
+    <Text>
+      "timeout at 10 s, handler books at 12 s, retry books again"
+  <Text>
+    <Text>
+      "          "
+    <Text>
+      "0 s"
+    <Text>
+      "           "
+    <Text>
+      "10 s"
+    <Text>
+      "  "
+    <Text>
+      "12 s"
+    <Text>
+      "              "
+    <Text>
+      "later"
+  <Text>
+    <Text>
+      "          "
+    <Text>
+      "▏─────────────▏─────▏─────────────────▏"
+  <Text>
+    <Text>
+      "Provider  "
+    <Text>
+      "██████████████"
+    <Text bold>
+      "✗"
+    <Text>
+      " timeout               "
+    <Text>
+      "█"
+    <Text>
+      " retry"
+  <Text>
+    <Text>
+      "Handler   "
+    <Text>
+      "████████████████████"
+    <Text>
+      " 200, nobody waits"
+  <Text>
+    <Text>
+      "Bookings  0                   "
+    <Text>
+      "1"
+    <Text>
+      "                 "
+    <Text bold>
+      "2 twice"
 <Box>
   <Box row>
     <Text>
@@ -464,27 +564,68 @@
 <Box border=round>
   <Text color=green bold>
     "Tip"
-  <Text>
+  <Box>
     <Text>
-      "If "
-    <Text>
-      "inner peace"
-    <Text>
-      " returns "
-    <Text>
-      "404"
-    <Text>
-      ", try "
-    <Text>
-      "snacks"
-    <Text>
-      " first."
+      <Text>
+        "If "
+      <Text>
+        "inner peace"
+      <Text>
+        " returns "
+      <Text>
+        "404"
+      <Text>
+        ", try "
+      <Text>
+        "snacks"
+      <Text>
+        " first."
 <Box row>
+  <Box>
+    <Box>
+      <Text>
+        "│ 
+│ 
+│ 
+│ 
+│ "
+  <Box>
+    <Text italic>
+      <Text>
+        "Mantis wisdom: small bug, big kick."
+    <Box>
+      <Box row>
+        <Text>
+          "• "
+        <Text italic>
+          <Text>
+            "stretch all "
+          <Text bold>
+            <Text>
+              "6"
+          <Text>
+            " legs"
+      <Box row>
+        <Text>
+          "• "
+        <Text italic>
+          <Text>
+            "then "
+          <Text>
+            "kick"
+<Text>
   <Text>
-    "│ "
-  <Text italic>
-    <Text>
-      "Mantis wisdom: small bug, big kick."
+    "<tldr>"
+<Text>
+  <Text>
+    "Kick at "
+  <Text>
+    "~/dojo/mat"
+  <Text>
+    ", then rest."
+<Text>
+  <Text>
+    "</tldr>"
 <Box>
   <Box>
     <Text bold>
@@ -494,8 +635,9 @@
       "━━━━━"
 <Box>
   <Text>
-    <Text underline>
-      "רושיק"
+    <Link>
+      <Text>
+        "רושיק"
     <Text>
       " םגו ,250ms-ו "
     <Text>
@@ -542,19 +684,20 @@
         <Text>
           " לכ תא םיחתומו םיררועתמ"
     <Text>
-      " 1."
+      " .1"
   <Box row>
     <Box>
       <Text>
         <Text>
           "סלדונה ילאל םיללפתמ"
     <Text>
-      " 2."
+      " .2"
 <Box row>
   <Box>
-    <Text italic>
-      <Text>
-        "תוינוויכב הכימת ילב לנימרטב םג ,לאמשל ןימימ תארקנ תירבע"
+    <Box>
+      <Text italic>
+        <Text>
+          "תוינוויכב הכימת ילב לנימרטב םג ,לאמשל ןימימ תארקנ תירבע"
   <Text>
     " │"
 <Box>

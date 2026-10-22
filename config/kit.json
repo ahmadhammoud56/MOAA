@@ -375,7 +375,7 @@
     {
       "id": "prismantis@moaa",
       "enabled": false,
-      "tested_version": "0.11.0",
+      "tested_version": "0.34.0",
       "profile": "core"
     },
     {
@@ -743,7 +743,8 @@
   "settings": {
     "env": {
       "ECC_GATEGUARD": "off",
-      "CLAUDE_CODE_OVERLOADED_RETRY_MAX_DELAY_MS": "60000"
+      "CLAUDE_CODE_OVERLOADED_RETRY_MAX_DELAY_MS": "60000",
+      "PRISMANTIS_PNG_BUTTON": "1"
     },
     "permissions_deny": [
       "Skill(lps:dogusariturk-python-style)"

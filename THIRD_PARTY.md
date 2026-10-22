@@ -9,7 +9,7 @@ MOAA's own code (the Specialist Council, the Agent Arena, the installer) is MIT 
 | `plugins/specialist-council` | own work | MIT | ok |
 | `plugins/agent-arena-mode` | own work | MIT | ok |
 | `plugins/flightdeck` | [scasella/claude-flightdeck](https://github.com/scasella/claude-flightdeck) | MIT | ok; local changes in `MODIFICATIONS.md` |
-| `plugins/prismantis` | [NahumLitvin/prismantis](https://github.com/NahumLitvin/prismantis) | MIT | ok; local PNG-export changes in `MODIFICATIONS.md` |
+| `plugins/prismantis` | [NahumLitvin/prismantis](https://github.com/NahumLitvin/prismantis) @ `82afde8` (v0.34.0) | MIT | ok; opt-in PNG button and the left-out Codex files and screenshots in `MODIFICATIONS.md` |
 | `skills/networkx`, `skills/pyzotero`, `skills/scientific-brainstorming`, `skills/uncertainty-and-units` | [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) @ `a1043ef` (skill v1.4) | MIT | ok |
 | `skills/headroom` | [headroomlabs-ai/headroom](https://github.com/headroomlabs-ai/headroom), written against `f1bc260` | Apache-2.0 (+ NOTICE) | ok; MOAA's own guide to the software |
 | `skills/reverse-engineer-anything` | [morluto/rea](https://github.com/morluto/rea) @ `322506d` (skill v42) | MIT | ok |

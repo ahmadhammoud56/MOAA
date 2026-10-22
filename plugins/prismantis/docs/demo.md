@@ -2,6 +2,8 @@
 
 **Furious Five status:** Mantis cleared 3 dumplings in 6m 20s, kick power up 18% to 82 kicks/min. Notes in ~/jade-palace/training.md, scroll at https://github.com/NahumLitvin/prismantis
 
+Type /kick to start; /srv/dojo/moves.md has the moves.
+
 ## Roster
 
 | Mantis | Movie | Superpower | Size |
@@ -43,6 +45,25 @@ xychart-beta
   line [2, 4, 6, 9]
 ```
 
+```mermaid
+graph LR
+  A[<i>Reply</i>] --> B[<b>Draw</b>]
+```
+
+```mermaid
+flowchart TD
+  Q[Queue] --> W1[Worker 1] & W2[Worker 2] & W3[Worker 3] & W4[Worker 4] & W5[Worker 5] & W6[Worker 6] & W7[Worker 7] & W8[Worker 8] & W9[Worker 9] & W10[Worker 10] & W11[Worker 11] & W12[Worker 12]
+```
+
+```figure
+{dim:timeout at 10 s, handler books at 12 s, retry books again}
+          {note:0 s}           {note:10 s}  {note:12 s}              {note:later}
+          {accent:▏─────────────▏─────▏─────────────────▏}
+Provider  {accent:██████████████}{warn:✗} timeout               {accent:█} retry
+Handler   {ok:████████████████████} 200, nobody waits
+Bookings  0                   {ok:1}                 {warn:2 twice}
+```
+
 ```ts
 const master = "Shifu" // wise, short
 export function train(student: string, dumplings = 3) {
@@ -58,6 +79,13 @@ kungfu train --student "Po" --master shifu --dumplings 3 && echo "skadoosh"
 > If `inner peace` returns 404, try `snacks` first.
 
 > Mantis wisdom: small bug, big kick.
+>
+> - stretch all **6** legs
+> - then `kick`
+
+<tldr>
+Kick at ~/dojo/mat, then rest.
+</tldr>
 
 ## עברית
 

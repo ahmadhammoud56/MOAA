@@ -4,4 +4,4 @@
 
 - [ ] `claude plugin validate .` passes
 - [ ] `claude plugin test .` passes
-- [ ] Screenshot attached for any visual change
+- [ ] `live-check` render attached for any visual change

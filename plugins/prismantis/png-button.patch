@@ -1,10 +1,11 @@
-diff -ruN -x vendor -x node_modules a/hooks/register.tsx b/hooks/register.tsx
---- a/hooks/register.tsx	2026-10-08 10:01:03.098029700 -0500
-+++ b/hooks/register.tsx	2026-10-08 10:01:03.185311100 -0500
-@@ -46,6 +46,26 @@
+diff -ruN a/hooks/register.tsx b/hooks/register.tsx
+--- a/hooks/register.tsx	2026-10-22 17:51:15.234494400 +0300
++++ b/hooks/register.tsx	2026-10-22 17:51:15.298203000 +0300
+@@ -53,6 +53,27 @@
+ }
  
  const expandedCalls = new Set<string>()
- 
++
 +const savePng = async ($: EngineInterface, art: string): Promise<string> => {
 +  const home = (await $.env.get('USERPROFILE')) ?? (await $.env.get('HOME')) ?? '.'
 +  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
@@ -25,15 +26,26 @@ diff -ruN -x vendor -x node_modules a/hooks/register.tsx b/hooks/register.tsx
 +  return run?.exitCode === 0
 +}
 +
- const drawMarkdown = ($: EngineInterface, el: ReturnType<EngineInterface['ui']['resolve']>, style: Style, blocks: ReturnType<typeof parse>, columns: number, reply?: string): RenderElement[] => {
-   const { Button } = el
-   const copy = (text: string | (() => string), key: string, label = '⧉ copy') =>
-@@ -61,6 +81,19 @@
-         }}
+ const readOnlyCalls = new Set<string>()
+ 
+ const columnsOf = (viewport?: { columns?: number }) => Math.max(20, (viewport?.columns ?? 100) - 4)
+@@ -270,7 +291,9 @@
+   probes.htmlCopy ??= htmlBackend($)
+   const before = style.htmlCopy
+   style.htmlCopy = await probes.htmlCopy
+-  if (style.htmlCopy !== before) $.ui.invalidate('ui.render')
++  const png = Boolean(await $.env.get('PRISMANTIS_PNG_BUTTON').catch(() => undefined))
++  if (style.htmlCopy !== before || style.pngCopy !== png) $.ui.invalidate('ui.render')
++  style.pngCopy = png
+   return terminal
+ }
+ 
+@@ -314,6 +337,19 @@
        />
      ) : null
+   }
 +  const png = (text: string | (() => string), key: string, label = '▣ png') =>
-+    style.copyButtons ? (
++    style.copyButtons && style.pngCopy ? (
 +      <Button
 +        key={key}
 +        variant="primary"
@@ -45,46 +57,87 @@ diff -ruN -x vendor -x node_modules a/hooks/register.tsx b/hooks/register.tsx
 +        }}
 +      />
 +    ) : null
-   const drawn: Drawn = new Map()
-   if (style.mermaid) {
-     for (const [i, block] of blocks.entries()) {
-@@ -69,7 +102,7 @@
-       if (art !== null && art.split('\n').every(l => width(l) <= columns - 2)) drawn.set(i, { element: boxArt(el, style, art, `b${i}`), art })
+   const drawn = drawDiagrams(el, style, blocks, columns - markerRoom(style))
+   const Image = 'Image' in el ? el.Image : null
+   if (Image) {
+@@ -327,7 +363,7 @@
      }
    }
--  const elements = renderBlocks(el, style, blocks, columns, drawn, copy)
-+  const elements = renderBlocks(el, style, blocks, columns, drawn, copy, png)
+   const tip = notes?.press ? noteTip(blocks, text => void $.ui.toast(text)) : undefined
+-  const elements = renderBlocks(el, notes ? { ...style, noteKey: instanceKey(notes.id) } : style, blocks, columns, drawMath(el, style, blocks, drawn), copy, folder($, el, open), tip)
++  const elements = renderBlocks(el, notes ? { ...style, noteKey: instanceKey(notes.id) } : style, blocks, columns, drawMath(el, style, blocks, drawn), copy, folder($, el, open), tip, png)
    const button = reply === undefined ? null : copy(reply, 'reply', '⧉ copy reply')
-   return button ? [...elements, <el.Box key="reply" alignSelf="flex-end">{button}</el.Box>] : elements
- }
-diff -ruN -x vendor -x node_modules a/hooks/render.tsx b/hooks/render.tsx
---- a/hooks/render.tsx	2026-10-08 10:01:03.101027900 -0500
-+++ b/hooks/render.tsx	2026-10-08 10:01:03.171411900 -0500
-@@ -468,7 +468,7 @@
- const copySource = (block: Block): string | undefined =>
-   block.kind === 'code' ? block.lines.join('\n') : block.kind === 'table' || block.kind === 'list' ? block.raw : block.kind === 'quote' || block.kind === 'alert' ? block.raw.split('\n').map(line => line.replace(/^\s*>\s?/, '')).join('\n') : undefined
+   if (!button) return elements
+   return [...elements, style.copyButtonStyle === 'hover' ? replyMarker(el, button, notes?.id) : <el.Box key="reply" alignSelf="flex-end">{button}</el.Box>]
+diff -ruN a/hooks/render.tsx b/hooks/render.tsx
+--- a/hooks/render.tsx	2026-10-22 17:51:15.233495000 +0300
++++ b/hooks/render.tsx	2026-10-22 17:51:15.364955600 +0300
+@@ -1051,7 +1051,7 @@
+   </Box>
+ )
  
--export const renderBlocks = (el: ElementTable, style: Style, blocks: Block[], columns: number, drawn: Drawn = new Map(), copy?: CopyButton): RenderElement[] => {
-+export const renderBlocks = (el: ElementTable, style: Style, blocks: Block[], columns: number, drawn: Drawn = new Map(), copy?: CopyButton, png?: CopyButton): RenderElement[] => {
+-export const renderBlocks = (el: ElementTable, style: Style, blocks: Block[], columns: number, drawn: Drawn = new Map(), copy?: CopyButton, fold?: Fold, tip?: Tip): RenderElement[] => {
++export const renderBlocks = (el: ElementTable, style: Style, blocks: Block[], columns: number, drawn: Drawn = new Map(), copy?: CopyButton, fold?: Fold, tip?: Tip, png?: CopyButton): RenderElement[] => {
    const { Box, Text } = el
    const t = style.theme
-   const rendered = blocks.map((block, b) => {
-@@ -509,10 +509,12 @@
-     const art = drawn.get(b)?.art ?? (block?.kind === 'table' ? () => tableArt(block) : undefined)
-     const first = text === undefined || isPlainCode ? null : copy?.(text, `copy${b}`, art === undefined || block?.kind === 'table' ? undefined : '⧉ source')
+   const hover = style.copyButtonStyle === 'hover'
+@@ -1080,7 +1080,8 @@
+     const first = text === undefined || isPlainCode ? null : copy?.(text, `copy${b}`, block.kind === 'table' ? '⧉ md' : art === undefined ? undefined : '⧉ source')
      const second = first && art !== undefined ? copy?.(art, `art${b}`, '⧉ art') : null
-+    const third = second && art !== undefined ? png?.(art, `png${b}`, '▣ png') : null
+     const html = first && block.kind === 'table' ? copy?.(() => tableText(block), `html${b}`, '⧉ html', () => tableHtml(block)) : null
+-    return { first, second, html }
++    const image = second && art !== undefined ? png?.(art, `png${b}`, '▣ png') ?? null : null
++    return { first, second, html, image }
+   })
+   const codeHead = (label: string, button: RenderElement | null) => {
+     if (!hover || !button) return null
+@@ -1148,7 +1149,7 @@
+   })
+   const copied = rendered.map((element, b) => {
+     const block = blocks[b]!
+-    const { first, second, html } = buttons[b]!
++    const { first, second, html, image } = buttons[b]!
+     if (!first) return element
+     const { Box } = el
+     const hebrew = style.reorder && hasRtl(block.raw)
+@@ -1157,13 +1158,14 @@
+     if (hover) {
+       const wide = rtl && (block.kind === 'list' || block.kind === 'quote' || block.kind === 'alert' || rtlTables[b])
+       const start = !!wide && (!!rtlTables[b] || leadSide(style, block, room(b)) === 'R')
+-      return markedRow(el, `c${b}`, element, floating(fitted([first, second, html]), opensWithCopy(block), start), start)
++      return markedRow(el, `c${b}`, element, floating(fitted([first, second, html, image]), opensWithCopy(block), start), start)
+     }
      const button = second ? (
        <el.Box key={`copies${b}`} flexDirection="row" columnGap={1}>
          {first}
          {second}
-+        {third}
+         {html}
++        {image}
        </el.Box>
      ) : first
-     if (!button) return element
-diff -ruN -x vendor -x node_modules a/scripts/text2png.py b/scripts/text2png.py
---- a/scripts/text2png.py	1969-12-31 18:00:00.000000000 -0600
-+++ b/scripts/text2png.py	2026-10-08 10:01:03.197966100 -0500
+     return (block.kind === 'quote' || block.kind === 'alert') && !mirrored(style) ? (
+diff -ruN a/hooks/theme.ts b/hooks/theme.ts
+--- a/hooks/theme.ts	2026-10-22 17:51:15.233495000 +0300
++++ b/hooks/theme.ts	2026-10-22 17:51:15.425011600 +0300
+@@ -38,6 +38,7 @@
+   copyButtons: boolean
+   copyButtonStyle: 'inline' | 'hover'
+   htmlCopy: ClipboardBackend | null
++  pngCopy: boolean
+   nativeCode?: boolean
+   httpLinks: boolean
+   editorLinks: boolean
+@@ -95,6 +96,7 @@
+     copyButtons: options.copyButtons !== false,
+     copyButtonStyle: pick(options.copyButtonStyle, ['inline', 'hover'] as const, 'inline'),
+     htmlCopy: null,
++    pngCopy: false,
+     httpLinks: false,
+     editorLinks: false,
+     fileLinks: null,
+diff -ruN a/scripts/text2png.py b/scripts/text2png.py
+--- a/scripts/text2png.py	1970-01-01 03:00:00.000000000 +0300
++++ b/scripts/text2png.py	2026-10-22 17:51:15.481443600 +0300
 @@ -0,0 +1,44 @@
 +"""Render monospace text (stdin) to a PNG: text2png.py OUT.png [BG_HEX] [FG_HEX]."""
 +import sys
@@ -130,3 +183,30 @@ diff -ruN -x vendor -x node_modules a/scripts/text2png.py b/scripts/text2png.py
 +
 +
 +main()
+diff -ruN a/tests/moaa-png.test.tsx b/tests/moaa-png.test.tsx
+--- a/tests/moaa-png.test.tsx	1970-01-01 03:00:00.000000000 +0300
++++ b/tests/moaa-png.test.tsx	2026-10-22 17:51:15.550284100 +0300
+@@ -0,0 +1,23 @@
++import { expect, test } from 'claude-code/testing'
++
++import { clipboardEnv, startSession } from './clipboard-env'
++
++const mount = {
++  plugin: 'prismantis',
++  component: 'AssistantMessage' as const,
++  props: { text: '| a | b |\n|---|---|\n| 1 | 2 |', isFirstOfReply: true },
++  viewport: { columns: 120, rows: 40 },
++  surface: 'terminal' as const,
++}
++
++for (const [env, shown] of [[{}, false], [{ PRISMANTIS_PNG_BUTTON: '1' }, true]] as const) {
++  test(`a table's ▣ png button is ${shown ? 'shown with' : 'hidden without'} PRISMANTIS_PNG_BUTTON`, async ($, on) => {
++    clipboardEnv(on, 'other', env)
++    await startSession($, on)
++    const ui = await $.ui.mount(mount)
++    const labels = (await ui.findAll({ type: 'Button' })).map(b => b.props.label)
++    expect(labels.includes('⧉ art')).toBe(true)
++    expect(labels.includes('▣ png')).toBe(shown)
++    await ui.unmount()
++  })
++}

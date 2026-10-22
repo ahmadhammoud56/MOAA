@@ -26,6 +26,12 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 - **Specialist Council README** rewritten: marketplace install, use, roles, cost ledger and commands. The old one still
   described the pre-plugin standalone install.
 - **README:** the cost section states the benchmark result.
+- **prismantis 0.11.0 → 0.34.0** (23 upstream releases).
+  - The vendored copy is upstream v0.34.0 without its Codex plugin files and the 14 MB of screenshots in `docs/`
+    (1.5 MB instead of 4.3 MB).
+  - MOAA's PNG button is re-applied on top. It is now opt-in through `PRISMANTIS_PNG_BUTTON`, which the installer's
+    default env sets to 1, so upstream's own test suite passes unchanged: 844 of 844 including the button's 2 tests.
+  - `MODIFICATIONS.md` and `png-button.patch` describe the change against clean v0.34.0.
 
 ## [0.12.0] - 2026-10-22
 

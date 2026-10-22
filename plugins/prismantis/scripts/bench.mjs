@@ -3,7 +3,7 @@ import { cpus } from 'node:os'
 import { join } from 'node:path'
 import { ROOT, load } from './load.mjs'
 
-const { parse, mermaidText, boxArt, resolveStyle, el, reply } = await load()
+const { parse, mermaidText, boxArt, resolveStyle, el, reply, renderDiffCard } = await load()
 const demo = readFileSync(join(ROOT, 'docs/demo.md'), 'utf8')
 const style = resolveStyle({ theme: 'dracula', rtl: 'warp' })
 const columns = 200
@@ -53,15 +53,22 @@ for (let end = 100; end <= streamSource.length; end += 100) {
   streamTimes.push(performance.now() - t)
 }
 
-const hebrew = n => Array.from({ length: n }, (_, i) => `פסקה ${i} עם **מודגש**, \`קוד\`, 99.9% ו-250ms וגם kubectl באנגלית ועוד מילים כדי שהשורה תתכסה.`).join("\n\n")
+const hebrew = (n, tag = '') => Array.from({ length: n }, (_, i) => `פסקה ${i}${tag} עם **מודגש**, \`קוד\`, 99.9% ו-250ms וגם kubectl באנגלית ועוד מילים כדי שהשורה תתכסה.`).join("\n\n")
 const count = n => (n == null || n === false ? 0 : Array.isArray(n) ? n.reduce((a, c) => a + count(c), 0) : typeof n !== "object" ? 1 : 1 + count(n.children))
+const linked = { ...style, httpLinks: true, fileLinks: 'file://', pathLinks: true, home: '/home/me', cwd: '/work' }
+const paragraphs = Array.from({ length: 300 }, (_, i) => `Paragraph ${i} with **bold**, \`code\`, 99.9% and ~/src/app.ts.`).join("\n\n")
+const pathTable = `| file | notes |\n|---|---|\n${Array.from({ length: 300 }, (_, i) => `| /srv/app/src/f${i}.ts | ~/notes/n${i}.md |`).join('\n')}`
 const nodeRows = [
   ["nodes: 500 highlighted ts lines", `\`\`\`ts\n${Array.from({ length: 500 }, (_, i) => `const v${i} = await fetch("/api/${i}", { retries: ${i % 5} })`).join("\n")}\n\`\`\``],
   ["nodes: 300 table rows", bigTable.split("\n").slice(0, 302).join("\n")],
-  ["nodes: 300 paragraphs", Array.from({ length: 300 }, (_, i) => `Paragraph ${i} with **bold**, \`code\`, 99.9% and ~/src/app.ts.`).join("\n\n")],
+  ["nodes: 300 paragraphs", paragraphs],
+  ["nodes: 300 paragraphs, paths linked", paragraphs, linked],
+  ["nodes: 300 table rows of paths, linked", pathTable, linked],
   ["nodes: 300 Hebrew paragraphs", hebrew(300)],
   ["nodes: demo reply", demo],
-].map(([stage, text]) => ({ stage, nodes: count(reply(text, style)) }))
+].map(([stage, text, drawn = style]) => ({ stage, nodes: count(reply(text, drawn)) }))
+const editLines = Array.from({ length: 400 }, (_, i) => `+const v${i} = await fetch("/api/${i}", { retries: ${i % 5} })`)
+nodeRows.push({ stage: 'nodes: opened 400-line diff card', nodes: count(renderDiffCard(el, style, { filePath: '/repo/app.ts', structuredPatch: [{ oldStart: 1, newStart: 1, lines: editLines }] }, () => ({ folded: false, element: null }), 'bench')) })
 
 const rows = [
   time('parse, demo (cold)', i => parse(fresh(demo, i), { numbers: true, paths: true })),
@@ -71,7 +78,7 @@ const rows = [
   time('full reply, demo (warm)', () => reply(demo, style)),
   time('full reply, 6x demo (cold)', i => reply(freshCharts(section(6), i), style), Math.max(20, RUNS / 5)),
   time('table, 300 rows', i => reply(fresh(bigTable, i), style)),
-  time('Hebrew, 300 paragraphs (cold)', i => reply(fresh(hebrew(300), i), style), Math.max(20, RUNS / 5)),
+  time('Hebrew, 300 paragraphs (cold)', i => reply(hebrew(300, `-${i}`), style), Math.max(20, RUNS / 5)),
   time('code block, 1500 lines, highlighted', i => reply(fresh(bigCode, i), style), Math.max(20, RUNS / 5)),
   {
     stage: `stream replay, ${streamTimes.length} redraws of a ${streamSource.length}-char reply (per redraw)`,

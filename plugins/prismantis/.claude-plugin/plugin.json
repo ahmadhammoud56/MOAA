@@ -1,6 +1,6 @@
 {
   "name": "prismantis",
-  "version": "0.11.0",
+  "version": "0.34.0",
   "description": "Colorful, themeable rendering for Claude Code replies: tables, headings, code, numbers, paths and links.",
   "author": {
     "name": "Nahum Litvin",
@@ -28,44 +28,107 @@
     "theme": {
       "type": "string",
       "title": "Theme",
-      "description": "Base palette, from popular MIT-licensed themes. Light variants: catppuccin-latte, gruvbox-light, rose-pine-dawn, github-light, solarized-light. mono uses bold and dim only. Allowed: catppuccin-mocha, catppuccin-latte, dracula, nord, tokyo-night, gruvbox-dark, gruvbox-light, rose-pine, rose-pine-dawn, everforest, github-dark, github-light, one-dark, solarized-dark, solarized-light, mono.",
-      "default": "catppuccin-mocha"
+      "description": "Base palette, from popular MIT-licensed themes. Light variants: catppuccin-latte, gruvbox-light, rose-pine-dawn, github-light, solarized-light. mono uses bold and dim only. random picks a dark color preset each time the mod loads (session start or reload).",
+      "default": "catppuccin-mocha",
+      "options": [
+        "catppuccin-mocha",
+        "catppuccin-latte",
+        "dracula",
+        "nord",
+        "tokyo-night",
+        "gruvbox-dark",
+        "gruvbox-light",
+        "rose-pine",
+        "rose-pine-dawn",
+        "everforest",
+        "github-dark",
+        "github-light",
+        "one-dark",
+        "solarized-dark",
+        "solarized-light",
+        "mono",
+        "random"
+      ]
     },
     "headingStyle": {
       "type": "string",
       "title": "Heading style",
-      "description": "Terminals have one font size, so headings get weight instead: banner (a box around H1, a heavy rule under H2), bold, underline, or uppercase H1. Allowed: bold, underline, uppercase, banner.",
-      "default": "banner"
+      "description": "Terminals have one font size, so headings get weight instead: banner (a box around H1, a heavy rule under H2), bold, underline, or uppercase H1.",
+      "default": "banner",
+      "options": [
+        "bold",
+        "underline",
+        "uppercase",
+        "banner"
+      ]
     },
     "tableStyle": {
       "type": "string",
       "title": "Table style",
-      "description": "box: every cell boxed, with a double line under the header. rules: a rule under the header and between rows. grid: heavier header rule, wider gaps. minimal: header rule only. Allowed: box, rules, grid, minimal.",
-      "default": "box"
+      "description": "box: every cell boxed, with a double line under the header. rules: a rule under the header and between rows. grid: heavier header rule, wider gaps. minimal: header rule only.",
+      "default": "box",
+      "options": [
+        "box",
+        "rules",
+        "grid",
+        "minimal"
+      ]
     },
     "promptStyle": {
       "type": "string",
       "title": "Your prompt style",
-      "description": "How the prompts you type draw in the transcript. bubble: a rounded box in the accent color. bar: an accent bar on the left. chevron: a bold accent › before the text. off: Claude Code's own look. Allowed: bubble, bar, chevron, off.",
-      "default": "bubble"
+      "description": "How the prompts you type draw in the transcript. bubble: a rounded box in the accent color. wide: the same box across the full width, a divider between turns. bar: an accent bar on the left. chevron: a bold accent › before the text. off: Claude Code's own look.",
+      "default": "bubble",
+      "options": ["bubble", "wide", "bar", "chevron", "off"]
+    },
+    "clock": {
+      "type": "string",
+      "title": "Clock times",
+      "description": "Shows when you sent each prompt and when each turn finished. 24h: 14:32. 12h: 2:32 PM. A time from another day gets its date. off: no times.",
+      "default": "off",
+      "options": ["off", "24h", "12h"]
     },
     "toolStyle": {
       "type": "string",
       "title": "Tool row style",
-      "description": "How tool rows (Ran, Read, Edited) sit next to Claude's sentences. chat: tool rows dimmed on the right, Claude on the left. tree-dim: tucked under the sentence with ⎿ and dimmed. tree-bold: tree-dim plus one-line sentences in bold. classic: the original look. Allowed: chat, tree-dim, tree-bold, classic.",
-      "default": "chat"
+      "description": "How tool rows (Ran, Read, Edited) sit next to Claude's sentences. chat: tool rows dimmed on the right, Claude on the left. tree-dim: tucked under the sentence with ⎿ and dimmed. tree-bold: tree-dim plus one-line sentences in bold. classic: the original look.",
+      "default": "chat",
+      "options": ["chat", "tree-dim", "tree-bold", "classic"]
+    },
+    "toolOutput": {
+      "type": "string",
+      "title": "Tool output",
+      "description": "How much of a tool call shows. full: what Claude Code shows. quiet: rows say in plain words what a call did, reads, searches and listings show only their row, other shell commands show their first lines, edits keep their diff, a failed call shows the last line of its error, and a refused call its full reason. Needs toolRows on.",
+      "default": "full",
+      "options": ["full", "quiet"]
     },
     "taskStyle": {
       "type": "string",
       "title": "Task list style",
-      "description": "How - [ ] and - [x] items draw. checks: [ ] and [✓] with done items dimmed and struck through. ticks: ○ and ✓, done items dimmed. box: □ and ✓, done items dimmed and struck through. progress: ticks with a done-count bar above each list. Allowed: checks, ticks, box, progress.",
-      "default": "checks"
+      "description": "How - [ ] and - [x] items draw. checks: [ ] and [✓] with done items dimmed and struck through. ticks: ○ and ✓, done items dimmed. box: □ and ✓, done items dimmed and struck through. progress: ticks with a done-count bar above each list.",
+      "default": "checks",
+      "options": ["checks", "ticks", "box", "progress"]
     },
     "rtl": {
       "type": "string",
       "title": "Right-to-left terminal",
-      "description": "Hebrew and Arabic get a right-to-left layout (right aligned, bullets and quote bars on the right, tables mirrored), with the letters sent the way your terminal needs them. auto detects the terminal; pick one to force its handling, or off for none. Allowed: auto, warp, kitty, apple-terminal, iterm, ghostty, wezterm, vscode, alacritty, windows-terminal, gnome, konsole, off.",
-      "default": "auto"
+      "description": "Hebrew and Arabic get a right-to-left layout (right aligned, bullets and quote bars on the right, tables mirrored), with the letters sent the way your terminal needs them. auto detects the terminal; pick one to force its handling, or off for none.",
+      "default": "auto",
+      "options": [
+        "auto",
+        "warp",
+        "kitty",
+        "apple-terminal",
+        "iterm",
+        "ghostty",
+        "wezterm",
+        "vscode",
+        "alacritty",
+        "windows-terminal",
+        "gnome",
+        "konsole",
+        "off"
+      ]
     },
     "highlightNumbers": {
       "type": "boolean",
@@ -172,7 +235,7 @@
     "diagramTextColor": {
       "type": "string",
       "title": "Diagram text",
-      "description": "Color for diagram labels. Hex, rgb(), ansi256() or a name. Empty uses the theme.",
+      "description": "Color for diagram labels and LaTeX formulas. Hex, rgb(), ansi256() or a name. Empty uses the theme.",
       "default": ""
     },
     "toolRows": {
@@ -202,7 +265,7 @@
     "ruleColor": {
       "type": "string",
       "title": "Rules",
-      "description": "Color for horizontal rules and heading banners. Hex, rgb(), ansi256() or a name. Empty uses the theme.",
+      "description": "Color for horizontal rules, diff card borders and chart gridlines. Hex, rgb(), ansi256() or a name. Empty uses the theme.",
       "default": ""
     },
     "bulletColor": {
@@ -210,6 +273,32 @@
       "title": "Bullets",
       "description": "Color for list bullets and numbers. Hex, rgb(), ansi256() or a name. Empty uses the theme.",
       "default": ""
+    },
+    "diffAddedColor": {
+      "type": "string",
+      "title": "Diff added",
+      "description": "Color for added diff lines: their + marks and count, and in hex the tint behind them, mixed into black or white so code text stays at 4.5:1. Hex, rgb(), ansi256() or a name. Empty uses the theme's green.",
+      "default": ""
+    },
+    "diffRemovedColor": {
+      "type": "string",
+      "title": "Diff removed",
+      "description": "Color for removed diff lines: their - marks and count, and in hex the tint behind them, mixed into black or white so code text stays at 4.5:1. Hex, rgb(), ansi256() or a name. Empty uses the theme's red.",
+      "default": ""
+    },
+    "diffStyle": {
+      "type": "string",
+      "title": "Diff style",
+      "description": "How edit and shell edit diffs draw. card: a rounded box with tinted lines. full: no box, each changed line tinted across the width. marks: no box and no tint, only the +/- marks in the theme's diff colors. bar: no box and no tint, a colored ▌ before each changed line. Every style highlights the code and marks the changed words.",
+      "default": "card",
+      "options": ["card", "full", "marks", "bar"]
+    },
+    "pieStyle": {
+      "type": "string",
+      "title": "Pie style",
+      "description": "How mermaid pie charts draw. round: a circle with a legend, falling back to bars in ascii mode, with more slices than the theme has distinct colors (mono always) or in a narrow terminal. bars: one bar per slice, largest first, with its share.",
+      "default": "round",
+      "options": ["round", "bars"]
     },
     "mermaid": {
       "type": "boolean",
@@ -223,11 +312,30 @@
       "description": "Put a copy button on code blocks, tables, diagrams, lists and quotes. Reach them with ctrl+x tab then Enter, or click where the terminal passes clicks through.",
       "default": true
     },
+    "copyButtonStyle": {
+      "type": "string",
+      "title": "Copy button style",
+      "description": "inline: buttons beside or above each block, always shown. hover: each block shows a dim ⧉ beside its first row, and the reply one in its bottom-right corner; the pointer on a ⧉ draws its buttons over it, so they take no line; ctrl+x tab does not reach them, and the mobile app, which has no pointer, shows them inline. Needs copyButtons on.",
+      "default": "inline",
+      "options": ["inline", "hover"]
+    },
+    "issueHint": {
+      "type": "boolean",
+      "title": "Issue hint",
+      "description": "On your first prompt and every tenth after it, tell the model it can offer, after asking you, to open a minimal repro issue on prismantis when you say something drew wrong. About 35 tokens each time.",
+      "default": true
+    },
     "diagramHints": {
       "type": "boolean",
       "title": "Diagram hints",
-      "description": "Attach a short note, read by the model and never shown, to each prompt you type, saying tables, code, mermaid diagrams and charts render here. About 190 tokens per prompt. Off when mermaid is off.",
+      "description": "Attach a short note, read by the model and never shown, to each prompt you type or another plugin sends, saying tables, code, mermaid diagrams, charts and figures render here, and LaTeX formulas when the renderer runs. About 630 tokens per prompt (about 275 for the main part, about 360 for figures), about 80 more with LaTeX. Off when mermaid is off.",
       "default": true
+    },
+    "latex": {
+      "type": "boolean",
+      "title": "LaTeX math",
+      "description": "Draw $$ and ```math formulas as typeset images in kitty and Ghostty (not under tmux) with RaTeX's renderer, installed as ratex-render on your PATH. Off runs nothing. Formulas that can't be drawn stay as text.",
+      "default": false
     }
   }
 }
