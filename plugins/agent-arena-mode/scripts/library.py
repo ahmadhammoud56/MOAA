@@ -384,7 +384,7 @@ def promote(database, agent_id, council_home="~/.claude", slug=None, min_runs=2,
     card = f"""---
 name: "council-forged-{slug}"
 description: "Forged specialist: {profile['name']}. Arena-proven in {len(evidence['runs'])} runs. Use when delegated this specialist responsibility."
-tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
+disallowedTools: [Agent]
 model: "{model}"
 effort: "{effort}"
 ---

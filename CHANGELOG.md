@@ -4,6 +4,14 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-10-22
+
+### Changed
+- **Agent Arena 0.6.1:** forged council members get every tool except Agent again (`disallowedTools: [Agent]`),
+  MCP servers included, so an arena-proven specialist can use whatever the session has. The 60 role agents keep
+  their core tool list. With tool search, MCP tools are listed by name and loaded on demand, so the extra cost per
+  call is small.
+
 ## [0.11.0] - 2026-10-22
 
 ### Added
