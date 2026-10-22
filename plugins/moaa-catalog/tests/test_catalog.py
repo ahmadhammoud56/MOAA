@@ -83,9 +83,12 @@ class Catalog(unittest.TestCase):
         self.assertIn("claude plugin enable off@m", catalog.promote_hint(self.home, "off@m"))
         self.assertEqual(catalog.use(self.home, str(self.home / "settings.json")), 1)  # not in the index: refused
 
-    @unittest.skipUnless(__import__("shutil").which("bash"), "needs bash, as Claude Code's hook runner does")
     def test_hook_command_skips_interpreters_that_exit_3_and_runs_the_next(self):
-        import subprocess
+        import shutil, subprocess
+        # the full path: on Windows a bare "bash" finds System32's WSL launcher before Git Bash on PATH
+        bash = shutil.which("bash")
+        if not bash or "system32" in bash.lower():
+            self.skipTest("needs Git Bash or a POSIX bash, as Claude Code's hook runner does")
         root = Path(__file__).resolve().parents[1]
         command = json.loads((root / "hooks" / "hooks.json").read_text())["hooks"]["UserPromptSubmit"][0]["hooks"][0]
         fake = self.home / "bin"
@@ -96,7 +99,7 @@ class Catalog(unittest.TestCase):
         (fake / "python3").chmod(0o755)
         env = {**os.environ, "CLAUDE_PLUGIN_ROOT": root.as_posix(), "CLAUDE_CONFIG_DIR": str(self.home),
                "PATH": fake.as_posix() + os.pathsep + os.environ["PATH"]}
-        r = subprocess.run(["bash", "-c", command["command"]], input=json.dumps({"prompt": "stripe webhooks payments"}),
+        r = subprocess.run([bash, "-c", command["command"]], input=json.dumps({"prompt": "stripe webhooks payments"}),
                            capture_output=True, text=True, env=env)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("stripe-integration", r.stdout)
