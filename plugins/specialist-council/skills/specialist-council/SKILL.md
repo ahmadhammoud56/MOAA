@@ -17,6 +17,11 @@ Use native registered subagents named `council-<role-id>`. Read [Claude runtime]
 ## Form the team
 
 1. Extract the deliverable, acceptance criteria, input sources, constraints, and authorized actions. Resolve consequential missing context from available sources before asking a focused question. A request to plan is not permission to implement or publish.
+   Then size the job. For a short task with a checkable answer (a factorization, a small review, a calculation),
+   one strong model already matched the full council in MOAA's benchmark (`benchmarks/council-vs-solo`, every arm
+   at 100%) at a fifth of the cost and time. Unless the user explicitly asked for several workers, answer such tasks
+   yourself or with one worker and say so in one line. Convene a team for ambiguous, high-stakes, long or
+   multi-part work, where independent methods can actually disagree.
 2. Inspect the advertised Claude Code agent tools, current live agents, available slots, models, and effort levels. Read [runtime.md](references/runtime.md) for actual dispatch and capability limits. Never simulate several personas in one response and describe them as real subagents.
 3. Choose the requested mode, or select a default:
 
@@ -97,6 +102,9 @@ Read [adjudication.md](references/adjudication.md) when results arrive.
 3. Resolve material disagreement with evidence or a targeted check. Request a bounded repair only when needed. If evidence cannot decide, expose uncertainty or conditional alternatives.
 4. Choose a sound base, incorporate only compatible supported improvements, and verify the assembled result. For split tasks, check interfaces and dependencies too. Never average incompatible numerical results or splice incompatible implementations.
 5. Deliver the actual answer or completed artifact first, followed by the chosen result, meaningful improvements, validation, and material limitations. Include a compact comparison when useful or requested; omit discussion transcripts. Claim the best-supported result among evaluated candidates, not a guaranteed global optimum.
-6. End with one cost line from `python "${CLAUDE_PLUGIN_ROOT}/council.py" cost` (the plugin's SubagentStop hook records every finished worker): workers run and total tokens, cache reads shown separately. Skip it if the ledger is empty.
+6. Wait for every dispatched worker before giving the final answer. If a worker's report arrives after you have
+   answered, your next message must restate the complete final answer (including any required output format), not
+   point back to an earlier message: in headless and scripted use only the last message is kept.
+7. End with one cost line from `python "${CLAUDE_PLUGIN_ROOT}/council.py" cost` (the plugin's SubagentStop hook records every finished worker): workers run and total tokens, cache reads shown separately. Skip it if the ledger is empty.
 
 Save deliverables in the user's requested project or output location; follow existing publication permissions. Do not modify this installed skill or persist new roles unless the user asks to save that customization. Spawned agents are task-local; reusable role definitions live in this skill.

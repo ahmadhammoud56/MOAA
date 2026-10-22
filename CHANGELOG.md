@@ -4,6 +4,29 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-10-22
+
+### Added
+- **Council vs single-agent benchmark** (`benchmarks/council-vs-solo`): Sonnet alone, Opus alone and the council
+  on 5 tasks with fixed answer keys (three code reviews with 25 planted bugs and 10 decoys, 10 statistics claims, 10
+  trap questions), 3 runs each, in clean headless sessions with no shell or file writes. `bench.py` runs, resumes and
+  scores it on a normal Claude Code login, and `verify_keys.py` re-proves every answer key by execution. Raw results
+  for all 45 runs are included.
+  - **Result:** both single models scored 100% in every run. The council never did better, cost 2.5–6× as much and
+    took 3.5–7× as long. One council run lost its answer to a late worker report.
+- **Replay tool, arena runs:** `tools/council-replay` now recognises an Agent Arena transcript and labels it as one:
+  contestants, the judge, the verdict and the winner.
+
+### Changed
+- **Specialist Council 1.6.1:**
+  - It now sizes the job first. Short tasks with a checkable answer get one worker or a direct answer, unless the
+    user explicitly asks for several workers. Teams are for ambiguous, long or high-stakes work.
+  - It waits for every worker, and after a late report it restates the full answer instead of pointing back to it.
+    Headless use keeps only the last message.
+- **Specialist Council README** rewritten: marketplace install, use, roles, cost ledger and commands. The old one still
+  described the pre-plugin standalone install.
+- **README:** the cost section states the benchmark result.
+
 ## [0.12.0] - 2026-10-22
 
 The first milestone of the October roadmap: measure what the council costs, start proving what it adds, make the

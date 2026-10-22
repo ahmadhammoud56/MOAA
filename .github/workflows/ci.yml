@@ -52,6 +52,11 @@ jobs:
       - name: moaa-catalog tests
         working-directory: plugins/moaa-catalog
         run: python -m unittest discover -s tests
+      - name: Benchmark scoring and answer keys
+        working-directory: benchmarks/council-vs-solo
+        run: |
+          python -m unittest test_bench
+          python verify_keys.py
       - name: Public-release scan (secrets, personal paths, licences)
         run: python scripts/scan.py --public
       - name: MODELS.md matches the plugins

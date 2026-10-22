@@ -1,0 +1,65 @@
+{
+  "case": "review-hard",
+  "arm": "solo-opus",
+  "run": 2,
+  "started": 1792678927,
+  "model_alias": "opus",
+  "council": false,
+  "prompt": "Review this Python module for bugs: places where the code does not do what its docstring says. Line numbers are shown before the bar. Ignore style and report only real defects.\n\n```python\n 1 | import re\n 2 | from datetime import datetime\n 3 | \n 4 | class Counter:\n 5 |     \"\"\"Counts events per name. Each Counter keeps its own counts.\"\"\"\n 6 |     counts = {}\n 7 | \n 8 |     def add(self, name):\n 9 |         self.counts[name] = self.counts.get(name, 0) + 1\n10 | \n11 | def stamp(event, when=datetime.now()):\n12 |     \"\"\"A copy of event with 'at' set to when, or to the time of this call if when is not given.\"\"\"\n13 |     return {**event, \"at\": when}\n14 | \n15 | def make_multipliers():\n16 |     \"\"\"[f0, f1, f2] where fi(x) == i * x.\"\"\"\n17 |     return [lambda x: i * x for i in range(3)]\n18 | \n19 | def is_valid_id(s):\n20 |     \"\"\"True when s is exactly 3 uppercase letters followed by 4 digits, such as 'ABC1234'.\"\"\"\n21 |     return re.match(r\"[A-Z]{3}\\d{4}\", s) is not None\n22 | \n23 | def clamp(x, lo, hi):\n24 |     \"\"\"x limited to the range [lo, hi], assuming lo <= hi.\"\"\"\n25 |     return max(lo, min(x, hi))\n26 | \n27 | def find(sorted_xs, target):\n28 |     \"\"\"Index of target in an ascending list, or -1 when it is absent.\"\"\"\n29 |     lo, hi = 0, len(sorted_xs) - 1\n30 |     while lo < hi:\n31 |         mid = (lo + hi) // 2\n32 |         if sorted_xs[mid] == target:\n33 |             return mid\n34 |         if sorted_xs[mid] < target:\n35 |             lo = mid + 1\n36 |         else:\n37 |             hi = mid - 1\n38 |     return -1\n39 | \n40 | def remove_negatives(xs):\n41 |     \"\"\"Remove every negative number from the list xs, in place.\"\"\"\n42 |     for x in xs:\n43 |         if x < 0:\n44 |             xs.remove(x)\n45 | \n46 | def chunks_of(s, n):\n47 |     \"\"\"s split into pieces of n characters; the last piece may be shorter.\"\"\"\n48 |     return [s[i:i + n] for i in range(0, len(s), n)]\n49 | \n50 | def total_cents(prices):\n51 |     \"\"\"Total of prices given as decimal strings such as '0.29', as an exact number of cents.\"\"\"\n52 |     return int(sum(float(p) for p in prices) * 100)\n53 | \n54 | def same_object(a, b):\n55 |     \"\"\"True only when a and b are the very same object.\"\"\"\n56 |     return a is b\n57 | \n58 | def copy_grid(grid):\n59 |     \"\"\"An independent copy of a 2-D list: changing a cell of the copy never changes grid.\"\"\"\n60 |     return [row for row in grid]\n61 | \n62 | def first_word(text):\n63 |     \"\"\"The first whitespace-separated word of text, or '' for blank text.\"\"\"\n64 |     parts = text.split()\n65 |     return parts[0] if parts else \"\"\n```\n\nEnd with a fenced ```json block: {\"bugs\": [{\"line\": <line number>, \"issue\": \"<one sentence>\"}]}, one entry per distinct bug.",
+  "result": "Seven of the functions don't do what their docstrings say. `clamp`, `chunks_of`, `same_object` and `first_word` are correct.\n\n1. **Line 6, `Counter`:** `counts = {}` is a class attribute, so every `Counter` instance shares one dict. That contradicts \"Each Counter keeps its own counts.\" It should be set as `self.counts = {}` in `__init__`.\n2. **Line 11, `stamp`:** the default `datetime.now()` runs only once, when the function is defined. Every call without `when` gets that same old timestamp, not the time of the call.\n3. **Line 17, `make_multipliers`:** the lambdas look up `i` when they are called, not when they are created. By then `i` is 2, so every function computes `2 * x`. Binding it early fixes this: `lambda x, i=i: i * x`.\n4. **Line 21, `is_valid_id`:** `re.match` only anchors at the start of the string. Input with extra characters, such as `'ABC12345'` or `'ABC1234xyz'`, wrongly passes. Use `re.fullmatch`. Note also that `\\d` accepts non-ASCII digits; `[0-9]` with `fullmatch` avoids that.\n5. **Line 30, `find`:** with `while lo < hi`, the loop stops before checking the last remaining element. For example, `find([5], 5)` returns -1. The condition should be `lo <= hi`.\n6. **Line 42, `remove_negatives`:** it removes items from `xs` while iterating over it, which skips the element after each removal. `[-1, -2]` becomes `[-2]`. Reassigning the slice fixes it: `xs[:] = [x for x in xs if x >= 0]`.\n7. **Line 52, `total_cents`:** float arithmetic followed by `int()` truncation is not exact. `float('0.29') * 100` is `28.999999999999996`, which becomes `28` instead of `29`. Use `decimal.Decimal`, or round instead of truncating.\n8. **Line 60, `copy_grid`:** this is a shallow copy. The new list holds the same row lists, so changing a cell in the copy also changes `grid`. It should be `[list(row) for row in grid]`.\n\n```json\n{\"bugs\": [\n  {\"line\": 6, \"issue\": \"counts is a class attribute, so all Counter instances share the same dict instead of each keeping its own counts.\"},\n  {\"line\": 11, \"issue\": \"The default datetime.now() is evaluated once at definition time, so calls without 'when' get a stale fixed timestamp rather than the time of the call.\"},\n  {\"line\": 17, \"issue\": \"Lambdas capture i by late binding, so all three functions compute 2 * x instead of i * x.\"},\n  {\"line\": 21, \"issue\": \"re.match is not anchored at the end, so strings with extra trailing characters like 'ABC12345' are wrongly accepted.\"},\n  {\"line\": 30, \"issue\": \"The loop condition lo < hi skips checking the final candidate when lo == hi, so present targets (e.g. find([5], 5)) return -1.\"},\n  {\"line\": 42, \"issue\": \"Removing items from xs while iterating over it skips elements, so consecutive negatives are not all removed.\"},\n  {\"line\": 52, \"issue\": \"Summing floats and truncating with int() gives inexact cents (e.g. '0.29' yields 28 instead of 29).\"},\n  {\"line\": 60, \"issue\": \"The copy is shallow: rows are shared with the original, so changing a cell in the copy changes grid.\"}\n]}\n```",
+  "is_error": false,
+  "error": "",
+  "total_cost_usd": 0.1277698,
+  "duration_ms": 18200,
+  "num_turns": 1,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 11642,
+    "cache_read_input_tokens": 23329,
+    "output_tokens": 1498,
+    "output_tokens_details": {
+      "thinking_tokens": 309
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 11642,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1498,
+        "cache_read_input_tokens": 23329,
+        "cache_creation_input_tokens": 11642,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 11642
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 1498,
+      "cacheReadInputTokens": 23329,
+      "cacheCreationInputTokens": 11642,
+      "webSearchRequests": 0,
+      "costUSD": 0.1277698,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 309,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}

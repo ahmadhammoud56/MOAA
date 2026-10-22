@@ -1,0 +1,65 @@
+{
+  "case": "review-hard",
+  "arm": "solo-sonnet",
+  "run": 2,
+  "started": 1792678918,
+  "model_alias": "sonnet",
+  "council": false,
+  "prompt": "Review this Python module for bugs: places where the code does not do what its docstring says. Line numbers are shown before the bar. Ignore style and report only real defects.\n\n```python\n 1 | import re\n 2 | from datetime import datetime\n 3 | \n 4 | class Counter:\n 5 |     \"\"\"Counts events per name. Each Counter keeps its own counts.\"\"\"\n 6 |     counts = {}\n 7 | \n 8 |     def add(self, name):\n 9 |         self.counts[name] = self.counts.get(name, 0) + 1\n10 | \n11 | def stamp(event, when=datetime.now()):\n12 |     \"\"\"A copy of event with 'at' set to when, or to the time of this call if when is not given.\"\"\"\n13 |     return {**event, \"at\": when}\n14 | \n15 | def make_multipliers():\n16 |     \"\"\"[f0, f1, f2] where fi(x) == i * x.\"\"\"\n17 |     return [lambda x: i * x for i in range(3)]\n18 | \n19 | def is_valid_id(s):\n20 |     \"\"\"True when s is exactly 3 uppercase letters followed by 4 digits, such as 'ABC1234'.\"\"\"\n21 |     return re.match(r\"[A-Z]{3}\\d{4}\", s) is not None\n22 | \n23 | def clamp(x, lo, hi):\n24 |     \"\"\"x limited to the range [lo, hi], assuming lo <= hi.\"\"\"\n25 |     return max(lo, min(x, hi))\n26 | \n27 | def find(sorted_xs, target):\n28 |     \"\"\"Index of target in an ascending list, or -1 when it is absent.\"\"\"\n29 |     lo, hi = 0, len(sorted_xs) - 1\n30 |     while lo < hi:\n31 |         mid = (lo + hi) // 2\n32 |         if sorted_xs[mid] == target:\n33 |             return mid\n34 |         if sorted_xs[mid] < target:\n35 |             lo = mid + 1\n36 |         else:\n37 |             hi = mid - 1\n38 |     return -1\n39 | \n40 | def remove_negatives(xs):\n41 |     \"\"\"Remove every negative number from the list xs, in place.\"\"\"\n42 |     for x in xs:\n43 |         if x < 0:\n44 |             xs.remove(x)\n45 | \n46 | def chunks_of(s, n):\n47 |     \"\"\"s split into pieces of n characters; the last piece may be shorter.\"\"\"\n48 |     return [s[i:i + n] for i in range(0, len(s), n)]\n49 | \n50 | def total_cents(prices):\n51 |     \"\"\"Total of prices given as decimal strings such as '0.29', as an exact number of cents.\"\"\"\n52 |     return int(sum(float(p) for p in prices) * 100)\n53 | \n54 | def same_object(a, b):\n55 |     \"\"\"True only when a and b are the very same object.\"\"\"\n56 |     return a is b\n57 | \n58 | def copy_grid(grid):\n59 |     \"\"\"An independent copy of a 2-D list: changing a cell of the copy never changes grid.\"\"\"\n60 |     return [row for row in grid]\n61 | \n62 | def first_word(text):\n63 |     \"\"\"The first whitespace-separated word of text, or '' for blank text.\"\"\"\n64 |     parts = text.split()\n65 |     return parts[0] if parts else \"\"\n```\n\nEnd with a fenced ```json block: {\"bugs\": [{\"line\": <line number>, \"issue\": \"<one sentence>\"}]}, one entry per distinct bug.",
+  "result": "Bugs found:\n\n- **Line 6:** `counts` is a class attribute, so every Counter shares one dict. This contradicts \"each Counter keeps its own counts\".\n- **Line 11:** The default `when=datetime.now()` is evaluated once, at definition time. Calls without `when` get the import time, not the time of the call.\n- **Line 17:** The lambdas close over `i` late. After the loop `i` is 2, so every function computes `2 * x` instead of `i * x`.\n- **Line 21:** `re.match` anchors only at the start, with no end anchor. 'ABC12345' and 'ABC1234xyz' are accepted though they are not exactly 3 letters plus 4 digits. It needs `fullmatch` or `$`. Even `$` would still accept a trailing newline.\n- **Line 30:** The loop condition `lo < hi` exits before checking the last remaining candidate. `find([5], 5)` returns -1, and so does searching for the last element in some lists. It should be `lo <= hi`.\n- **Line 42:** The code removes items from the list while iterating over it, so it skips the element after each removal. `[-1, -2]` leaves `[-2]`.\n- **Line 52:** Summing floats and then truncating with `int` is not exact. `['0.29']` gives `28`, because 0.29*100 is 28.999…. It should use `Decimal` or integer parsing, and round.\n- **Line 60:** The copy is shallow. The rows are shared with the original, so changing a cell of the copy changes `grid`. It needs `[row[:] for row in grid]` or `deepcopy`.\n\nNot bugs: `clamp` (line 25), `chunks_of` (line 48), `same_object` (line 56) and `first_word` (line 65) match their docstrings.\n\n```json\n{\"bugs\": [\n{\"line\": 6, \"issue\": \"counts is a shared class-level dict, so all Counter instances share the same counts instead of each keeping its own.\"},\n{\"line\": 11, \"issue\": \"Default argument datetime.now() is evaluated once at definition time, not at each call.\"},\n{\"line\": 17, \"issue\": \"Lambdas capture i late, so all three return 2 * x instead of i * x.\"},\n{\"line\": 21, \"issue\": \"re.match has no end anchor, so strings with extra trailing characters are accepted; fullmatch is needed.\"},\n{\"line\": 30, \"issue\": \"Loop condition lo < hi skips the final candidate, so existing elements (e.g. single-element list) are reported as absent.\"},\n{\"line\": 42, \"issue\": \"Removing from the list while iterating over it skips elements, so some negatives remain.\"},\n{\"line\": 52, \"issue\": \"Float summation followed by int() truncation is inexact and can be off by a cent (e.g. '0.29' gives 28).\"},\n{\"line\": 60, \"issue\": \"Shallow copy shares the row lists with the original, so changing a cell in the copy changes grid.\"}\n]}\n```",
+  "is_error": false,
+  "error": "",
+  "total_cost_usd": 0.0587682,
+  "duration_ms": 11301,
+  "num_turns": 1,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 11648,
+    "cache_read_input_tokens": 23722,
+    "output_tokens": 980,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 11648,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 980,
+        "cache_read_input_tokens": 23722,
+        "cache_creation_input_tokens": 11648,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 11648
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 980,
+      "cacheReadInputTokens": 23722,
+      "cacheCreationInputTokens": 11648,
+      "webSearchRequests": 0,
+      "costUSD": 0.0587682,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}

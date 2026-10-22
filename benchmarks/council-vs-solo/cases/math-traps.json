@@ -1,0 +1,20 @@
+{
+  "id": "math-traps",
+  "kind": "answers",
+  "title": "Ten questions with common traps, no tools",
+  "task": "Answer each question exactly, without running code. Give integers as plain numbers and non-integers as reduced fractions such as 3/7.",
+  "questions": {
+    "1": "What are the last two digits of 7^2026? Give them as a two-digit number.",
+    "2": "How many trailing zeros does 2026! have?",
+    "3": "What is the sum of the decimal digits of 2^20?",
+    "4": "In how many ways can a 2 by 10 board be tiled with 1 by 2 dominoes?",
+    "5": "How many integers from 1 to 9999 have decimal digits that sum to 9?",
+    "6": "What is the expected number of rolls of a fair six-sided die needed to see all six faces at least once?",
+    "7": "For how many integers n from 1 to 100 is n^2 + 1 divisible by 5?",
+    "8": "What is the smaller angle, in degrees, between the hour and minute hands of a clock at 3:40?",
+    "9": "How many diagonals does a convex polygon with 20 sides have?",
+    "10": "What is the 100th digit after the decimal point in the decimal expansion of 1/7?"
+  },
+  "answers": {"1": "49", "2": "505", "3": "31", "4": "89", "5": "220", "6": "147/10", "7": "40", "8": "130",
+              "9": "170", "10": "8"}
+}

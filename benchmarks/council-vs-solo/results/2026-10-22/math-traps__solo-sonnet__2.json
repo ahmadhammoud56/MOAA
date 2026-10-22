@@ -1,0 +1,65 @@
+{
+  "case": "math-traps",
+  "arm": "solo-sonnet",
+  "run": 2,
+  "started": 1792678880,
+  "model_alias": "sonnet",
+  "council": false,
+  "prompt": "Answer each question exactly, without running code. Give integers as plain numbers and non-integers as reduced fractions such as 3/7.\n\n1. What are the last two digits of 7^2026? Give them as a two-digit number.\n2. How many trailing zeros does 2026! have?\n3. What is the sum of the decimal digits of 2^20?\n4. In how many ways can a 2 by 10 board be tiled with 1 by 2 dominoes?\n5. How many integers from 1 to 9999 have decimal digits that sum to 9?\n6. What is the expected number of rolls of a fair six-sided die needed to see all six faces at least once?\n7. For how many integers n from 1 to 100 is n^2 + 1 divisible by 5?\n8. What is the smaller angle, in degrees, between the hour and minute hands of a clock at 3:40?\n9. How many diagonals does a convex polygon with 20 sides have?\n10. What is the 100th digit after the decimal point in the decimal expansion of 1/7?\n\nEnd with a fenced ```json block: {\"answers\": {\"1\": \"<answer>\", ...}} with an answer for every question.",
+  "result": "1. 7^2 = 49 and 7^4 ≡ 1 (mod 100). Since 2026 ≡ 2 (mod 4), 7^2026 ≡ 49 (mod 100).\n2. The number of factors of 5 in 2026! is 405 + 81 + 16 + 3 = 505, so there are 505 trailing zeros.\n3. 2^20 = 1048576, and its digits sum to 1+0+4+8+5+7+6 = 31.\n4. The tilings of a 2×n board follow the Fibonacci numbers, with 2×1 giving 1 and 2×2 giving 2. That gives 89 for n = 10.\n5. Count the digit strings of length 4 (leading zeros allowed) that sum to 9. Each digit is automatically at most 9, so there are C(12,3) = 220. The all-zero string sums to 0, so it is not counted.\n6. This is the coupon collector problem: 6(1 + 1/2 + 1/3 + 1/4 + 1/5 + 1/6) = 6 × 49/20 = 147/10.\n7. n² + 1 is divisible by 5 exactly when n ≡ 2 or 3 (mod 5). That is 2 of every 5 residues, so 40 of the 100 integers.\n8. At 3:40 the minute hand is at 240°. The hour hand is at 90° + 20° = 110°. The difference is 130°, which is already the smaller angle.\n9. A convex polygon with n sides has n(n−3)/2 diagonals, so 20 × 17 / 2 = 170.\n10. 1/7 = 0.142857 repeating with period 6. Since 100 ≡ 4 (mod 6), the 100th digit is the 4th digit of the block, which is 8.\n\n```json\n{\"answers\": {\"1\": \"49\", \"2\": \"505\", \"3\": \"31\", \"4\": \"89\", \"5\": \"220\", \"6\": \"147/10\", \"7\": \"40\", \"8\": \"130\", \"9\": \"170\", \"10\": \"8\"}}\n```",
+  "is_error": false,
+  "error": "",
+  "total_cost_usd": 0.055520200000000006,
+  "duration_ms": 10297,
+  "num_turns": 1,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 10861,
+    "cache_read_input_tokens": 23722,
+    "output_tokens": 970,
+    "output_tokens_details": {
+      "thinking_tokens": 303
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 10861,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 970,
+        "cache_read_input_tokens": 23722,
+        "cache_creation_input_tokens": 10861,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 10861
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 970,
+      "cacheReadInputTokens": 23722,
+      "cacheCreationInputTokens": 10861,
+      "webSearchRequests": 0,
+      "costUSD": 0.055520200000000006,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 303,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}

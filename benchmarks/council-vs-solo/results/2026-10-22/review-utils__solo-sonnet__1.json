@@ -1,0 +1,65 @@
+{
+  "case": "review-utils",
+  "arm": "solo-sonnet",
+  "run": 1,
+  "started": 1792678787,
+  "model_alias": "sonnet",
+  "council": false,
+  "prompt": "Review this Python module for bugs: places where the code does not do what its docstring says. Line numbers are shown before the bar. Ignore style.\n\n```python\n 1 | def chunk(xs, n):\n 2 |     \"\"\"Split xs into lists of at most n items, in order, keeping every item.\"\"\"\n 3 |     return [xs[i:i + n] for i in range(0, len(xs) - n, n)]\n 4 | \n 5 | def add_tag(item, tags=[]):\n 6 |     \"\"\"Return a new list: tags plus item.\"\"\"\n 7 |     tags.append(item)\n 8 |     return tags\n 9 | \n10 | def median(values):\n11 |     \"\"\"Median of a non-empty list of numbers.\"\"\"\n12 |     s = sorted(values)\n13 |     mid = len(s) // 2\n14 |     if len(s) % 2 == 0:\n15 |         return (s[mid] + s[mid + 1]) / 2\n16 |     return s[mid]\n17 | \n18 | def is_adult(age):\n19 |     \"\"\"True for ages 18 and over.\"\"\"\n20 |     return age > 18\n21 | \n22 | def safe_div(a, b):\n23 |     \"\"\"a / b, or 0 when b is 0.\"\"\"\n24 |     try:\n25 |         return a / b\n26 |     except ZeroDivisionError:\n27 |         return 0\n28 | \n29 | def percent(part, total):\n30 |     \"\"\"Percentage of total, rounded to 1 decimal.\"\"\"\n31 |     return round(part / total * 100, 1)\n32 | \n33 | def last_n(xs, n):\n34 |     \"\"\"The last n items: all of xs when n >= len(xs), and [] when n == 0.\"\"\"\n35 |     return xs[-n:]\n```\n\nEnd with a fenced ```json block: {\"bugs\": [{\"line\": <line number>, \"issue\": \"<one sentence>\"}]}, one entry per distinct bug.",
+  "result": "Bugs found:\n\n- **Line 3:** `range(0, len(xs) - n, n)` stops too early, so the last chunk (or the only chunk, if `len(xs) <= n`) is dropped. It should be `range(0, len(xs), n)`.\n- **Line 5:** The mutable default `tags=[]` is shared across calls, and line 7 mutates it, so the function doesn't return a new list and the result accumulates across calls.\n- **Line 15:** For even lengths the median should average `s[mid - 1]` and `s[mid]`. Using `s[mid + 1]` is wrong and raises an `IndexError` for a 2-item list.\n- **Line 20:** `age > 18` excludes 18, but the docstring says 18 and over. It should be `>=`.\n- **Line 35:** `xs[-n:]` with `n == 0` returns all of `xs` instead of `[]`. (`n >= len(xs)` works.)\n\nLines 22–27 and 29–31 follow their docstrings. `percent` raises `ZeroDivisionError` when `total` is 0, but the docstring doesn't cover that case.\n\n```json\n{\"bugs\": [\n  {\"line\": 3, \"issue\": \"range stop len(xs) - n drops the final chunk (and returns [] when len(xs) <= n), so items are lost.\"},\n  {\"line\": 7, \"issue\": \"The mutable default argument is mutated in place, so the function doesn't return a new list and state leaks between calls.\"},\n  {\"line\": 15, \"issue\": \"Even-length median uses s[mid] and s[mid + 1] instead of s[mid - 1] and s[mid], giving a wrong value or an IndexError.\"},\n  {\"line\": 20, \"issue\": \"age > 18 excludes 18, but the docstring says 18 and over; it should be >=.\"},\n  {\"line\": 35, \"issue\": \"xs[-0:] returns the whole list, not [], when n == 0.\"}\n]}\n```",
+  "is_error": false,
+  "error": "",
+  "total_cost_usd": 0.0532302,
+  "duration_ms": 9153,
+  "num_turns": 1,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 11106,
+    "cache_read_input_tokens": 23722,
+    "output_tokens": 643,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 11106,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 643,
+        "cache_read_input_tokens": 23722,
+        "cache_creation_input_tokens": 11106,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 11106
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 643,
+      "cacheReadInputTokens": 23722,
+      "cacheCreationInputTokens": 11106,
+      "webSearchRequests": 0,
+      "costUSD": 0.0532302,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 0,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}

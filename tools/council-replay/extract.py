@@ -73,9 +73,9 @@ def plain(text):
 
 
 def headline(result, limit=110):
-    """First prose lines of a worker result, skipping section headers, until the first list item."""
+    """First prose lines of a worker result, skipping section headers and code blocks, until the first list item."""
     out = []
-    for raw in result.splitlines():
+    for raw in re.sub(r"```.*?(```|$)", "", result, flags=re.S).splitlines():
         line = plain(raw)
         if not line or line.endswith(":") or re.fullmatch(r"\s*(\*\*[^*]+\*\*|#+ .*)\s*", raw):  # headings
             continue
@@ -146,7 +146,7 @@ def extract(session_path):
     session_path = Path(session_path)
     rows = load(session_path)
     t0 = None
-    task = ""
+    task = slash = ""
     for row in rows:
         if row.get("type") == "user" and not task:
             for text in texts(row):
@@ -155,6 +155,9 @@ def extract(session_path):
                     task = (args.group(1) if args else text).strip()
                     t0 = ts(row.get("timestamp"))
                     break
+        if row.get("type") == "user" and not slash:
+            name = next((m for t in texts(row) for m in re.findall(r"<command-name>(.*?)</command-name>", t)), "")
+            slash = name.strip()
 
     def rel(value):
         return round(value - t0, 2) if value is not None and t0 is not None else None
@@ -231,16 +234,57 @@ def extract(session_path):
     verdict = next((p for p in paragraphs[1:] if re.search(r"(?i)\bagree|adjudicat|cross-check|verif|\bchecked?:", p)),
                    paragraphs[1] if len(paragraphs) > 1 else "")
     answer = re.search(r"COUNCIL_RESULT:\s*(.+)", final)
+    arena = "agent-arena" in slash or any("agent-arena" in a["type"] for a in agents) or any(
+        u.get("name") in ("Bash", "PowerShell") and "arena.py" in u.get("input", {}).get("command", "")
+        for u, _ in uses.values())
+    verification = redact(plain(verdict))
+    first = redact(plain(paragraphs[0].splitlines()[0])) if paragraphs else ""
+    result = redact(plain(answer.group(1))) if answer else ""
+    if arena:  # arena tasks follow a `--` after the mode's flags
+        task = task.split(" -- ", 1)[1] if " -- " in task else task
+        raw = {id(a): subs.get(u["id"], {}).get("result", "") for a, (u, _) in zip(
+            agents, sorted(((u, w) for u, w in uses.values() if u["name"] in ("Agent", "Task")
+                            and (subs.get(u["id"]) or not results.get(u["id"], ({},))[0].get("is_error"))),
+                           key=lambda uw: rel(subs.get(uw[0]["id"], {}).get("start") or uw[1]) or 0))}
+        for a in agents:
+            a["role"] = ("judge" if "judge" in a["type"] or "judge" in a["description"].lower()
+                         else "validator" if "validator" in a["description"].lower() else "contestant")
+            text = raw.get(id(a), "")
+            code = re.search(r"```\w*\n(.*?)```", text, re.S)
+            if a["role"] == "contestant" and code:  # the answer itself says more than the worker's prose
+                line = next((l.strip() for l in code.group(1).splitlines() if "return" in l), "")
+                a["result"] = redact(line) or a["result"]
+            elif a["role"] == "judge" and code:
+                try:
+                    scored = json.loads(code.group(1))
+                    n = sum(1 for v in scored.values() if isinstance(v, dict) and "scores" in v) \
+                        if isinstance(scored, dict) else 0
+                    a["result"] = f"Scored {n} candidates blind" if n else a["result"]
+                except ValueError:
+                    pass
+        contestants = [a for a in agents if a["role"] == "contestant"]
+        mode = re.match(r"(.*?)(?:\s|$)", slash.rsplit(":", 1)[-1])
+        mode_text = f"{mode.group(1) or 'arena'} · {len(contestants)} contestants, blind judge"
+        checker = next((a for a in agents if a["role"] == "validator"), None) or next(
+            (a for a in agents if a["role"] == "judge"), None)
+        verification = checker["result"] if checker else verification
+        won = re.search(r"(?i)candidate\s+(a\d+)(?:-v\d+)?\s+(?:passes|wins|is the winner)", all_text + "\n" +
+                        "\n".join(a["result"] for a in agents))
+        result = f"Candidate {won.group(1)} wins, validated" if won else result
+        prose = next((p for p in paragraphs if not p.startswith("```") and not p.startswith("#")), "")
+        first = redact(plain(prose.splitlines()[0])) if prose else first
     return {
         "version": 1,
+        "kind": "arena" if arena else "council",
+        "command": slash,
         "task": redact(task),
         "coordinator": coordinator,
-        "mode": plain(mode.group(1)) if mode else "ensemble",
+        "mode": mode_text if arena else (plain(mode.group(1)) if mode else "ensemble"),
         "resolves": resolves,
         "agents": agents,
-        "verification": redact(plain(verdict)),
-        "headline": redact(plain(paragraphs[0].splitlines()[0])) if paragraphs else "",
-        "answer": redact(plain(answer.group(1))) if answer else "",
+        "verification": verification,
+        "headline": first,
+        "answer": result,
         "duration": rel(ts(final_row.get("timestamp"))) if final_row else None,
     }
 

@@ -57,6 +57,11 @@ That loop is what MOAA is built around:
             └──────────── library of winning agents ◄─┘
 ```
 
+An arena run, replayed from its transcript: three contestants work in parallel, a blind judge scores them and a
+fresh validator checks the winner (real run, 233 s, compressed):
+
+![Replay of a real Agent Arena judge run: three contestants write is_leap(year), an Opus judge scores them blind, a validator checks the winner](docs/demo/arena-run.gif)
+
 ## What's inside
 
 | Plugin | What it does |
@@ -74,6 +79,10 @@ That loop is what MOAA is built around:
 
 - **Council:** every finished worker's tokens go to a local ledger; `council.py cost` and the end of each council
   answer show them. A run is usually two or three workers.
+- **Measured, not assumed:** on short tasks with fixed answer keys, Sonnet and Opus alone already scored 100%, and
+  the council matched them at 2.5–6× the cost and 3.5–7× the time ([benchmark](benchmarks/council-vs-solo/README.md)).
+  So the council now answers small checkable tasks with one worker and keeps the team for ambiguous, long or
+  high-stakes work.
 - **War Room:** far more than subagents. A measured three-worker Haiku/Sonnet run processed 3–4M tokens, mostly
   cache reads. It has a usage guard and a spend cap; use it for jobs with several independent streams of work.
 - **Context:** every enabled plugin's skills are listed in every request. `install.py --report` shows what yours

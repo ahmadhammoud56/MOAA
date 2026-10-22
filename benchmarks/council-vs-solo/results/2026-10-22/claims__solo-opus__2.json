@@ -1,0 +1,65 @@
+{
+  "case": "claims",
+  "arm": "solo-opus",
+  "run": 2,
+  "started": 1792678862,
+  "model_alias": "opus",
+  "council": false,
+  "prompt": "A draft report makes the numbered claims below. Decide for each claim whether it is correct as stated. Use only the numbers given.\n\n1. In a trial with 1000 patients per arm, 40 placebo patients and 30 drug patients had the event, so the drug cut the risk of the event by 25%.\n2. In the same trial, the absolute risk reduction was 1 percentage point, so the number needed to treat is 100.\n3. In the same trial, the drug group had 10 fewer events per 1000 patients, which is a 1% relative reduction.\n4. Group A had a mean of 50 (95% CI 46 to 54) and group B a mean of 55 (95% CI 51 to 59). Because the two intervals overlap, the difference between the groups cannot be significant at the 5% level.\n5. A test with 99% sensitivity and 99% specificity, used where 1 person in 1000 has the disease, has a positive predictive value of about 9%.\n6. Revenue fell 20% in 2024 and rose 20% in 2025, so it is back to its 2023 level.\n7. The result had p = 0.03, so there is a 3% probability that the null hypothesis is true.\n8. For the values 3, 7, 7, 10 and 40, the median is 7 and the mean is 13.4.\n9. Doubling the sample size halves the standard error of the mean.\n10. A correlation of r = -0.8 is stronger than a correlation of r = 0.6.\n\nEnd with a fenced ```json block: {\"wrong\": [\"<claim number>\", ...]} listing every incorrect claim.",
+  "result": "**1. Correct.** The risk was 40/1000 = 4.0% on placebo and 30/1000 = 3.0% on the drug. The relative risk reduction is 1/4 = 25%.\n\n**2. Correct.** The absolute risk reduction is 4.0% − 3.0% = 1 percentage point, and the number needed to treat is 1/0.01 = 100.\n\n**3. Wrong.** 10 fewer events per 1000 is a 1 percentage-point *absolute* reduction. The *relative* reduction is 25%, as in claim 1.\n\n**4. Wrong.** Overlapping 95% intervals do not show that a difference is non-significant, so the reasoning is invalid. Here the conclusion happens to hold anyway. Each standard error is about 4/1.96 ≈ 2.04, so the standard error of the difference is about 2.89. That gives z ≈ 5/2.89 ≈ 1.73 and p ≈ 0.08. With half-widths of 4, though, a gap of about 5.7 or more would be significant at 5% while the intervals still overlapped. The rule the claim relies on is false.\n\n**5. Correct.** Per 1000 people, there are 0.99 true positives and 0.01 × 999 ≈ 9.99 false positives. The positive predictive value is 0.99/10.98 ≈ 9.0%.\n\n**6. Wrong.** 0.8 × 1.2 = 0.96, so revenue is 4% below its 2023 level.\n\n**7. Wrong.** A p-value is P(data at least this extreme | the null hypothesis is true). It is not the probability that the null hypothesis is true.\n\n**8. Correct.** Sorted, the values are 3, 7, 7, 10, 40, so the median is 7. The sum is 67, and 67/5 = 13.4.\n\n**9. Wrong.** The standard error scales with 1/√n. Doubling n divides it by √2, about a 29% drop. Halving it takes 4 times the sample size.\n\n**10. Correct.** Strength depends on |r|, and 0.8 > 0.6.\n\n```json\n{\"wrong\": [\"3\", \"4\", \"6\", \"7\", \"9\"]}\n```",
+  "is_error": false,
+  "error": "",
+  "total_cost_usd": 0.1190658,
+  "duration_ms": 16464,
+  "num_turns": 1,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 10999,
+    "cache_read_input_tokens": 23329,
+    "output_tokens": 1320,
+    "output_tokens_details": {
+      "thinking_tokens": 595
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 10999,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1320,
+        "cache_read_input_tokens": 23329,
+        "cache_creation_input_tokens": 10999,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 10999
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 1320,
+      "cacheReadInputTokens": 23329,
+      "cacheCreationInputTokens": 10999,
+      "webSearchRequests": 0,
+      "costUSD": 0.1190658,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 595,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}

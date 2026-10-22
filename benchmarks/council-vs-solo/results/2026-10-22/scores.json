@@ -1,0 +1,623 @@
+[
+  {
+    "case": "claims",
+    "arm": "council",
+    "run": 1,
+    "score": 1.0,
+    "parsed": true,
+    "said_wrong": [
+      "3",
+      "4",
+      "6",
+      "7",
+      "9"
+    ],
+    "cost_usd": 0.2940918,
+    "seconds": 30.783518075942993,
+    "error": false
+  },
+  {
+    "case": "claims",
+    "arm": "council",
+    "run": 2,
+    "score": 1.0,
+    "parsed": true,
+    "said_wrong": [
+      "3",
+      "4",
+      "6",
+      "7",
+      "9"
+    ],
+    "cost_usd": 0.29391949999999994,
+    "seconds": 52.26058650016785,
+    "error": false
+  },
+  {
+    "case": "claims",
+    "arm": "council",
+    "run": 3,
+    "score": 1.0,
+    "parsed": true,
+    "said_wrong": [
+      "3",
+      "4",
+      "6",
+      "7",
+      "9"
+    ],
+    "cost_usd": 0.27646985,
+    "seconds": 43.109495401382446,
+    "error": false
+  },
+  {
+    "case": "claims",
+    "arm": "solo-opus",
+    "run": 1,
+    "score": 1.0,
+    "parsed": true,
+    "said_wrong": [
+      "3",
+      "4",
+      "6",
+      "7",
+      "9"
+    ],
+    "cost_usd": 0.1197658,
+    "seconds": 18.22409462928772,
+    "error": false
+  },
+  {
+    "case": "claims",
+    "arm": "solo-opus",
+    "run": 2,
+    "score": 1.0,
+    "parsed": true,
+    "said_wrong": [
+      "3",
+      "4",
+      "6",
+      "7",
+      "9"
+    ],
+    "cost_usd": 0.1190658,
+    "seconds": 17.6939058303833,
+    "error": false
+  },
+  {
+    "case": "claims",
+    "arm": "solo-opus",
+    "run": 3,
+    "score": 1.0,
+    "parsed": true,
+    "said_wrong": [
+      "3",
+      "4",
+      "6",
+      "7",
+      "9"
+    ],
+    "cost_usd": 0.1157738,
+    "seconds": 18.7404625415802,
+    "error": false
+  },
+  {
+    "case": "claims",
+    "arm": "solo-sonnet",
+    "run": 1,
+    "score": 1.0,
+    "parsed": true,
+    "said_wrong": [
+      "3",
+      "4",
+      "6",
+      "7",
+      "9"
+    ],
+    "cost_usd": 0.055426199999999995,
+    "seconds": 11.550409317016602,
+    "error": false
+  },
+  {
+    "case": "claims",
+    "arm": "solo-sonnet",
+    "run": 2,
+    "score": 1.0,
+    "parsed": true,
+    "said_wrong": [
+      "3",
+      "4",
+      "6",
+      "7",
+      "9"
+    ],
+    "cost_usd": 0.0527182,
+    "seconds": 10.830568790435791,
+    "error": false
+  },
+  {
+    "case": "claims",
+    "arm": "solo-sonnet",
+    "run": 3,
+    "score": 1.0,
+    "parsed": true,
+    "said_wrong": [
+      "3",
+      "4",
+      "6",
+      "7",
+      "9"
+    ],
+    "cost_usd": 0.0565462,
+    "seconds": 12.24391770362854,
+    "error": false
+  },
+  {
+    "case": "math-traps",
+    "arm": "council",
+    "run": 1,
+    "score": 1.0,
+    "parsed": true,
+    "wrong_questions": [],
+    "cost_usd": 0.2749532,
+    "seconds": 107.64378595352173,
+    "error": false
+  },
+  {
+    "case": "math-traps",
+    "arm": "council",
+    "run": 2,
+    "score": 1.0,
+    "parsed": true,
+    "wrong_questions": [],
+    "cost_usd": 0.2741355,
+    "seconds": 139.72956919670105,
+    "error": false
+  },
+  {
+    "case": "math-traps",
+    "arm": "council",
+    "run": 3,
+    "score": 1.0,
+    "parsed": true,
+    "wrong_questions": [],
+    "cost_usd": 0.2596431,
+    "seconds": 119.78222584724426,
+    "error": false
+  },
+  {
+    "case": "math-traps",
+    "arm": "solo-opus",
+    "run": 1,
+    "score": 1.0,
+    "parsed": true,
+    "wrong_questions": [],
+    "cost_usd": 0.1077458,
+    "seconds": 11.92346739768982,
+    "error": false
+  },
+  {
+    "case": "math-traps",
+    "arm": "solo-opus",
+    "run": 2,
+    "score": 1.0,
+    "parsed": true,
+    "wrong_questions": [],
+    "cost_usd": 0.1115098,
+    "seconds": 14.735958099365234,
+    "error": false
+  },
+  {
+    "case": "math-traps",
+    "arm": "solo-opus",
+    "run": 3,
+    "score": 1.0,
+    "parsed": true,
+    "wrong_questions": [],
+    "cost_usd": 0.11058180000000001,
+    "seconds": 13.973135232925415,
+    "error": false
+  },
+  {
+    "case": "math-traps",
+    "arm": "solo-sonnet",
+    "run": 1,
+    "score": 1.0,
+    "parsed": true,
+    "wrong_questions": [],
+    "cost_usd": 0.0562242,
+    "seconds": 10.756911993026733,
+    "error": false
+  },
+  {
+    "case": "math-traps",
+    "arm": "solo-sonnet",
+    "run": 2,
+    "score": 1.0,
+    "parsed": true,
+    "wrong_questions": [],
+    "cost_usd": 0.055520200000000006,
+    "seconds": 11.355228662490845,
+    "error": false
+  },
+  {
+    "case": "math-traps",
+    "arm": "solo-sonnet",
+    "run": 3,
+    "score": 1.0,
+    "parsed": true,
+    "wrong_questions": [],
+    "cost_usd": 0.0557302,
+    "seconds": 10.363103866577148,
+    "error": false
+  },
+  {
+    "case": "review-hard",
+    "arm": "council",
+    "run": 1,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "anchor",
+      "bsearch",
+      "closure",
+      "float",
+      "iterate",
+      "shallow",
+      "shared",
+      "stamp"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.40324780000000005,
+    "seconds": 73.70273971557617,
+    "error": false
+  },
+  {
+    "case": "review-hard",
+    "arm": "council",
+    "run": 2,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "anchor",
+      "bsearch",
+      "closure",
+      "float",
+      "iterate",
+      "shallow",
+      "shared",
+      "stamp"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.4606641,
+    "seconds": 86.1438467502594,
+    "error": false
+  },
+  {
+    "case": "review-hard",
+    "arm": "council",
+    "run": 3,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "anchor",
+      "bsearch",
+      "closure",
+      "float",
+      "iterate",
+      "shallow",
+      "shared",
+      "stamp"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.42683699999999997,
+    "seconds": 84.57803082466125,
+    "error": false
+  },
+  {
+    "case": "review-hard",
+    "arm": "solo-opus",
+    "run": 1,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "anchor",
+      "bsearch",
+      "closure",
+      "float",
+      "iterate",
+      "shallow",
+      "shared",
+      "stamp"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.1297098,
+    "seconds": 21.031392812728882,
+    "error": false
+  },
+  {
+    "case": "review-hard",
+    "arm": "solo-opus",
+    "run": 2,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "anchor",
+      "bsearch",
+      "closure",
+      "float",
+      "iterate",
+      "shallow",
+      "shared",
+      "stamp"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.1277698,
+    "seconds": 19.770236015319824,
+    "error": false
+  },
+  {
+    "case": "review-hard",
+    "arm": "solo-opus",
+    "run": 3,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "anchor",
+      "bsearch",
+      "closure",
+      "float",
+      "iterate",
+      "shallow",
+      "shared",
+      "stamp"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.1264138,
+    "seconds": 19.407480001449585,
+    "error": false
+  },
+  {
+    "case": "review-hard",
+    "arm": "solo-sonnet",
+    "run": 1,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "anchor",
+      "bsearch",
+      "closure",
+      "float",
+      "iterate",
+      "shallow",
+      "shared",
+      "stamp"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.0574082,
+    "seconds": 12.229779481887817,
+    "error": false
+  },
+  {
+    "case": "review-hard",
+    "arm": "solo-sonnet",
+    "run": 2,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "anchor",
+      "bsearch",
+      "closure",
+      "float",
+      "iterate",
+      "shallow",
+      "shared",
+      "stamp"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.0587682,
+    "seconds": 12.952574014663696,
+    "error": false
+  },
+  {
+    "case": "review-hard",
+    "arm": "solo-sonnet",
+    "run": 3,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "anchor",
+      "bsearch",
+      "closure",
+      "float",
+      "iterate",
+      "shallow",
+      "shared",
+      "stamp"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.0588202,
+    "seconds": 12.913376092910767,
+    "error": false
+  },
+  {
+    "case": "review-utils",
+    "arm": "council",
+    "run": 1,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "adult",
+      "chunk",
+      "default",
+      "last",
+      "median"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.37858450000000005,
+    "seconds": 111.16203546524048,
+    "error": false
+  },
+  {
+    "case": "review-utils",
+    "arm": "council",
+    "run": 2,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "adult",
+      "chunk",
+      "default",
+      "last",
+      "median"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.2886174,
+    "seconds": 40.96672987937927,
+    "error": false
+  },
+  {
+    "case": "review-utils",
+    "arm": "council",
+    "run": 3,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "adult",
+      "chunk",
+      "default",
+      "last",
+      "median"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.35455519999999996,
+    "seconds": 58.2922887802124,
+    "error": false
+  },
+  {
+    "case": "review-utils",
+    "arm": "solo-opus",
+    "run": 1,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "adult",
+      "chunk",
+      "default",
+      "last",
+      "median"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.1163138,
+    "seconds": 18.11569309234619,
+    "error": false
+  },
+  {
+    "case": "review-utils",
+    "arm": "solo-opus",
+    "run": 2,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "adult",
+      "chunk",
+      "default",
+      "last",
+      "median"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.1167578,
+    "seconds": 15.819797039031982,
+    "error": false
+  },
+  {
+    "case": "review-utils",
+    "arm": "solo-opus",
+    "run": 3,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "adult",
+      "chunk",
+      "default",
+      "last",
+      "median"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.1188378,
+    "seconds": 18.079705715179443,
+    "error": false
+  },
+  {
+    "case": "review-utils",
+    "arm": "solo-sonnet",
+    "run": 1,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "adult",
+      "chunk",
+      "default",
+      "last",
+      "median"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.0532302,
+    "seconds": 10.588720798492432,
+    "error": false
+  },
+  {
+    "case": "review-utils",
+    "arm": "solo-sonnet",
+    "run": 2,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "adult",
+      "chunk",
+      "default",
+      "last",
+      "median"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.0543462,
+    "seconds": 9.743950605392456,
+    "error": false
+  },
+  {
+    "case": "review-utils",
+    "arm": "solo-sonnet",
+    "run": 3,
+    "score": 1.0,
+    "parsed": true,
+    "found": [
+      "adult",
+      "chunk",
+      "default",
+      "last",
+      "median"
+    ],
+    "missed": [],
+    "false_positive_lines": [],
+    "cost_usd": 0.0541942,
+    "seconds": 10.832225322723389,
+    "error": false
+  }
+]

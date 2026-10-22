@@ -861,6 +861,8 @@ def doctor_checks():
         checks.append((f"{name} tests", [py, "-m", "unittest", "discover", "-s", "tests"], plugins / name))
     checks += [
         ("war-room bus test", [py, "tests/test_bus.py"], plugins / "war-room"),
+        ("benchmark scoring test", [py, "-m", "unittest", "test_bench"], KIT / "benchmarks" / "council-vs-solo"),
+        ("benchmark answer keys", [py, "verify_keys.py"], KIT / "benchmarks" / "council-vs-solo"),
         ("MODELS.md matches the plugins", [py, "scripts/models_doc.py", "--check"], KIT),
         ("catalog matches installed plugins", [py, "scripts/sync_catalog.py", "--check"], KIT),
         ("public-release scan", [py, "scripts/scan.py", "--public"], KIT),

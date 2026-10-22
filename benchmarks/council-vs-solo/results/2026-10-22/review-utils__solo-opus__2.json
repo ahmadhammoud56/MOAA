@@ -1,0 +1,65 @@
+{
+  "case": "review-utils",
+  "arm": "solo-opus",
+  "run": 2,
+  "started": 1792678957,
+  "model_alias": "opus",
+  "council": false,
+  "prompt": "Review this Python module for bugs: places where the code does not do what its docstring says. Line numbers are shown before the bar. Ignore style.\n\n```python\n 1 | def chunk(xs, n):\n 2 |     \"\"\"Split xs into lists of at most n items, in order, keeping every item.\"\"\"\n 3 |     return [xs[i:i + n] for i in range(0, len(xs) - n, n)]\n 4 | \n 5 | def add_tag(item, tags=[]):\n 6 |     \"\"\"Return a new list: tags plus item.\"\"\"\n 7 |     tags.append(item)\n 8 |     return tags\n 9 | \n10 | def median(values):\n11 |     \"\"\"Median of a non-empty list of numbers.\"\"\"\n12 |     s = sorted(values)\n13 |     mid = len(s) // 2\n14 |     if len(s) % 2 == 0:\n15 |         return (s[mid] + s[mid + 1]) / 2\n16 |     return s[mid]\n17 | \n18 | def is_adult(age):\n19 |     \"\"\"True for ages 18 and over.\"\"\"\n20 |     return age > 18\n21 | \n22 | def safe_div(a, b):\n23 |     \"\"\"a / b, or 0 when b is 0.\"\"\"\n24 |     try:\n25 |         return a / b\n26 |     except ZeroDivisionError:\n27 |         return 0\n28 | \n29 | def percent(part, total):\n30 |     \"\"\"Percentage of total, rounded to 1 decimal.\"\"\"\n31 |     return round(part / total * 100, 1)\n32 | \n33 | def last_n(xs, n):\n34 |     \"\"\"The last n items: all of xs when n >= len(xs), and [] when n == 0.\"\"\"\n35 |     return xs[-n:]\n```\n\nEnd with a fenced ```json block: {\"bugs\": [{\"line\": <line number>, \"issue\": \"<one sentence>\"}]}, one entry per distinct bug.",
+  "result": "I found five bugs. `safe_div` and `percent` do what their docstrings say. `percent` will raise on `total == 0`, but its docstring doesn't promise anything for that case.\n\n1. **Line 3, `chunk` drops items.** `range(0, len(xs) - n, n)` stops too early, so the last chunk is lost. For example, `chunk([1,2,3,4], 2)` gives `[[1,2]]`, and when `len(xs) <= n` the result is `[]`. The range should run to `len(xs)`.\n2. **Line 5, `add_tag` has a mutable default argument.** Every call that doesn't pass `tags` shares the same list, so tags pile up from one call to the next.\n3. **Line 7, `add_tag` returns the same list it was given.** The docstring promises a new list, but `tags.append(item)` changes the caller's list and returns it. It should be `return tags + [item]` (with `tags=None` or a tuple as the default).\n4. **Line 15, `median` uses the wrong middle pair for even-length lists.** It averages `s[mid]` and `s[mid + 1]` but should average `s[mid - 1]` and `s[mid]`. For example, `median([1,2,3,4])` returns 3.5 instead of 2.5, and `median([1,2])` raises `IndexError`.\n5. **Line 20, `is_adult` excludes age 18.** `age > 18` returns False for 18, but the docstring says \"18 and over\", so it should be `>=`.\n6. **Line 35, `last_n` returns everything when `n == 0`.** `xs[-0:]` is the same as `xs[0:]`, so it returns the whole list instead of `[]`. A fix is `xs[len(xs) - n:] if n else []`, or `xs[-n:] if n > 0 else []`.\n\n```json\n{\"bugs\": [\n  {\"line\": 3, \"issue\": \"range(0, len(xs) - n, n) stops too early, so the final chunk is dropped (and every item is lost when len(xs) <= n).\"},\n  {\"line\": 5, \"issue\": \"The mutable default tags=[] is shared between calls, so tags from earlier calls build up.\"},\n  {\"line\": 7, \"issue\": \"tags.append changes and returns the caller's list instead of returning a new list as the docstring promises.\"},\n  {\"line\": 15, \"issue\": \"For even-length lists it averages s[mid] and s[mid+1] instead of s[mid-1] and s[mid], which gives the wrong median and raises IndexError for two items.\"},\n  {\"line\": 20, \"issue\": \"age > 18 returns False for age 18, though the docstring says 18 and over.\"},\n  {\"line\": 35, \"issue\": \"When n == 0, xs[-0:] returns the whole list instead of [].\"}\n]}\n```",
+  "is_error": false,
+  "error": "",
+  "total_cost_usd": 0.1167578,
+  "duration_ms": 14697,
+  "num_turns": 1,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 11103,
+    "cache_read_input_tokens": 23329,
+    "output_tokens": 1163,
+    "output_tokens_details": {
+      "thinking_tokens": 240
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 11103,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1163,
+        "cache_read_input_tokens": 23329,
+        "cache_creation_input_tokens": 11103,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 11103
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 1163,
+      "cacheReadInputTokens": 23329,
+      "cacheCreationInputTokens": 11103,
+      "webSearchRequests": 0,
+      "costUSD": 0.1167578,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 240,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}

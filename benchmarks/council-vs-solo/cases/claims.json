@@ -1,0 +1,19 @@
+{
+  "id": "claims",
+  "kind": "claims",
+  "title": "Results check: 10 claims, 5 wrong",
+  "task": "A draft report makes the numbered claims below. Decide for each claim whether it is correct as stated. Use only the numbers given.",
+  "claims": {
+    "1": "In a trial with 1000 patients per arm, 40 placebo patients and 30 drug patients had the event, so the drug cut the risk of the event by 25%.",
+    "2": "In the same trial, the absolute risk reduction was 1 percentage point, so the number needed to treat is 100.",
+    "3": "In the same trial, the drug group had 10 fewer events per 1000 patients, which is a 1% relative reduction.",
+    "4": "Group A had a mean of 50 (95% CI 46 to 54) and group B a mean of 55 (95% CI 51 to 59). Because the two intervals overlap, the difference between the groups cannot be significant at the 5% level.",
+    "5": "A test with 99% sensitivity and 99% specificity, used where 1 person in 1000 has the disease, has a positive predictive value of about 9%.",
+    "6": "Revenue fell 20% in 2024 and rose 20% in 2025, so it is back to its 2023 level.",
+    "7": "The result had p = 0.03, so there is a 3% probability that the null hypothesis is true.",
+    "8": "For the values 3, 7, 7, 10 and 40, the median is 7 and the mean is 13.4.",
+    "9": "Doubling the sample size halves the standard error of the mean.",
+    "10": "A correlation of r = -0.8 is stronger than a correlation of r = 0.6."
+  },
+  "wrong": ["3", "4", "6", "7", "9"]
+}

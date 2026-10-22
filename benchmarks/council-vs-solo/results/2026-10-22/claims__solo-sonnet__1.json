@@ -1,0 +1,65 @@
+{
+  "case": "claims",
+  "arm": "solo-sonnet",
+  "run": 1,
+  "started": 1792678735,
+  "model_alias": "sonnet",
+  "council": false,
+  "prompt": "A draft report makes the numbered claims below. Decide for each claim whether it is correct as stated. Use only the numbers given.\n\n1. In a trial with 1000 patients per arm, 40 placebo patients and 30 drug patients had the event, so the drug cut the risk of the event by 25%.\n2. In the same trial, the absolute risk reduction was 1 percentage point, so the number needed to treat is 100.\n3. In the same trial, the drug group had 10 fewer events per 1000 patients, which is a 1% relative reduction.\n4. Group A had a mean of 50 (95% CI 46 to 54) and group B a mean of 55 (95% CI 51 to 59). Because the two intervals overlap, the difference between the groups cannot be significant at the 5% level.\n5. A test with 99% sensitivity and 99% specificity, used where 1 person in 1000 has the disease, has a positive predictive value of about 9%.\n6. Revenue fell 20% in 2024 and rose 20% in 2025, so it is back to its 2023 level.\n7. The result had p = 0.03, so there is a 3% probability that the null hypothesis is true.\n8. For the values 3, 7, 7, 10 and 40, the median is 7 and the mean is 13.4.\n9. Doubling the sample size halves the standard error of the mean.\n10. A correlation of r = -0.8 is stronger than a correlation of r = 0.6.\n\nEnd with a fenced ```json block: {\"wrong\": [\"<claim number>\", ...]} listing every incorrect claim.",
+  "result": "Checking each claim against the numbers given:\n\n1. **Correct.** The risks are 4% and 3%, so the relative risk reduction is 1/4 = 25%.\n2. **Correct.** The absolute risk reduction is 4% − 3% = 1 percentage point, so the NNT is 1/0.01 = 100.\n3. **Wrong.** 10 fewer events per 1000 is correct, but that is an absolute difference of 1 percentage point. The relative reduction is 25%, not 1%.\n4. **Wrong.** Overlapping 95% CIs do not mean the difference is non-significant. Significance depends on the standard error of the difference, which is smaller than the two intervals' combined width. Here the difference happens to be non-significant (z ≈ 1.73), but the stated reasoning is invalid.\n5. **Correct.** True positives are 0.99 × 0.001 = 0.00099 and false positives are 0.01 × 0.999 = 0.00999. The PPV is 0.00099 / 0.01098 ≈ 9%.\n6. **Wrong.** 0.8 × 1.2 = 0.96, so revenue is 4% below its 2023 level.\n7. **Wrong.** A p-value is the probability of data at least this extreme if the null is true. It is not the probability that the null is true.\n8. **Correct.** The median is 7 and the mean is 67/5 = 13.4.\n9. **Wrong.** The standard error scales with 1/√n, so doubling n divides it by √2 (about 0.71), not by 2.\n10. **Correct.** Strength depends on |r|, and 0.8 > 0.6.\n\n```json\n{\"wrong\": [\"3\", \"4\", \"6\", \"7\", \"9\"]}\n```",
+  "is_error": false,
+  "error": "",
+  "total_cost_usd": 0.055426199999999995,
+  "duration_ms": 10122,
+  "num_turns": 1,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 11005,
+    "cache_read_input_tokens": 23722,
+    "output_tokens": 903,
+    "output_tokens_details": {
+      "thinking_tokens": 327
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 11005,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 903,
+        "cache_read_input_tokens": 23722,
+        "cache_creation_input_tokens": 11005,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 11005
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 903,
+      "cacheReadInputTokens": 23722,
+      "cacheCreationInputTokens": 11005,
+      "webSearchRequests": 0,
+      "costUSD": 0.055426199999999995,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 327,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}

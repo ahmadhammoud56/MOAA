@@ -51,9 +51,18 @@ const tierColor = (m) => TIER[(/(haiku|sonnet|opus|fable)/.exec(m || "") || [])[
 const clamp = (x) => Math.max(0, Math.min(1, x));
 const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
 const at = (t, t0, d = 0.5) => ease((t - t0) / d);
-const short = (type) => type.replace(/^specialist-council:/, "");
+const short = (type) => type.replace(/^(specialist-council|agent-arena-mode):/, "");
+// Texts that differ between a council run and an arena run (replay.json "kind").
+const LABELS = {
+  council: { product: "Specialist Council", command: "/specialist-council", role: "Council role", short: "Role",
+             verify: "Cross-check · coordinator as judge", result: "Council result" },
+  arena: { product: "Agent Arena", command: "/agent-arena-mode", role: "Contestant", short: "Contestant",
+           verify: "Verdict", result: "Arena winner" },
+};
+const ROLE = { judge: ["Judge", "#d4a24c"], validator: ["Validator", "#5cb87a"] };
+const title = (a) => (D.kind === "arena" && a.description) ? a.description.replace(/^Arena\s+/i, "") : short(a.type);
 
-let D = null, T = null, PA = 1; // PA: alpha of the panel being drawn
+let D = null, T = null, PA = 1, L = LABELS.council; // PA: alpha of the panel being drawn
 
 // ---------- timeline ----------
 function build(d) {
@@ -177,8 +186,8 @@ function header(t) {
   font(15, 600); ctx.fillStyle = C.text; ctx.fillText("MOAA", LX, 33);
   const x = LX + ctx.measureText("MOAA").width + 12;
   ctx.fillStyle = C.border; ctx.fillRect(x, 20, 1, 17);
-  font(14, 500); ctx.fillStyle = C.soft; ctx.fillText("Specialist Council", x + 12, 33);
-  const x2 = x + 12 + ctx.measureText("Specialist Council").width + 10;
+  font(14, 500); ctx.fillStyle = C.soft; ctx.fillText(L.product, x + 12, 33);
+  const x2 = x + 12 + ctx.measureText(L.product).width + 10;
   font(13); ctx.fillStyle = C.muted; ctx.fillText("Replay of a recorded run", x2, 33);
   ctx.textAlign = "right";
   font(12, 400, true); ctx.fillStyle = C.dim; ctx.fillText("github.com/ahmadhammoud56/MOAA", W - 20, 33);
@@ -193,7 +202,7 @@ function task(t) {
   if (!panel(x, y, w, h, at(t, 0, 0.6), t < T.R0 ? 1 : 0)) return;
   label("Task", x + 14, y + 22);
   font(12, 400, true); ctx.fillStyle = C.dim; ctx.textAlign = "right";
-  ctx.fillText("/specialist-council", x + w - 14, y + 22); ctx.textAlign = "left";
+  ctx.fillText(D.command || L.command, x + w - 14, y + 22); ctx.textAlign = "left";
   font(13.5); ctx.fillStyle = C.text;
   typed(wrap(D.task, w - 28, 6), (t - 0.3) / 1.6).forEach((l, i) => ctx.fillText(l, x + 14, y + 45 + i * 18.5));
   ctx.restore();
@@ -255,7 +264,9 @@ function mode(t) {
   if (t >= T.F0) {
     ctx.globalAlpha = PA * at(t, T.F0, 0.4);
     font(12.5); ctx.fillStyle = C.muted;
-    ctx.fillText(`Dispatching ${D.agents.length} agent${D.agents.length === 1 ? "" : "s"} in parallel`, x + 14, y + h - 13);
+    const n = D.agents.filter((a) => !ROLE[a.role]).length, extra = D.agents.length - n;
+    ctx.fillText(extra ? `${n} contestants in parallel, then ${extra === 1 ? "the judge" : "judge and validator"}`
+                       : `Dispatching ${D.agents.length} agent${D.agents.length === 1 ? "" : "s"} in parallel`, x + 14, y + h - 13);
     ctx.globalAlpha = PA;
   }
   ctx.restore();
@@ -296,12 +307,19 @@ function agents(t) {
       const bw = badge(wide ? "forged member" : "forged", b.x + 14, b.y + 23, C.forged);
       font(11.5); ctx.fillStyle = C.dim;
       if (wide) ctx.fillText("arena-validated, promoted into the council", b.x + 22 + bw, b.y + 23);
-    } else label(wide ? "Council role" : "Role", b.x + 14, b.y + 22);
-    tag(`${a.model || "?"}${a.effort ? " · " + a.effort : ""}`, b.x + b.w - 14, b.y + 23, color, true); // no effort: frontmatter default
-    font(14.5, 600); ctx.fillStyle = C.text; ctx.fillText(fit(short(a.type), b.w - 28), b.x + 14, b.y + 46);
+    } else if (ROLE[a.role]) label(ROLE[a.role][0], b.x + 14, b.y + 22, ROLE[a.role][1]);
+    else label(wide ? L.role : L.short, b.x + 14, b.y + 22);
+    tag(`${a.model || "?"}${a.effort && wide ? " · " + a.effort : ""}`, b.x + b.w - 14, b.y + 23, color, true); // narrow cards: model only
+    font(14.5, 600); ctx.fillStyle = C.text; ctx.fillText(fit(title(a), b.w - 28), b.x + 14, b.y + 46);
     let ry = b.y + 66;
     if (b.h >= 100) {
       font(12.5); ctx.fillStyle = C.muted; ctx.fillText(fit(`Method: ${a.method}`, b.w - 28), b.x + 14, ry); ry += 15;
+    }
+    const compact = b.h < 100; // short grid cards: once done, the result replaces the progress row
+    if (compact && done) {
+      ctx.globalAlpha = PA * at(t, tl.a1, 0.4);
+      font(12.5, 500); ctx.fillStyle = C.text; ctx.fillText(fit(a.result || "done", b.w - 28), b.x + 14, ry + 6);
+      ctx.globalAlpha = PA; ctx.restore(); return;
     }
     // progress bar
     const bw = b.w - 28 - 92;
@@ -343,7 +361,7 @@ function verify(t) {
   const last = D.agents.length ? cardBox(D.agents.length - 1) : { y: 54, h: 0 };
   const x = RX, y = last.y + last.h + 10, w = RW, h = 86;
   if (!D.verification || !panel(x, y, w, h, at(t, T.V0), t >= T.V0 && t < T.A0 ? 1 : 0)) return;
-  label("Cross-check · coordinator as judge", x + 14, y + 22);
+  label(L.verify, x + 14, y + 22);
   font(13.5); ctx.fillStyle = C.soft;
   typed(wrap(D.verification, w - 28, 3), (t - T.V0 - 0.2) / 1.6).forEach((l, i) => ctx.fillText(l, x + 14, y + 44 + i * 18));
   ctx.restore();
@@ -352,11 +370,11 @@ function verify(t) {
 function answer(t) {
   const x = RX, y = 452, w = RW, h = 68, text = D.answer || D.headline;
   if (!text || !panel(x, y, w, h, at(t, T.A0, 0.6), 1, C.ok)) return;
-  label("Council result", x + 14, y + 22, C.ok);
+  label(L.result, x + 14, y + 22, C.ok);
   font(21, 600); ctx.fillStyle = C.text; ctx.fillText(fit(text, w - 200), x + 14, y + 51);
   font(11.5, 400, true); ctx.fillStyle = C.muted; ctx.textAlign = "right";
   ctx.fillText(`real run ${T.real.toFixed(1)}s`, x + w - 14, y + 30);
-  ctx.fillText(`${D.agents.length} agents · ${D.resolves.length} resolves`, x + w - 14, y + 48);
+  ctx.fillText(D.resolves.length ? `${D.agents.length} agents · ${D.resolves.length} resolves` : `${D.agents.length} agents`, x + w - 14, y + 48);
   ctx.textAlign = "left";
   ctx.restore();
 }
@@ -515,6 +533,7 @@ async function run(auto) {
 (async () => {
   try {
     D = window.REPLAY || await (await fetch(P.get("data") || "replay.json")).json();
+    L = LABELS[D.kind] || LABELS.council;
   } catch (e) {
     status.textContent = "No replay data. Run record.py, or open with ?data=<replay.json url>.";
     return;

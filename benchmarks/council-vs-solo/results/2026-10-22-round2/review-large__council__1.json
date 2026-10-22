@@ -1,0 +1,79 @@
+{
+  "case": "review-large",
+  "arm": "council",
+  "run": 1,
+  "started": 1792679257,
+  "model_alias": "sonnet",
+  "council": true,
+  "prompt": "Use the Specialist Council for this task (the specialist-council skill): dispatch at least two independent specialists and cross-check their results before answering.\n\nReview this Python module for bugs: places where the code does not do what its docstring says. Line numbers are shown before the bar. Ignore style, performance and missing input validation that the docstrings do not promise; report only real defects.\n\n```python\n 1 | from dataclasses import dataclass, field\n 2 | from datetime import datetime, timedelta\n 3 | from decimal import Decimal, ROUND_HALF_UP\n 4 | \n 5 | @dataclass\n 6 | class Order:\n 7 |     sku: str\n 8 |     qty: int\n 9 |     unit_price: Decimal\n10 |     status: str\n11 |     created: datetime\n12 |     tags: list = field(default_factory=list)\n13 | \n14 | def page(orders, number, size):\n15 |     \"\"\"Page `number` of orders, counting pages from 1, with `size` orders per page.\"\"\"\n16 |     start = number * size\n17 |     return orders[start:start + size]\n18 | \n19 | def line_total(order, discount, tax_rate):\n20 |     \"\"\"Price of an order line: the discount fraction comes off before tax is added.\"\"\"\n21 |     gross = order.unit_price * order.qty\n22 |     return gross * (1 + tax_rate) * (1 - discount)\n23 | \n24 | def to_cents(amount):\n25 |     \"\"\"A Decimal amount rounded half up to the cent, e.g. Decimal('2.675') -> Decimal('2.68').\"\"\"\n26 |     return Decimal(round(float(amount), 2)).quantize(Decimal('0.01'))\n27 | \n28 | def by_date(rows):\n29 |     \"\"\"Rows (dicts with a 'date' like '3/14/2026', month first) sorted oldest first.\"\"\"\n30 |     return sorted(rows, key=lambda r: r['date'])\n31 | \n32 | def empty_groups(names):\n33 |     \"\"\"A dict mapping each name to its own new empty list.\"\"\"\n34 |     return dict.fromkeys(names, [])\n35 | \n36 | def parse_rows(lines):\n37 |     \"\"\"Parse 'sku,qty' lines into (sku, qty) pairs; raise ValueError on a malformed line.\"\"\"\n38 |     out = []\n39 |     try:\n40 |         for line in lines:\n41 |             sku, qty = line.split(',')\n42 |             out.append((sku.strip(), int(qty)))\n43 |     except Exception:\n44 |         return []\n45 |     return out\n46 | \n47 | def is_expired(order, now):\n48 |     \"\"\"True when the order was created 30 or more days before now.\"\"\"\n49 |     return (now - order.created).days > 30\n50 | \n51 | def find_sku(orders, sku):\n52 |     \"\"\"Orders whose SKU matches sku, ignoring upper and lower case.\"\"\"\n53 |     return [o for o in orders if o.sku == sku]\n54 | \n55 | def mean_qty(orders):\n56 |     \"\"\"Mean quantity of the orders as a float; 0.0 for no orders.\"\"\"\n57 |     if not orders:\n58 |         return 0.0\n59 |     return sum(o.qty for o in orders) // len(orders)\n60 | \n61 | def paid_share(orders):\n62 |     \"\"\"Fraction of orders with status 'paid'; 0.0 for no orders.\"\"\"\n63 |     paid = (o for o in orders if o.status == 'paid')\n64 |     count = sum(1 for _ in paid)\n65 |     return count / len(orders) if orders else 0.0\n66 | \n67 | def all_paid(orders):\n68 |     \"\"\"True when every order has status 'paid' (True for no orders).\"\"\"\n69 |     for o in orders:\n70 |         if o.status == 'paid':\n71 |             return True\n72 |     return False\n73 | \n74 | def newest_first(orders):\n75 |     \"\"\"A new list of orders sorted newest first; orders itself is not changed.\"\"\"\n76 |     orders.sort(key=lambda o: o.created, reverse=True)\n77 |     return orders\n78 | \n79 | def available(stock, reserved):\n80 |     \"\"\"Units that can still be sold: stock minus reserved, never below 0.\"\"\"\n81 |     return max(0, stock - reserved)\n82 | \n83 | def tag_all(orders, tag):\n84 |     \"\"\"Add tag to every order's tags, once: an order that already has it is left alone.\"\"\"\n85 |     for o in orders:\n86 |         if tag not in o.tags:\n87 |             o.tags.append(tag)\n88 | \n89 | def total_qty_by_sku(orders):\n90 |     \"\"\"Total quantity per SKU, with SKUs compared ignoring case and keyed in lower case.\"\"\"\n91 |     totals = {}\n92 |     for o in orders:\n93 |         key = o.sku.casefold()\n94 |         totals[key] = totals.get(key, 0) + o.qty\n95 |     return totals\n96 | \n97 | def window(orders, start, days):\n98 |     \"\"\"Orders created from start (included) to start + days (excluded).\"\"\"\n99 |     end = start + timedelta(days=days)\n100 |     return [o for o in orders if start <= o.created <= end]\n101 | \n102 | def first_paid(orders):\n103 |     \"\"\"The first order with status 'paid', or None.\"\"\"\n104 |     return next((o for o in orders if o.status == 'paid'), None)\n105 | \n106 | def restock_list(stock, minimum):\n107 |     \"\"\"SKUs (keys of stock) whose quantity is below minimum, in alphabetical order.\"\"\"\n108 |     low = [sku for sku, qty in stock.items() if qty <= minimum]\n109 |     return sorted(low)\n```\n\nEnd with a fenced ```json block: {\"bugs\": [{\"line\": <line number>, \"issue\": \"<one sentence>\"}]}, one entry per distinct bug.",
+  "result": "I found 12 defects. Two independent specialists (a debugger and a test engineer) and my own read of the module agree on every one. None of us ran any Python; the specialists reported working from the code alone.\n\n| Line | Defect |\n|---|---|\n| 16 | `number * size` counts pages from 0. Page 1 skips the first `size` orders, so it should be `(number - 1) * size`. |\n| 26 | Rounding goes through a binary float, so `Decimal('2.675')` gives `2.67`, not `2.68`. It should quantize the Decimal directly with `ROUND_HALF_UP`. |\n| 30 | Dates are sorted as strings, so `'10/1/2026'` comes before `'9/1/2026'`. The key should parse the date as month/day/year. |\n| 34 | `dict.fromkeys(names, [])` gives every name the same list, not its own new list. |\n| 44 | `parse_rows` catches every error and returns `[]`. The docstring says it should raise `ValueError` on a malformed line. |\n| 49 | `> 30` misses an order created exactly 30 days ago. It should be `>= 30`. |\n| 53 | `find_sku` compares with `==`, which is case-sensitive. The docstring says to ignore case. |\n| 59 | `//` is integer division, so `mean_qty` returns a floored int, not a float (quantities 1 and 2 give 1, not 1.5). |\n| 71 | `all_paid` returns `True` as soon as one order is paid, so it behaves like `any`. It also returns `False` for no orders, where the docstring says `True`. |\n| 76 | `orders.sort` reorders the caller's list and returns that same list. The docstring promises a new list and an unchanged input. |\n| 100 | `<= end` includes the end instant, but the docstring says the end is excluded. It should be `< end`. |\n| 108 | `<= minimum` lists SKUs exactly at the minimum, but the docstring says \"below minimum\". It should be `< minimum`. |\n\nThings I checked and did not count as defects:\n- **`line_total` (line 22):** the order of discount and tax doesn't matter, because both are multiplications and give the same result.\n- **`total_qty_by_sku` (line 93):** `casefold()` differs from `lower()` only for rare characters such as `ß`, which I judged too marginal to report.\n- **Other functions:** `paid_share`, `available`, `tag_all` and `first_paid` match their docstrings.\n\n```json\n{\"bugs\": [\n  {\"line\": 16, \"issue\": \"Pages are meant to count from 1, but start = number * size counts from 0, so page 1 skips the first page.\"},\n  {\"line\": 26, \"issue\": \"Rounding through a binary float turns Decimal('2.675') into 2.67 instead of rounding half up to 2.68.\"},\n  {\"line\": 30, \"issue\": \"Dates are sorted as strings rather than parsed month/day/year, so the order is not oldest first.\"},\n  {\"line\": 34, \"issue\": \"dict.fromkeys(names, []) makes every name share one list instead of each having its own new list.\"},\n  {\"line\": 44, \"issue\": \"A malformed line returns [] instead of raising ValueError as documented.\"},\n  {\"line\": 49, \"issue\": \"Uses > 30 so an order exactly 30 days old is not expired; it should be >= 30.\"},\n  {\"line\": 53, \"issue\": \"SKU comparison is case-sensitive although the docstring says to ignore case.\"},\n  {\"line\": 59, \"issue\": \"Floor division returns a rounded-down int instead of the float mean.\"},\n  {\"line\": 71, \"issue\": \"all_paid returns True when any order is paid and False for no orders, instead of True only when all are paid (and True for none).\"},\n  {\"line\": 76, \"issue\": \"Sorts the caller's list in place and returns it instead of returning a new list and leaving the input unchanged.\"},\n  {\"line\": 100, \"issue\": \"Uses <= end so the end instant is included although it should be excluded.\"},\n  {\"line\": 108, \"issue\": \"Uses <= minimum so SKUs exactly at the minimum are listed, though only those below it should be.\"}\n]}\n```",
+  "is_error": false,
+  "error": "",
+  "total_cost_usd": 0.3347067,
+  "duration_ms": 11325,
+  "num_turns": 1,
+  "usage": {
+    "input_tokens": 4,
+    "cache_creation_input_tokens": 1723,
+    "cache_read_input_tokens": 53104,
+    "output_tokens": 1382,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 1723,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 4,
+        "output_tokens": 1382,
+        "cache_read_input_tokens": 53104,
+        "cache_creation_input_tokens": 1723,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 1723
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 14,
+      "outputTokens": 8187,
+      "cacheReadInputTokens": 175700,
+      "cacheCreationInputTokens": 40730,
+      "webSearchRequests": 0,
+      "costUSD": 0.24795050000000002,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1589,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    },
+    "claude-opus-5-5": {
+      "inputTokens": 2,
+      "outputTokens": 1891,
+      "cacheReadInputTokens": 4216,
+      "cacheCreationInputTokens": 9617,
+      "webSearchRequests": 0,
+      "costUSD": 0.0867562,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 703,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  }
+}
