@@ -1,0 +1,46 @@
+name: Council evals
+
+# Spends API tokens, so it only runs by hand. Needs the ANTHROPIC_API_KEY repository secret.
+# Each case runs with the council and without it (the no-plugin baseline), and the report shows the score delta.
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: "Runs per case"
+        default: "1"
+      max_cost_usd:
+        description: "Hard cost ceiling for the whole run (USD)"
+        default: "10"
+
+permissions:
+  contents: read
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Run the Specialist Council eval suite
+        working-directory: plugins/specialist-council
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: >
+          claude plugin eval . --trust-plugin --no-publish
+          --runs "${{ inputs.runs }}" --max-cost-usd "${{ inputs.max_cost_usd }}"
+          --allow-tools Agent --threshold 0.75
+          --json results.json --report report.html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: council-evals
+          path: |
+            plugins/specialist-council/results.json
+            plugins/specialist-council/report.html

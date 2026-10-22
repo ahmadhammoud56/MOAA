@@ -1,0 +1,17 @@
+{
+  "description": "Specialist Council ledger: record each finished subagent's token use for `council.py cost`",
+  "hooks": {
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 || continue; $p \"${CLAUDE_PLUGIN_ROOT}/council.py\" hook subagent-stop; rc=$?; case $rc in 3|49) ;; *) exit $rc;; esac; done; exit 0",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

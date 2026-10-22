@@ -83,6 +83,24 @@ class Catalog(unittest.TestCase):
         self.assertIn("claude plugin enable off@m", catalog.promote_hint(self.home, "off@m"))
         self.assertEqual(catalog.use(self.home, str(self.home / "settings.json")), 1)  # not in the index: refused
 
+    @unittest.skipUnless(__import__("shutil").which("bash"), "needs bash, as Claude Code's hook runner does")
+    def test_hook_command_skips_interpreters_that_exit_3_and_runs_the_next(self):
+        import subprocess
+        root = Path(__file__).resolve().parents[1]
+        command = json.loads((root / "hooks" / "hooks.json").read_text())["hooks"]["UserPromptSubmit"][0]["hooks"][0]
+        fake = self.home / "bin"
+        fake.mkdir()
+        (fake / "py").write_text("#!/bin/sh\nexit 3\n")  # an interpreter older than 3.10
+        (fake / "py").chmod(0o755)
+        (fake / "python3").write_text(f"#!/bin/sh\nexec \"{Path(sys.executable).as_posix()}\" \"$@\"\n")
+        (fake / "python3").chmod(0o755)
+        env = {**os.environ, "CLAUDE_PLUGIN_ROOT": root.as_posix(), "CLAUDE_CONFIG_DIR": str(self.home),
+               "PATH": fake.as_posix() + os.pathsep + os.environ["PATH"]}
+        r = subprocess.run(["bash", "-c", command["command"]], input=json.dumps({"prompt": "stripe webhooks payments"}),
+                           capture_output=True, text=True, env=env)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("stripe-integration", r.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

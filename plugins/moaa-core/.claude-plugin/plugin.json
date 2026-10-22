@@ -1,0 +1,14 @@
+{
+  "name": "moaa-core",
+  "version": "0.1.0",
+  "description": "MOAA in one install: the Specialist Council, the Agent Arena and moaa-catalog, pulled in as dependencies. Add war-room, allies or strata on their own when you want them.",
+  "author": {
+    "name": "Ahmad Hammoud",
+    "url": "https://github.com/ahmadhammoud56"
+  },
+  "homepage": "https://github.com/ahmadhammoud56/MOAA",
+  "repository": "https://github.com/ahmadhammoud56/MOAA",
+  "license": "MIT",
+  "keywords": ["multi-agent", "council", "arena", "meta-plugin"],
+  "dependencies": ["specialist-council", "agent-arena-mode", "moaa-catalog"]
+}

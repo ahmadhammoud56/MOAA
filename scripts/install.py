@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """MOAA (Mother of All Agents) installer. Standard library only; safe to rerun.
 
-  python scripts/install.py                 core profile: 14 plugins, council, arena, allies, strata, skills, rea MCP
-  python scripts/install.py --full          everything: 97 plugins (99 with --with-claude-mem) + ansys MCP; the big
+  python scripts/install.py                 core profile: 15 plugins, council, arena, allies, strata, skills, rea MCP
+  python scripts/install.py --full          everything: 98 plugins (100 with --with-claude-mem) + ansys MCP; the big
                                             skill packs (agentic-awesome-skills, ruflo extras) install disabled
   python scripts/install.py --profile web   core plus the packs for one kind of work (web, data, devops, research,
                                             science; comma-separated for several), installed and enabled
@@ -670,6 +670,33 @@ def listing_tokens(roots, max_desc=1536, fraction=0.01, window=200_000):
     return n, names // 4 + 2 * n + min(descs // 4, int(fraction * window))
 
 
+def skill_names(home, pid, path):
+    """Names of the skills a plugin lists. A marketplace entry with a `skills` list (strict: false) loads only those
+    folders even though the whole repository is cached, as anthropics/skills' plugins are."""
+    if not path.is_dir():
+        return set()
+    name, _, market = pid.partition("@")
+    catalog = read_json(home / "plugins" / "marketplaces" / market / ".claude-plugin" / "marketplace.json", {})
+    entry = next((p for p in catalog.get("plugins", []) if p.get("name") == name), {})
+    roots = [path / s for s in entry.get("skills", [])] if isinstance(entry.get("skills"), list) else [path]
+    return {md.parent.name for r in roots if r.is_dir() for md in r.rglob("SKILL.md")}
+
+
+def covered_plugins(home, paths):
+    """Plugin ids whose every skill another plugin of the same marketplace in `paths` ({id: install path}) already
+    lists, such as the agentic-bundle-* subsets of agentic-awesome-skills. Enabling one only lists the same skills
+    twice. Only the same marketplace counts: elsewhere a shared name need not mean the same skill. Of two identical
+    sets the first id is kept."""
+    names = {pid: skill_names(home, pid, p) for pid, p in paths.items()}
+    market = {pid: pid.partition("@")[2] for pid in names}
+    covered = []
+    for pid, mine in names.items():
+        if mine and any(other != pid and other not in covered and market[other] == market[pid] and mine <= theirs
+                        and (mine < theirs or other < pid) for other, theirs in names.items()):
+            covered.append(pid)
+    return covered
+
+
 def report(args):
     """Local, read-only summary: what every session lists, what is used, what the catalog served, what was pruned.
     Nothing leaves the machine. Each run adds a dated budget line to the manifest so the trend shows over time."""
@@ -696,6 +723,11 @@ def report(args):
           f"{cap[0]} characters and {cap[1]:.1%} of the window). Budget warning above {SKILL_BUDGET} skills.")
     print(f"Disabled plugins keep {kept_out} skills out of the listing; enabling everything under the current "
           f"limits would list about {all_on:,} tokens (200k model). moaa-catalog serves disabled skills on demand.")
+    covered = covered_plugins(home, enabled)
+    if covered:
+        dupes = listing_tokens([enabled[pid] for pid in covered], *cap)
+        print(f"Listed twice: {len(covered)} enabled plugin(s) only repeat skills another enabled plugin lists "
+              f"({dupes[0]} skills, about {dupes[1]:,} tokens); `--mode all-on` leaves them off.")
     print("Exact figures: run /context in a fresh session (the Skills row).")
     if len(history) > 1:
         print("Trend: " + "  ".join(f"{h['date']} {h['skills']}" for h in history[-6:]))
@@ -761,16 +793,25 @@ def mode(args):
         turn_on = [p["id"] for p in kit["plugins"] if (p.get("pack") or p["enabled"]) and not p.get("optional")
                    and p["id"] in installed and p["id"] not in enabled]
         turn_on += [pid for pid in record.get("pruned", []) if pid in installed and pid not in turn_on + list(enabled)]
+        # a plugin whose skills another one already lists would only repeat them: leave it off (--restore enables it)
+        paths = {pid: Path((installed[pid] or [{}])[0].get("installPath", "")) for pid in turn_on}
+        covered = covered_plugins(home, {**enabled, **paths})
+        turn_on = [pid for pid in turn_on if pid not in covered]
+        turn_off = [pid for pid in covered if pid in enabled]
         if args.dry_run:
-            log(f"would enable {len(turn_on)} plugin(s) and set {ALL_ON_LISTING}")
+            log(f"would enable {len(turn_on)} plugin(s), leave off {len(covered)} that repeat other plugins' skills "
+                f"and set {ALL_ON_LISTING}")
             return 0
         for pid in turn_on:
             log(f"enabling {pid}")
             r.run(["claude", "plugin", "enable", pid, "--scope", "user"])
+        for pid in turn_off:
+            log(f"disabling {pid} (its skills are already listed by another plugin)")
+            r.run(["claude", "plugin", "disable", pid, "--scope", "user"])
         settings = read_json(settings_path, {})  # the CLI just rewrote enabledPlugins
         shutil.copy2(settings_path, settings_path.with_name(f"settings.json.bak-{time.strftime('%Y%m%d-%H%M%S')}"))
         settings.update(ALL_ON_LISTING)
-        record["pruned"], record["mode"] = [], "all-on"
+        record["pruned"], record["mode"] = turn_off, "all-on"
     else:
         lean(args)
         if args.dry_run:
@@ -916,7 +957,7 @@ def main(argv=None):
     p.add_argument("--with-omniroute", action="store_true",
                    help="also install the OmniRoute gateway (npm) used by allies for free-tier fallback; not started")
     p.add_argument("--full", action="store_true",
-                   help="install all 97 plugins and the ansys MCP server (default: the 14-plugin core profile)")
+                   help="install all 98 plugins and the ansys MCP server (default: the 15-plugin core profile)")
     p.add_argument("--profile", default="",
                    help="add packs for a kind of work on top of core (or full), enabled: web, data, devops, research, "
                         "science; comma-separated for several")

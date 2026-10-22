@@ -12,6 +12,9 @@ Commands:
   render   --out FILE                 write the generated model-profile reference
   diff     [--against REF|FILE]       role, team and tier-mix changes against a git ref (default HEAD) or a file
   migrate  [--home ~/.claude]         move a pre-plugin standalone install (skill, 60 user agents, forged/) to the plugin layout
+  cost     [--session ID | --days N]  tokens per subagent type from the ledger (default: the latest session)
+  hook subagent-stop                  SubagentStop hook: add the finished subagent's tokens to
+                                      ~/.claude/specialist-council/ledger.jsonl
 """
 import argparse
 import json
@@ -314,9 +317,84 @@ def migrate(home, profile):
     return moved
 
 
+USAGE_KEYS = ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
+
+
+def ledger_path(home=None):
+    return Path(home or claude_home()) / "specialist-council" / "ledger.jsonl"
+
+
+def transcript_usage(path):
+    """Summed token usage and the model of one transcript. A message is logged once per content block with the same
+    usage, so each message id counts once."""
+    seen, total, model = set(), dict.fromkeys(USAGE_KEYS, 0), None
+    for line in Path(path).open(encoding="utf-8", errors="replace"):
+        if '"usage"' not in line:
+            continue
+        try:
+            msg = json.loads(line).get("message") or {}
+        except ValueError:
+            continue
+        usage, mid = msg.get("usage"), msg.get("id")
+        if not isinstance(usage, dict) or (mid and mid in seen):
+            continue
+        seen.add(mid)
+        model = msg.get("model") or model
+        for k in USAGE_KEYS:
+            total[k] += usage.get(k) or 0
+    return total, model
+
+
+def record_subagent(payload, home=None):
+    """SubagentStop hook: append one ledger line with the finished subagent's tokens. Returns the line or None."""
+    path = payload.get("agent_transcript_path")
+    if not path and payload.get("transcript_path") and payload.get("agent_id"):
+        main_t = Path(payload["transcript_path"])
+        path = main_t.with_suffix("") / "subagents" / f"agent-{payload['agent_id']}.jsonl"
+    if not path or not Path(path).is_file():
+        return None
+    tokens, model = transcript_usage(path)
+    entry = {"ts": round(time.time(), 1), "session": payload.get("session_id"), "agent": payload.get("agent_type"),
+             "agent_id": payload.get("agent_id"), "model": model, **tokens}
+    ledger = ledger_path(home)
+    ledger.parent.mkdir(parents=True, exist_ok=True)
+    with ledger.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
+    return entry
+
+
+def cost(home=None, session=None, days=None):
+    """Tokens per subagent type from the ledger: one session (default: the latest recorded) or the last `days`."""
+    ledger = ledger_path(home)
+    rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines() if line.strip()] \
+        if ledger.is_file() else []
+    if days:
+        rows = [r for r in rows if r["ts"] >= time.time() - days * 86400]
+    else:
+        session = session or (rows[-1]["session"] if rows else None)
+        rows = [r for r in rows if r["session"] == session]
+    agents = {}
+    for r in rows:
+        a = agents.setdefault(r.get("agent") or "?", {"runs": 0, "model": r.get("model"), **dict.fromkeys(USAGE_KEYS, 0)})
+        a["runs"] += 1
+        for k in USAGE_KEYS:
+            a[k] += r.get(k) or 0
+    total = {k: sum(a[k] for a in agents.values()) for k in USAGE_KEYS}
+    return {"session": None if days else session, "days": days, "agents": agents, "total": total,
+            "total_tokens": sum(total.values())}
+
+
 def main(argv=None):
+    if argv is None and sys.argv[1:] == ["hook", "subagent-stop"]:
+        try:  # a hook must never fail the session
+            record_subagent(json.loads(sys.stdin.read() or "{}"))
+        except Exception:
+            pass
+        return 0
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("command", choices=("check", "apply", "resolve", "render", "diff", "migrate"))
+    p.add_argument("command", choices=("check", "apply", "resolve", "render", "diff", "migrate", "cost"))
+    p.add_argument("--session", help="cost: a session id (default: the latest one in the ledger)")
+    p.add_argument("--days", type=float, help="cost: every session of the last N days")
     p.add_argument("--agents", default=str(ROOT / "agents"))
     p.add_argument("--profile", default=str(ROOT / "profile.json"))
     p.add_argument("--role")
@@ -345,6 +423,8 @@ def main(argv=None):
         elif a.command == "diff":
             d = diff(base_profile(a.against), profile)
             result = d if a.json else diff_text(d)
+        elif a.command == "cost":
+            result = cost(a.home, a.session, a.days)
         else:
             result = migrate(a.home, profile)
         print(result if isinstance(result, str) else json.dumps(result, indent=2))
@@ -355,4 +435,6 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    if sys.version_info < (3, 10):
+        sys.exit(3)  # the hook command then tries the next interpreter on PATH
     sys.exit(main())

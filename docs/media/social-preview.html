@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MOAA social preview</title>
+<!-- Source of docs/media/social-preview.png (1280x640, GitHub's social preview size).
+     Render: msedge --headless --window-size=1280,640 --screenshot=social-preview.png social-preview.html -->
+<style>
+  html, body { margin: 0; width: 1280px; height: 640px; overflow: hidden; }
+  body { background: #16181c; color: #e8e6e1; font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+         display: flex; flex-direction: column; padding: 64px 80px; box-sizing: border-box; }
+  .kicker { color: #f0a630; font: 600 22px/1 Consolas, "SF Mono", monospace; letter-spacing: .12em; }
+  h1 { font-size: 76px; margin: 18px 0 10px; letter-spacing: -.02em; }
+  .tag { font-size: 32px; color: #c9c6bf; line-height: 1.35; }
+  .loop { margin-top: auto; display: flex; align-items: center; gap: 22px; font-size: 25px; }
+  .box { border: 2px solid #3a3e46; border-radius: 10px; padding: 18px 26px; background: #1e2127; white-space: nowrap; }
+  .box b { color: #f0a630; display: block; font-size: 30px; margin-bottom: 4px; }
+  .arrow { color: #f0a630; font-size: 40px; }
+  .foot { margin-top: 28px; color: #8d8a84; font: 22px Consolas, "SF Mono", monospace; }
+</style>
+</head>
+<body>
+  <div class="kicker">CLAUDE CODE PLUGIN MARKETPLACE</div>
+  <h1>MOAA: Mother of All Agents</h1>
+  <div class="tag">Agents compete in an arena.<br>The winners join a 60-role council that cross-checks your answers.</div>
+  <div class="loop">
+    <div class="box"><b>Agent Arena</b>8 modes, blind judge</div>
+    <div class="arrow">&rarr;</div>
+    <div class="box"><b>Forge</b>&ge;2 validated wins, all &ge;85</div>
+    <div class="arrow">&rarr;</div>
+    <div class="box"><b>Specialist Council</b>60 roles, cross-checked</div>
+  </div>
+  <div class="foot">github.com/ahmadhammoud56/MOAA &middot; MIT</div>
+</body>
+</html>

@@ -49,6 +49,9 @@ jobs:
       - name: Strata tests
         working-directory: plugins/strata
         run: python -m unittest discover -s tests
+      - name: moaa-catalog tests
+        working-directory: plugins/moaa-catalog
+        run: python -m unittest discover -s tests
       - name: Public-release scan (secrets, personal paths, licences)
         run: python scripts/scan.py --public
       - name: MODELS.md matches the plugins

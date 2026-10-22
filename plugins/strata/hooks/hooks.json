@@ -8,7 +8,7 @@
           {
             "type": "command",
             "shell": "bash",
-            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 && $p -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2>/dev/null && exec $p \"${CLAUDE_PLUGIN_ROOT}/strata.py\" hook session-start; done; exit 0",
+            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 || continue; $p \"${CLAUDE_PLUGIN_ROOT}/strata.py\" hook session-start; rc=$?; case $rc in 3|49) ;; *) exit $rc;; esac; done; exit 0",
             "timeout": 30
           }
         ]
@@ -20,7 +20,7 @@
           {
             "type": "command",
             "shell": "bash",
-            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 && $p -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2>/dev/null && exec $p \"${CLAUDE_PLUGIN_ROOT}/strata.py\" hook session-end; done; exit 0",
+            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 || continue; $p \"${CLAUDE_PLUGIN_ROOT}/strata.py\" hook session-end; rc=$?; case $rc in 3|49) ;; *) exit $rc;; esac; done; exit 0",
             "timeout": 60
           }
         ]

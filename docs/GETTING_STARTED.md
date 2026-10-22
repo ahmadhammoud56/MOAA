@@ -66,5 +66,5 @@ python scripts/install.py --report
 - `python scripts/install.py --status` compares your install with this repo (changes nothing).
 - `python scripts/install.py --uninstall` reverses everything the installer recorded.
 
-More: [README](../README.md), [War Room](../plugins/war-room/README.md), [MODELS.md](../MODELS.md),
+More: [README](../README.md), [Guide](GUIDE.md), [War Room](../plugins/war-room/README.md), [MODELS.md](../MODELS.md),
 [SECURITY.md](../SECURITY.md).

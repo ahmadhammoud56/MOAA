@@ -97,5 +97,6 @@ Read [adjudication.md](references/adjudication.md) when results arrive.
 3. Resolve material disagreement with evidence or a targeted check. Request a bounded repair only when needed. If evidence cannot decide, expose uncertainty or conditional alternatives.
 4. Choose a sound base, incorporate only compatible supported improvements, and verify the assembled result. For split tasks, check interfaces and dependencies too. Never average incompatible numerical results or splice incompatible implementations.
 5. Deliver the actual answer or completed artifact first, followed by the chosen result, meaningful improvements, validation, and material limitations. Include a compact comparison when useful or requested; omit discussion transcripts. Claim the best-supported result among evaluated candidates, not a guaranteed global optimum.
+6. End with one cost line from `python "${CLAUDE_PLUGIN_ROOT}/council.py" cost` (the plugin's SubagentStop hook records every finished worker): workers run and total tokens, cache reads shown separately. Skip it if the ledger is empty.
 
 Save deliverables in the user's requested project or output location; follow existing publication permissions. Do not modify this installed skill or persist new roles unless the user asks to save that customization. Spawned agents are task-local; reusable role definitions live in this skill.

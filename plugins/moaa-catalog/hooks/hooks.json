@@ -7,7 +7,7 @@
           {
             "type": "command",
             "shell": "bash",
-            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 && $p -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2>/dev/null && exec $p \"${CLAUDE_PLUGIN_ROOT}/catalog.py\" hook prompt; done; exit 0",
+            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 || continue; $p \"${CLAUDE_PLUGIN_ROOT}/catalog.py\" hook prompt; rc=$?; case $rc in 3|49) ;; *) exit $rc;; esac; done; exit 0",
             "timeout": 10
           }
         ]

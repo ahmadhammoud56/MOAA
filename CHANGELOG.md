@@ -4,6 +4,45 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-22
+
+The first milestone of the October roadmap (`docs/ROADMAP-PROPOSAL-2026-10.md`): measure what the council costs,
+start proving what it adds, make the first install one line, and trim per-prompt overhead.
+
+### Added
+- **moaa-core 0.1.0 (new plugin):** `/plugin install moaa-core@moaa` installs the Specialist Council, the Agent Arena
+  and moaa-catalog as plugin dependencies, with no clone and no installer. It has no components of its own.
+- **Specialist Council 1.6.0, cost ledger:** a `SubagentStop` hook records every finished subagent's input, output
+  and cache tokens (each message counted once) in `~/.claude/specialist-council/ledger.jsonl`.
+  `council.py cost [--session ID | --days N]` sums them per agent type, and the council skill ends each answer with
+  one cost line. Tokens only: no price table is guessed.
+- **Specialist Council eval suite** in `plugins/specialist-council/evals/` for `claude plugin eval`: 4 cases
+  (factoring, a digit count, an off-by-one review and a Simpson's-paradox claim), each run with and without the
+  council so the report shows what the council adds. It needs an API key, so it runs by hand or through the new
+  manual **Council evals** workflow (`ANTHROPIC_API_KEY` secret, cost ceiling as an input).
+- **`install.py --report`** names enabled plugins that only repeat another enabled plugin's skills.
+- **docs/GUIDE.md** (the detailed reference) and **docs/PLUGINS.md** (the generated plugin list);
+  `docs/media/social-preview.png` (1280×640) and its HTML source for the repository's social preview.
+
+### Changed
+- **`--mode all-on` leaves duplicate plugins off:** a plugin whose every skill another plugin of the same
+  marketplace already lists (the 34 `agentic-bundle-*` subsets of agentic-awesome-skills) is no longer enabled, and
+  is disabled if it was. On the maintainer machine that drops 283 skills, about 2.4k tokens from every request, with
+  nothing lost. `--restore` re-enables them. `strict: false` marketplace entries count only their listed skill
+  folders.
+- **Faster hooks (moaa-catalog 0.3.1, strata 0.1.1):** hook commands no longer start Python once just to check its
+  version. The scripts exit 3 on Python older than 3.10 and the command tries the next interpreter, skipping the
+  Windows Store alias (exit 49). The catalog prompt hook went from 108–184 ms to 81–117 ms per prompt here.
+- **README rewritten** around one first screen: a one-line hook, a two-line `/plugin` install, the council GIF, the
+  arena-to-council loop and a feature table (49 KB to about 7 KB). Everything else moved to docs/GUIDE.md.
+- **`scripts/sync_catalog.py`** writes the plugin list to docs/PLUGINS.md instead of the README.
+- **Marketplace description** now describes MOAA instead of "agent arena and UI mods".
+
+### Fixed
+- **CI now runs moaa-catalog's tests** (its prompt hook runs on every prompt but had no CI step).
+- **CITATION.cff:** earlier releases bumped `cff-version` (the format version, back to 1.2.0) instead of `version`
+  (now 0.12.0).
+
 ## [0.11.1] - 2026-10-22
 
 ### Changed

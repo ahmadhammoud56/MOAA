@@ -261,4 +261,6 @@ def main(argv):
 
 
 if __name__ == "__main__":
+    if sys.version_info < (3, 10):
+        sys.exit(3)  # the hook command then tries the next interpreter on PATH
     sys.exit(main(sys.argv[1:]))

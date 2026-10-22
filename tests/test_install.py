@@ -168,11 +168,11 @@ class ModelPresetTests(unittest.TestCase):
 
 
 class ReadmePluginListTests(unittest.TestCase):
-    def test_readme_plugin_list_matches_marketplace(self):
+    def test_plugin_list_matches_marketplace(self):
         sys.path.insert(0, str(install.KIT / "scripts"))
         import sync_catalog
         market = install.read_json(install.KIT / ".claude-plugin" / "marketplace.json", None)
-        readme = (install.KIT / "README.md").read_text(encoding="utf-8")
+        readme = (install.KIT / "docs" / "PLUGINS.md").read_text(encoding="utf-8")
         self.assertIn(sync_catalog.plugin_table(market), readme)
         self.assertEqual(readme.count("@moaa` |"), len(market["plugins"]))
 
@@ -261,6 +261,27 @@ class PruneTests(unittest.TestCase):
         self.assertLess(install.ALL_ON_LISTING["skillListingMaxDescChars"],
                         install.LISTING_DEFAULTS["skillListingMaxDescChars"])
 
+    def test_covered_plugins_are_same_marketplace_subsets(self):
+        import json, tempfile
+        with tempfile.TemporaryDirectory() as d:
+            home = Path(d)
+
+            def plugin(name, *skills):
+                for s in skills:
+                    (home / name / "skills" / s).mkdir(parents=True)
+                    (home / name / "skills" / s / "SKILL.md").write_text("---\nname: x\n---\n")
+                return home / name
+            whole = plugin("whole", "a", "b", "c")
+            paths = {"pack@m": whole, "bundle@m": plugin("bundle", "a", "b"), "twin@m": plugin("twin", "a", "b"),
+                     "other@elsewhere": plugin("other", "a"), "own@m": plugin("own", "a", "z")}
+            self.assertEqual(sorted(install.covered_plugins(home, paths)), ["bundle@m", "twin@m"])
+            # a strict: false entry loads only its listed folders, not the whole cached repository
+            market = home / "plugins" / "marketplaces" / "up" / ".claude-plugin"
+            market.mkdir(parents=True)
+            (market / "marketplace.json").write_text(json.dumps({"plugins": [
+                {"name": "one", "skills": ["./skills/a"]}, {"name": "two", "skills": ["./skills/b"]}]}))
+            self.assertEqual(install.covered_plugins(home, {"one@up": whole, "two@up": whole}), [])
+
     def test_full_profile_ships_heavy_packs_disabled(self):
         kit = install.read_json(install.KIT / "config" / "kit.json", None)
         heavy = [p for p in kit["plugins"] if p["id"].endswith("@agentic-awesome-skills")
@@ -292,6 +313,8 @@ class ProfileTests(unittest.TestCase):
         kit = install.read_json(install.KIT / "config" / "kit.json", None)
         core = {p["id"] for p in kit["plugins"] if p.get("profile") == "core"}
         self.assertTrue({"specialist-council@moaa", "agent-arena-mode@moaa"} <= core)
-        self.assertLessEqual(len(core), 14)  # 14th: moaa-catalog, which lets the full profile ship packs disabled
+        # 14th: moaa-catalog, which lets the full profile ship packs disabled; 15th: moaa-core, a meta plugin with no
+        # components of its own (its dependencies are already in core)
+        self.assertLessEqual(len(core), 15)
         self.assertTrue(all(p.get("profile") in ("core", "full") for p in kit["plugins"]))
         self.assertFalse(any(p.get("optional") for p in kit["plugins"] if p["id"] in core))

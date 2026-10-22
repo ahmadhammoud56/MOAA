@@ -6,9 +6,14 @@
     "url": "https://github.com/ahmadhammoud56"
   },
   "metadata": {
-    "description": "Vendored plugins for MOAA: Mother of All Agents (agent arena and UI mods)."
+    "description": "MOAA: Mother of All Agents. A 60-role Specialist Council, an Agent Arena that forges winning agents into the council, War Room parallel teams, allies (Codex, Gemini) and layered memory. Start with moaa-core."
   },
   "plugins": [
+    {
+      "name": "moaa-core",
+      "source": "./plugins/moaa-core",
+      "description": "MOAA in one install: Specialist Council, Agent Arena and moaa-catalog, pulled in as dependencies."
+    },
     {
       "name": "specialist-council",
       "source": "./plugins/specialist-council",

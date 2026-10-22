@@ -177,5 +177,35 @@ class DiffTests(unittest.TestCase):
         self.assertEqual(council.base_profile(str(path)), council.load_profile())
 
 
+class LedgerTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.tmp = Path(self.temp.name)
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def test_ledger_counts_each_message_once_and_groups_by_agent(self):
+        main_t = self.tmp / "s1.jsonl"
+        sub = self.tmp / "s1" / "subagents"
+        sub.mkdir(parents=True)
+        usage = {"input_tokens": 2, "output_tokens": 10, "cache_read_input_tokens": 100, "cache_creation_input_tokens": 5}
+        lines = [{"type": "assistant", "message": {"id": "m1", "model": "claude-x", "usage": usage}}] * 2 + \
+                [{"type": "assistant", "message": {"id": "m2", "model": "claude-x", "usage": usage}}]
+        (sub / "agent-a1.jsonl").write_text("\n".join(json.dumps(x) for x in lines) + "\nnot json\n", encoding="utf-8")
+        home = self.tmp / "home"
+        entry = council.record_subagent({"session_id": "s1", "transcript_path": str(main_t), "agent_id": "a1",
+                                         "agent_type": "specialist-council:council-analyst"}, home)
+        self.assertEqual((entry["output_tokens"], entry["cache_read_input_tokens"], entry["model"]), (20, 200, "claude-x"))
+        council.record_subagent({"session_id": "s1", "agent_transcript_path": str(sub / "agent-a1.jsonl"),
+                                 "agent_type": "specialist-council:council-analyst"}, home)
+        self.assertIsNone(council.record_subagent({"session_id": "s1", "agent_id": "gone"}, home))
+        summary = council.cost(home)
+        self.assertEqual(summary["session"], "s1")
+        self.assertEqual(summary["agents"]["specialist-council:council-analyst"]["runs"], 2)
+        self.assertEqual(summary["total_tokens"], 2 * 2 * (2 + 10 + 100 + 5))
+        self.assertEqual(council.cost(home, session="other")["total_tokens"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()
