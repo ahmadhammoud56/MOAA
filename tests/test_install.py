@@ -282,6 +282,25 @@ class PruneTests(unittest.TestCase):
                 {"name": "one", "skills": ["./skills/a"]}, {"name": "two", "skills": ["./skills/b"]}]}))
             self.assertEqual(install.covered_plugins(home, {"one@up": whole, "two@up": whole}), [])
 
+    def test_all_on_plan_is_stable_when_rerun(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            home = Path(d)
+            for name, skills in (("pack", "abc"), ("bundle", "ab")):
+                for s in skills:
+                    (home / name / "skills" / s).mkdir(parents=True)
+                    (home / name / "skills" / s / "SKILL.md").write_text("---\nname: x\n---\n")
+            kit = {"plugins": [{"id": "pack@m", "enabled": False, "pack": True},
+                               {"id": "bundle@m", "enabled": False, "pack": True}]}
+            records = {"pack@m": [{"installPath": str(home / "pack")}],
+                       "bundle@m": [{"installPath": str(home / "bundle")}]}
+            # first run: both enabled; the bundle only repeats the pack, so it goes off
+            first = install.all_on_plan(home, kit, {}, records, {"pack@m": home / "pack", "bundle@m": home / "bundle"})
+            self.assertEqual(first, ([], ["bundle@m"], ["bundle@m"]))
+            # rerun: the bundle is off and recorded as pruned; it stays off and stays recorded
+            again = install.all_on_plan(home, kit, {"pruned": ["bundle@m"]}, records, {"pack@m": home / "pack"})
+            self.assertEqual(again, ([], [], ["bundle@m"]))
+
     def test_full_profile_ships_heavy_packs_disabled(self):
         kit = install.read_json(install.KIT / "config" / "kit.json", None)
         heavy = [p for p in kit["plugins"] if p["id"].endswith("@agentic-awesome-skills")

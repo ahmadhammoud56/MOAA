@@ -776,6 +776,19 @@ def lean(args):
     return 0
 
 
+def all_on_plan(home, kit, record, records, enabled):
+    """(turn_on, turn_off, covered) for --mode all-on. `records` is installed_plugins.json's plugins map and
+    `enabled` {id: install path}. Every catalog plugin meant to be on (packs included, not opt-in ones such as
+    claude-mem) and every pruned one is enabled, except those whose skills another plugin already lists: those stay
+    or go off. Rerunning gives the same `covered`, so --restore keeps finding them."""
+    turn_on = [p["id"] for p in kit["plugins"] if (p.get("pack") or p["enabled"]) and not p.get("optional")
+               and p["id"] in records and p["id"] not in enabled]
+    turn_on += [pid for pid in record.get("pruned", []) if pid in records and pid not in turn_on + list(enabled)]
+    paths = {pid: Path((records[pid] or [{}])[0].get("installPath", "")) for pid in turn_on}
+    covered = covered_plugins(home, {**enabled, **paths})
+    return [pid for pid in turn_on if pid not in covered], [pid for pid in covered if pid in enabled], covered
+
+
 def mode(args):
     """--mode all-on: every MOAA pack and pruned plugin enabled (hooks, agents, MCP, commands all live) with the skill
     listing cut to names plus short descriptions; moaa-catalog supplies full descriptions on a matching prompt.
@@ -788,16 +801,8 @@ def mode(args):
     if args.mode == "all-on":
         if record.get("mode") != "all-on":
             record["mode_prev"] = {k: settings.get(k) for k in ALL_ON_LISTING}
-        installed, enabled = installed_plugins(home), enabled_plugins(home)
-        # every catalog plugin meant to be on (packs included), not optional ones the user opts into (claude-mem)
-        turn_on = [p["id"] for p in kit["plugins"] if (p.get("pack") or p["enabled"]) and not p.get("optional")
-                   and p["id"] in installed and p["id"] not in enabled]
-        turn_on += [pid for pid in record.get("pruned", []) if pid in installed and pid not in turn_on + list(enabled)]
-        # a plugin whose skills another one already lists would only repeat them: leave it off (--restore enables it)
-        paths = {pid: Path((installed[pid] or [{}])[0].get("installPath", "")) for pid in turn_on}
-        covered = covered_plugins(home, {**enabled, **paths})
-        turn_on = [pid for pid in turn_on if pid not in covered]
-        turn_off = [pid for pid in covered if pid in enabled]
+        records = read_json(home / "plugins" / "installed_plugins.json", {}).get("plugins", {})
+        turn_on, turn_off, covered = all_on_plan(home, kit, record, records, enabled_plugins(home))
         if args.dry_run:
             log(f"would enable {len(turn_on)} plugin(s), leave off {len(covered)} that repeat other plugins' skills "
                 f"and set {ALL_ON_LISTING}")
@@ -811,7 +816,7 @@ def mode(args):
         settings = read_json(settings_path, {})  # the CLI just rewrote enabledPlugins
         shutil.copy2(settings_path, settings_path.with_name(f"settings.json.bak-{time.strftime('%Y%m%d-%H%M%S')}"))
         settings.update(ALL_ON_LISTING)
-        record["pruned"], record["mode"] = turn_off, "all-on"
+        record["pruned"], record["mode"] = covered, "all-on"  # kept off, so --restore can still enable them
     else:
         lean(args)
         if args.dry_run:

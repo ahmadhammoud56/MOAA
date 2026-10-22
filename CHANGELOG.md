@@ -27,7 +27,7 @@ start proving what it adds, make the first install one line, and trim per-prompt
 ### Changed
 - **`--mode all-on` leaves duplicate plugins off:** a plugin whose every skill another plugin of the same
   marketplace already lists (the 34 `agentic-bundle-*` subsets of agentic-awesome-skills) is no longer enabled, and
-  is disabled if it was. On the maintainer machine that drops 283 skills, about 2.4k tokens from every request, with
+  is disabled if it was. On the maintainer machine that drops 283 skills, about 1.8k tokens from every request (23,490 to 21,676 under the all-on listing caps), with
   nothing lost. `--restore` re-enables them. `strict: false` marketplace entries count only their listed skill
   folders.
 - **Faster hooks (moaa-catalog 0.3.1, strata 0.1.1):** hook commands no longer start Python once just to check its
