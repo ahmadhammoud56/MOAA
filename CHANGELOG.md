@@ -6,8 +6,8 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [0.12.0] - 2026-10-22
 
-The first milestone of the October roadmap (`docs/ROADMAP-PROPOSAL-2026-10.md`): measure what the council costs,
-start proving what it adds, make the first install one line, and trim per-prompt overhead.
+The first milestone of the October roadmap: measure what the council costs, start proving what it adds, make the
+first install one line, and trim per-prompt overhead.
 
 ### Added
 - **moaa-core 0.1.0 (new plugin):** `/plugin install moaa-core@moaa` installs the Specialist Council, the Agent Arena
