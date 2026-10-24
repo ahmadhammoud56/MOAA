@@ -381,202 +381,202 @@
     {
       "id": "ruflo-adr@ruflo",
       "enabled": false,
-      "tested_version": "0.5.6",
+      "tested_version": "0.5.8",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-agent@ruflo",
       "enabled": false,
-      "tested_version": "0.3.3",
+      "tested_version": "0.3.4",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-agentdb@ruflo",
       "enabled": false,
-      "tested_version": "0.4.8",
+      "tested_version": "0.4.10",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-agntcy@ruflo",
       "enabled": false,
-      "tested_version": "0.2.4",
+      "tested_version": "0.2.5",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-aidefence@ruflo",
       "enabled": false,
-      "tested_version": "0.3.2",
+      "tested_version": "0.3.3",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-arena@ruflo",
       "enabled": false,
-      "tested_version": "0.2.5",
+      "tested_version": "0.2.6",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-autopilot@ruflo",
       "enabled": false,
-      "tested_version": "0.3.2",
+      "tested_version": "0.3.3",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-bbs-federation@ruflo",
       "enabled": false,
-      "tested_version": "0.3.3",
+      "tested_version": "0.3.4",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-browser@ruflo",
       "enabled": false,
-      "tested_version": "0.3.5",
+      "tested_version": "0.3.6",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-business-pods@ruflo",
       "enabled": false,
-      "tested_version": "0.2.3",
+      "tested_version": "0.2.4",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-core@ruflo",
       "enabled": true,
-      "tested_version": "0.2.8",
+      "tested_version": "0.2.11",
       "profile": "full"
     },
     {
       "id": "ruflo-cost-tracker@ruflo",
       "enabled": false,
-      "tested_version": "0.28.1",
+      "tested_version": "0.28.2",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-daa@ruflo",
       "enabled": false,
-      "tested_version": "0.3.3",
+      "tested_version": "0.3.4",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-ddd@ruflo",
       "enabled": false,
-      "tested_version": "0.3.5",
+      "tested_version": "0.3.6",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-docs@ruflo",
       "enabled": false,
-      "tested_version": "0.3.3",
+      "tested_version": "0.3.4",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-federation@ruflo",
       "enabled": false,
-      "tested_version": "0.3.5",
+      "tested_version": "0.3.6",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-goals@ruflo",
       "enabled": false,
-      "tested_version": "0.4.4",
+      "tested_version": "0.4.5",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-graph-intelligence@ruflo",
       "enabled": false,
-      "tested_version": "0.2.0-alpha.5",
+      "tested_version": "0.2.0-alpha.6",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-intelligence@ruflo",
       "enabled": false,
-      "tested_version": "0.4.3",
+      "tested_version": "0.4.5",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-iot-cognitum@ruflo",
       "enabled": false,
-      "tested_version": "0.3.3",
+      "tested_version": "0.3.4",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-jujutsu@ruflo",
       "enabled": false,
-      "tested_version": "0.3.4",
+      "tested_version": "0.3.6",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-knowledge-graph@ruflo",
       "enabled": false,
-      "tested_version": "0.3.4",
+      "tested_version": "0.3.6",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-loop-workers@ruflo",
       "enabled": false,
-      "tested_version": "0.3.4",
+      "tested_version": "0.3.6",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-market-data@ruflo",
       "enabled": false,
-      "tested_version": "0.3.4",
+      "tested_version": "0.3.5",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-metaharness@ruflo",
       "enabled": false,
-      "tested_version": "0.2.5",
+      "tested_version": "0.2.6",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-migrations@ruflo",
       "enabled": false,
-      "tested_version": "0.3.4",
+      "tested_version": "0.3.5",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-music@ruflo",
       "enabled": false,
-      "tested_version": "0.2.4",
+      "tested_version": "0.2.5",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-neural-trader@ruflo",
       "enabled": false,
-      "tested_version": "0.3.5",
+      "tested_version": "0.3.6",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-observability@ruflo",
       "enabled": false,
-      "tested_version": "0.3.4",
+      "tested_version": "0.3.5",
       "profile": "full",
       "pack": true
     },
@@ -590,42 +590,42 @@
     {
       "id": "ruflo-rag-memory@ruflo",
       "enabled": false,
-      "tested_version": "0.3.5",
+      "tested_version": "0.3.7",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-ruvector@ruflo",
       "enabled": false,
-      "tested_version": "0.3.4",
+      "tested_version": "0.3.7",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-ruvllm@ruflo",
       "enabled": false,
-      "tested_version": "0.3.4",
+      "tested_version": "0.3.6",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-rvf@ruflo",
       "enabled": false,
-      "tested_version": "0.3.6",
+      "tested_version": "0.3.7",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-security-audit@ruflo",
       "enabled": false,
-      "tested_version": "0.3.4",
+      "tested_version": "0.3.5",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-sparc@ruflo",
       "enabled": false,
-      "tested_version": "0.3.4",
+      "tested_version": "0.3.7",
       "profile": "full",
       "pack": true
     },
@@ -639,14 +639,14 @@
     {
       "id": "ruflo-testgen@ruflo",
       "enabled": false,
-      "tested_version": "0.3.2",
+      "tested_version": "0.3.3",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-workflows@ruflo",
       "enabled": false,
-      "tested_version": "0.6.6",
+      "tested_version": "0.6.7",
       "profile": "full",
       "pack": true
     },
