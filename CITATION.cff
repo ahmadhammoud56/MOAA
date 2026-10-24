@@ -1,4 +1,4 @@
-cff-version: 0.13.0
+cff-version: 0.14.0
 message: "If you use MOAA, please cite it as below."
 title: "MOAA: Mother of All Agents"
 abstract: "One-command installer for a complete Claude Code setup: a Specialist Council of 60 role agents, an Agent Arena with a persistent best-agent library that forges new council members, curated plugins, skills, and MCP servers."

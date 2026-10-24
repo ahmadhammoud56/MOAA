@@ -272,6 +272,8 @@ Both wrappers pass these flags through to `scripts/install.py`:
 | `--report` | Local summary: skills listed per request and their rough token cost, most used plugins, skills the catalog served, pruned plugins. Nothing leaves the machine. |
 | `--lean` | On an install made before 0.9.0, disable the packs the catalog now ships disabled. |
 | `--restore` | Re-enable every plugin `--prune` or `--lean` disabled. |
+| `--update` | Clone installs: `git pull --ff-only`, reinstall with the same profile and mode, print the changelog since your version. |
+| `--auto-update` | GitHub marketplace installs: set `autoUpdate` on the MOAA marketplace so Claude Code updates it in the background. |
 | `--status --mcp` | Also check every MCP server's connection, with a hint for slow `npx` servers. `--doctor` lists any that fail. |
 | `--doctor` | Run every pre-commit check: all test suites, `MODELS.md`, the catalog, the public-release scan and `claude plugin validate`. For maintainers. |
 

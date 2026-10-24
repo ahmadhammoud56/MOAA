@@ -17,6 +17,11 @@ in it. Keep the answer short and point to the one tool that fits the user's task
 | Another model family, or saving Claude usage | `/allies:allies`: Codex, Gemini (and others) on bounded tasks; read-only by default, writes on their own branch. |
 | Remember things across sessions | `strata`: recalls at session start and saves at session end automatically; `/strata:strata` to search. |
 | A skill that is not listed | `/moaa-catalog:moaa-catalog`: searches installed but disabled packs and loads one skill into this session. |
+| What to set up for this project | `claude-code-setup` (Anthropic's automation recommender): ask "recommend automations for this project". It reads the code and suggests 1-2 hooks, subagents, skills, plugins and MCP servers; prefer the MOAA tools above where they fit. |
+| A long or multi-session task | `/specialist-council:long-task`: brief with acceptance checks, progress file, evidence review, resume prompt. |
+| A knowledge base that compounds | `/strata:wiki`: Karpathy-style LLM Wiki; Claude compiles sources into linked pages (ingest, query, lint of the link graph). |
+| Findings with their sources | `/strata:graph`: typed claim-source graph shared by parallel agents, with a grounding check (score, specific failures). |
+| Improve something against a number | `/agent-arena-mode:karpathy-loop`: edit, measure with a fixed script, keep or discard, repeat. |
 
 Installer commands (run in the MOAA repo; `--dry-run` previews any of them):
 

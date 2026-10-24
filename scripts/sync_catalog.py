@@ -19,7 +19,8 @@ KIT = Path(__file__).resolve().parents[1]
 MARKET = KIT / ".claude-plugin" / "marketplace.json"
 SHA = re.compile(r"^[0-9a-f]{40}$")
 # Names reserved for Anthropic's own plugins may not appear in a third-party marketplace; list them under an alias.
-ALIASES = {"claude-api": "llm-api-reference", "claude-mem": "persistent-memory", "claude-mem-cowork": "persistent-memory-cowork"}
+ALIASES = {"claude-api": "llm-api-reference", "claude-mem": "persistent-memory", "claude-mem-cowork": "persistent-memory-cowork",
+           "claude-code-setup": "automation-recommender"}
 
 
 def claude_home():

@@ -4,6 +4,33 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-24
+
+Knowledge as a graph, loops judged by a number, Anthropic's setup recommender, and update notices.
+
+### Added
+- **Strata 0.2.0, `/strata:wiki`:** a Karpathy-style LLM Wiki. Claude compiles sources from `raw/` into linked
+  Markdown pages (`[[Page]]` links form the graph, viewable in Obsidian), keeps `index.md` and an append-only
+  `log.md`, answers from the pages, and runs ingest, query and lint. `graph.py lint` reports broken links, orphan
+  pages, pages missing from the index, uncited sources and hub pages.
+- **Strata 0.2.0, `/strata:graph`:** "graph engineering" for parallel agents. Findings are typed nodes (claim, source,
+  entity, decision, task) and edges (supports, cites, contradicts, depends_on, derived_from, about) in append-only
+  JSONL. `graph.py check` is a deterministic grounding evaluator: a score (grounded claims / all claims), one specific
+  failure per problem, and the list of contradictions. `graph.py export` draws a Mermaid diagram.
+- **Agent Arena 0.7.0, `/agent-arena-mode:karpathy-loop`:** the autoresearch loop. A fixed metric command, a
+  human-written `program.md`, and `loop.py record`, which measures each attempt and answers KEEP, DISCARD or STOP
+  (exit 0, 3 or 4) against the best value and the budget. Every attempt is logged in `results.tsv`.
+- **claude-code-setup** (Anthropic's read-only automation recommender) joins the core profile. The installer takes it
+  from `claude-plugins-official`; the `moaa` marketplace lists it as `automation-recommender`, because third-party
+  marketplaces cannot use names that start with `claude-`. `/moaa-catalog:moaa-help` points to it, and to the new
+  skills.
+- **Update notices:** moaa-catalog 0.4.0 checks GitHub's latest release at session start, at most once a day, and
+  says when a newer one is out, with the exact command. It is silent offline, honours
+  `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`, and `MOAA_NO_UPDATE_CHECK=1` turns it off.
+- **`install.py --update`** (clone installs): `git pull --ff-only`, reinstall with the same profile and mode, and
+  print the changelog since your version. **`install.py --auto-update`** (GitHub marketplace installs): sets
+  `autoUpdate` on the MOAA marketplace, so Claude Code updates it in the background.
+
 ## [0.13.0] - 2026-10-24
 
 Long tasks that finish, after a harness-engineering write-up for long Opus 5.5 runs: a written brief with

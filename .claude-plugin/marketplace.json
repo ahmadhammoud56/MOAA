@@ -1117,6 +1117,25 @@
       ]
     },
     {
+      "name": "automation-recommender",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/anthropics/claude-plugins-official.git",
+        "path": "plugins/claude-code-setup",
+        "sha": "58267944f92187b7d6a1c822165c96c81c864806"
+      },
+      "description": "Analyze codebases and recommend tailored Claude Code automations such as hooks, skills, MCP servers, and subagents. Upstream plugin `claude-code-setup` from claude-plugins-official; listed as `automation-recommender` because `claude-code-setup` is a reserved name.",
+      "author": {
+        "name": "Anthropic",
+        "email": "support@anthropic.com"
+      },
+      "category": "productivity",
+      "homepage": "https://github.com/anthropics/claude-plugins-official/tree/main/plugins/claude-code-setup",
+      "tags": [
+        "upstream:claude-plugins-official"
+      ]
+    },
+    {
       "name": "caveman",
       "source": {
         "source": "github",

@@ -31,6 +31,17 @@ git clone https://github.com/ahmadhammoud56/MOAA.git && cd MOAA
 ./install.sh              # macOS / Linux / Git Bash  (Windows PowerShell: .\install.ps1)
 ```
 
+### Staying up to date
+
+- **Marketplace install:** run `python scripts/install.py --auto-update` once in a clone, or turn it on in
+  `/plugin` > Marketplaces > moaa > Enable auto-update. Claude Code then refreshes MOAA in the background and says
+  `Plugin updated ... Run /reload-plugins`.
+- **Clone install:** `python scripts/install.py --update` pulls, reinstalls with your profile and mode, and prints what
+  changed.
+- **Either way:** at session start, moaa-catalog checks GitHub's latest release once a day and tells you when a newer
+  one is out, with the exact command (silent offline; `MOAA_NO_UPDATE_CHECK=1` turns it off). To get an e-mail per
+  release, use Watch > Custom > Releases on the GitHub repository.
+
 New here? The [5-minute guide](docs/GETTING_STARTED.md) walks through every part, and `/moaa-catalog:moaa-help`
 answers "what can MOAA do?" from inside Claude Code.
 

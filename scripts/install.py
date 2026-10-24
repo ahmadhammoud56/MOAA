@@ -7,6 +7,8 @@
   python scripts/install.py --profile web   core plus the packs for one kind of work (web, data, devops, research,
                                             science; comma-separated for several), installed and enabled
   python scripts/install.py --prune [--days N] [--yes]  list (and with --yes disable) plugins unused for N days
+  python scripts/install.py --update        clone installs: git pull, reinstall with the same profile and mode
+  python scripts/install.py --auto-update   GitHub marketplace installs: Claude Code auto-updates MOAA
   python scripts/install.py --mode all-on   every pack enabled; skill listing cut to names + short descriptions
   python scripts/install.py --mode lean     big packs disabled, listing limits restored (moaa-catalog serves them)
   python scripts/install.py --report      local summary: listed skills and tokens, usage, catalog hits, pruned
@@ -870,6 +872,74 @@ def mode(args):
     return 0
 
 
+def changelog_since(text, old):
+    """CHANGELOG sections for versions newer than `old`, newest first, as one string."""
+    ver = lambda v: tuple(int(x) for x in v.split("."))  # noqa: E731
+    parts = re.split(r"(?m)^(?=## \[\d+\.\d+\.\d+\])", text)
+    keep = [p.strip() for p in parts if (m := re.match(r"## \[(\d+\.\d+\.\d+)\]", p)) and ver(m.group(1)) > ver(old)]
+    return "\n\n".join(keep)
+
+
+def update(args):
+    """Clone installs: pull this repo (fast-forward only), reinstall with the same profile and mode, and show what
+    changed. Marketplace installs update through Claude Code instead (--auto-update, or `claude plugin marketplace
+    update moaa`)."""
+    home = claude_home()
+    if not (KIT / ".git").exists():
+        raise SystemExit("[moaa] --update needs a git clone of MOAA; marketplace installs update with "
+                         "`claude plugin marketplace update moaa` (or --auto-update)")
+    old = read_json(KIT / "config" / "kit.json", {})["version"]
+    pulled = subprocess.run(["git", "-C", str(KIT), "pull", "--ff-only"], capture_output=True, text=True)
+    if pulled.returncode:
+        raise SystemExit("[moaa] git pull failed (local changes or a diverged branch?): "
+                         + (pulled.stderr or pulled.stdout).strip()[-300:])
+    new = read_json(KIT / "config" / "kit.json", {})["version"]
+    if new == old and "Already up to date" in pulled.stdout:
+        log(f"already at {new}")
+        return 0
+    installed = installed_plugins(home)
+    kit = read_json(KIT / "config" / "kit.json", None)
+    full = any(p.get("profile") == "full" and p["id"] in installed for p in kit["plugins"])
+    argv = [sys.executable, str(KIT / "scripts" / "install.py")] + (["--full"] if full else []) + \
+        (["--with-claude-mem"] if any(i.startswith("claude-mem@") for i in installed) else [])
+    log(f"updating {old} -> {new}: " + " ".join(argv[2:] or ["(core profile)"]))
+    code = subprocess.run(argv).returncode  # the freshly pulled installer does the work
+    if read_json(home / MANIFEST, {}).get("mode") == "all-on":
+        subprocess.run([sys.executable, str(KIT / "scripts" / "install.py"), "--mode", "all-on"])
+    notes = changelog_since((KIT / "CHANGELOG.md").read_text(encoding="utf-8"), old)
+    if notes:
+        print("\n" + notes)
+    log("updated. Restart Claude Code (or /reload-plugins) to load it.")
+    return code
+
+
+def auto_update(args):
+    """Turn on Claude Code's own auto-update for the MOAA marketplace (GitHub installs). A clone installed as a
+    directory source cannot be pulled by Claude Code; it gets the daily release notice and `--update` instead."""
+    home = claude_home()
+    kit = read_json(KIT / "config" / "kit.json", None)
+    known = read_json(home / "plugins" / "known_marketplaces.json", {}).get(kit["name"])
+    if not known:
+        raise SystemExit(f"[moaa] the {kit['name']} marketplace is not added; run the installer or "
+                         "`/plugin marketplace add ahmadhammoud56/MOAA` first")
+    if known.get("source", {}).get("source") == "directory":
+        log("this install reads the MOAA folder directly, which Claude Code cannot pull. Update with "
+            "`python scripts/install.py --update`; moaa-catalog tells you at session start when a release is out.")
+        return 0
+    path = home / "settings.json"
+    settings = read_json(path, {})
+    entry = settings.setdefault("extraKnownMarketplaces", {}).setdefault(kit["name"], {"source": known["source"]})
+    if entry.get("autoUpdate") is True:
+        log("auto-update is already on")
+        return 0
+    if not args.dry_run and path.is_file():
+        shutil.copy2(path, path.with_name(f"settings.json.bak-{time.strftime('%Y%m%d-%H%M%S')}"))
+    entry["autoUpdate"] = True
+    write_json(path, settings, args.dry_run)
+    log("auto-update on: Claude Code refreshes MOAA in the background and says `Plugin updated ... /reload-plugins`")
+    return 0
+
+
 def restore(args):
     """Re-enable every plugin an earlier --prune disabled."""
     home, r = claude_home(), Runner(args.dry_run)
@@ -1017,6 +1087,10 @@ def main(argv=None):
     p.add_argument("--days", type=int, default=45, help="with --prune: usage window in days (default 45)")
     p.add_argument("--yes", action="store_true", help="with --prune: disable the listed plugins")
     p.add_argument("--restore", action="store_true", help="re-enable every plugin --prune or --lean disabled")
+    p.add_argument("--update", action="store_true",
+                   help="clone installs: git pull, reinstall with the same profile and mode, show the changelog")
+    p.add_argument("--auto-update", action="store_true",
+                   help="GitHub marketplace installs: turn on Claude Code's background auto-update for MOAA")
     p.add_argument("--mode", choices=("all-on", "lean"),
                    help="all-on: every pack enabled, skill listing cut to names + short descriptions; "
                         "lean: big packs disabled, listing limits restored")
@@ -1033,6 +1107,10 @@ def main(argv=None):
         return prune(a)
     if a.restore:
         return restore(a)
+    if a.update:
+        return update(a)
+    if a.auto_update:
+        return auto_update(a)
     if a.mode:
         return mode(a)
     if a.lean:

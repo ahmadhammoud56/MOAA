@@ -1,6 +1,19 @@
 {
-  "description": "MOAA catalog: on a strong match, name up to 3 disabled-plugin skills that fit the prompt",
+  "description": "MOAA catalog: on a strong match, name up to 3 skills that fit the prompt; once a day, say if a newer MOAA release exists",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 || continue; $p \"${CLAUDE_PLUGIN_ROOT}/catalog.py\" hook session; rc=$?; case $rc in 3|49) ;; *) exit $rc;; esac; done; exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [

@@ -5,6 +5,7 @@
   python catalog.py use <SKILL.md path>  print that skill (and log the use; suggests enabling a pack used often)
   python catalog.py packs               disabled plugins and their skill counts
   python catalog.py hook prompt         UserPromptSubmit hook: suggest up to 3 strong matches for the prompt on stdin
+  python catalog.py hook session        SessionStart hook: once a day, say if a newer MOAA release exists
 
 The index (~/.claude/moaa-catalog/index.json) is rebuilt only when the plugin record or settings change, so a search
 or a hook call reads one small file. Never changes settings or plugins. Standard library only.
@@ -228,6 +229,55 @@ def how(skill, catalog):
     return f"disabled, load it with: python \"{catalog}\" use \"{skill['path']}\""
 
 
+UPDATE_REPO = "ahmadhammoud56/MOAA"
+UPDATE_EVERY = 86400  # seconds between checks of the latest release
+
+
+def version_tuple(v):
+    return tuple(int(x) for x in re.findall(r"\d+", v or "")[:3]) or (0,)
+
+
+def latest_release(repo, timeout=2):
+    import urllib.request
+    req = urllib.request.Request(f"https://api.github.com/repos/{repo}/releases/latest",
+                                 headers={"Accept": "application/vnd.github+json", "User-Agent": "moaa-catalog"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310  fixed GitHub API URL
+        return json.loads(r.read().decode("utf-8")).get("tag_name", "").lstrip("v")
+
+
+def update_notice(home, fetch=latest_release, now=None):
+    """A one-line notice when a newer MOAA release exists than the installed marketplace copy, else None. Checks
+    GitHub at most once a day (cached), never blocks a session for more than a couple of seconds, stays silent offline
+    and when non-essential traffic or the check is turned off."""
+    if os.environ.get("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC") or os.environ.get("MOAA_NO_UPDATE_CHECK"):
+        return None
+    entry = read_json(home / "plugins" / "known_marketplaces.json").get("moaa") or {}
+    where = Path(entry.get("installLocation", ""))
+    installed = read_json(where / "config" / "kit.json").get("version") if entry else None
+    if not installed:
+        return None
+    now = now or time.time()
+    cache_path = home / "moaa-catalog" / "update.json"
+    cache = read_json(cache_path)
+    if "checked" not in cache or now - cache["checked"] >= UPDATE_EVERY:
+        try:
+            cache = {"checked": now, "latest": fetch(UPDATE_REPO)}
+        except Exception:  # offline, rate-limited: try again tomorrow, say nothing
+            cache = {"checked": now, "latest": cache.get("latest", "")}
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(json.dumps(cache), encoding="utf-8")
+    latest = cache.get("latest", "")
+    if version_tuple(latest) <= version_tuple(installed):
+        return None
+    if entry.get("source", {}).get("source") == "directory":
+        how = f'run `py "{(where / "scripts" / "install.py").as_posix()}" --update` (pulls and reinstalls)'
+    else:
+        how = ("run `claude plugin marketplace update moaa`, or /plugin > Marketplaces > moaa > Update marketplace, "
+               "then /reload-plugins")
+    return (f"MOAA {latest} is available (installed {installed}): {how}. "
+            f"Changes: https://github.com/{UPDATE_REPO}/releases/tag/v{latest}")
+
+
 def main(argv):
     home = claude_home()
     if argv[:1] == ["search"] and len(argv) > 1:
@@ -247,6 +297,16 @@ def main(argv):
                 counts[s["pid"]] = counts.get(s["pid"], 0) + 1
         for pid, n in sorted(counts.items(), key=lambda kv: -kv[1]):
             print(f"{n:5d}  {pid}")
+        return 0
+    if argv == ["hook", "session"]:
+        try:
+            notice = update_notice(home)
+        except Exception:  # a hook must never block the session
+            notice = None
+        if notice:
+            print(json.dumps({"systemMessage": notice, "hookSpecificOutput": {
+                "hookEventName": "SessionStart",
+                "additionalContext": notice + " Mention this to the user once, early, in one line."}}))
         return 0
     if argv == ["hook", "prompt"]:
         try:

@@ -330,6 +330,35 @@ class SafetyTests(unittest.TestCase):
         self.assertTrue(set(deny) <= set(merged["permissions"]["deny"]))
 
 
+class UpdateTests(unittest.TestCase):
+    def test_changelog_since_returns_only_newer_sections(self):
+        text = ("# Changelog\n\n## [Unreleased]\n\n## [0.14.0] - x\n\n- new\n\n## [0.13.0] - y\n\n- mid\n\n"
+                "## [0.9.1] - z\n\n- old\n")
+        notes = install.changelog_since(text, "0.13.0")
+        self.assertIn("## [0.14.0]", notes)
+        self.assertNotIn("0.13.0", notes)
+        self.assertIn("0.13.0", install.changelog_since(text, "0.10.0"))
+        self.assertNotIn("0.9.1", install.changelog_since(text, "0.10.0"))  # numeric, not string, order
+
+    def test_auto_update_sets_the_marketplace_entry_for_github_installs(self):
+        import json, os, tempfile
+        home = Path(tempfile.mkdtemp())
+        (home / "plugins").mkdir()
+        (home / "plugins" / "known_marketplaces.json").write_text(json.dumps({"moaa": {
+            "source": {"source": "github", "repo": "ahmadhammoud56/MOAA"}}}))
+        (home / "settings.json").write_text(json.dumps({"model": "opus"}))
+        old = os.environ.get("CLAUDE_CONFIG_DIR")
+        os.environ["CLAUDE_CONFIG_DIR"] = str(home)
+        try:
+            self.assertEqual(install.main(["--auto-update"]), 0)
+        finally:
+            os.environ.pop("CLAUDE_CONFIG_DIR") if old is None else os.environ.__setitem__("CLAUDE_CONFIG_DIR", old)
+        s = json.loads((home / "settings.json").read_text())
+        self.assertEqual(s["extraKnownMarketplaces"]["moaa"],
+                         {"source": {"source": "github", "repo": "ahmadhammoud56/MOAA"}, "autoUpdate": True})
+        self.assertEqual(s["model"], "opus")
+
+
 class WorkProfileTests(unittest.TestCase):
     def test_profiles_add_their_packs_enabled_on_top_of_core(self):
         kit = install.read_json(install.KIT / "config" / "kit.json", None)
@@ -354,7 +383,8 @@ class ProfileTests(unittest.TestCase):
         core = {p["id"] for p in kit["plugins"] if p.get("profile") == "core"}
         self.assertTrue({"specialist-council@moaa", "agent-arena-mode@moaa"} <= core)
         # 14th: moaa-catalog, which lets the full profile ship packs disabled; 15th: moaa-core, a meta plugin with no
-        # components of its own (its dependencies are already in core)
-        self.assertLessEqual(len(core), 15)
+        # components of its own (its dependencies are already in core); 16th: claude-code-setup, Anthropic's read-only
+        # automation recommender (one skill)
+        self.assertLessEqual(len(core), 16)
         self.assertTrue(all(p.get("profile") in ("core", "full") for p in kit["plugins"]))
         self.assertFalse(any(p.get("optional") for p in kit["plugins"] if p["id"] in core))

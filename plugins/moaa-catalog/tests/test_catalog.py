@@ -76,6 +76,35 @@ class Catalog(unittest.TestCase):
         self.assertIn('Skill tool, skill "on:stripe-listed"', catalog.how(names["stripe-listed"], "catalog.py"))
         self.assertIn("catalog.py\" use", catalog.how(names["stripe-integration"], "catalog.py"))
 
+    def test_update_notice_checks_once_a_day_and_names_the_right_command(self):
+        kit = self.home / "kit"
+        (kit / "config").mkdir(parents=True)
+        (kit / "config" / "kit.json").write_text(json.dumps({"version": "0.13.0"}))
+        (self.home / "plugins" / "known_marketplaces.json").write_text(json.dumps({"moaa": {
+            "source": {"source": "directory", "path": str(kit)}, "installLocation": str(kit)}}))
+        calls = []
+
+        def fetch(repo):
+            calls.append(repo)
+            return "0.14.0"
+        notice = catalog.update_notice(self.home, fetch, now=1000.0)
+        self.assertIn("MOAA 0.14.0 is available (installed 0.13.0)", notice)
+        self.assertIn("install.py\" --update", notice)
+        catalog.update_notice(self.home, fetch, now=1000.0 + 3600)
+        self.assertEqual(len(calls), 1)  # cached for a day
+        (kit / "config" / "kit.json").write_text(json.dumps({"version": "0.14.0"}))
+        self.assertIsNone(catalog.update_notice(self.home, fetch, now=1000.0 + 7200))  # up to date: silent
+        os.environ["MOAA_NO_UPDATE_CHECK"] = "1"
+        try:
+            (kit / "config" / "kit.json").write_text(json.dumps({"version": "0.1.0"}))
+            self.assertIsNone(catalog.update_notice(self.home, fetch, now=1000.0))
+        finally:
+            del os.environ["MOAA_NO_UPDATE_CHECK"]
+
+        def offline(repo):
+            raise OSError("no network")
+        self.assertIsNone(catalog.update_notice(Path(tempfile.mkdtemp()), offline))  # nothing known: silent
+
     def test_use_serves_indexed_skills_logs_and_suggests_enabling(self):
         for _ in range(catalog.PROMOTE_USES):
             self.assertEqual(catalog.use(self.home, str(self.stripe)), 0)
