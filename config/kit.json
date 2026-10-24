@@ -1,6 +1,6 @@
 {
   "name": "moaa",
-  "version": "0.12.1",
+  "version": "0.13.0",
   "marketplaces": {
     "ecc": "https://github.com/affaan-m/ECC.git",
     "karpathy-skills": "https://github.com/multica-ai/andrej-karpathy-skills.git",
@@ -653,7 +653,7 @@
     {
       "id": "specialist-council@moaa",
       "enabled": true,
-      "tested_version": "1.6.1",
+      "tested_version": "1.7.0",
       "profile": "core"
     },
     {
@@ -677,7 +677,7 @@
     {
       "id": "war-room@moaa",
       "enabled": true,
-      "tested_version": "0.7.0",
+      "tested_version": "0.7.1",
       "profile": "core"
     },
     {
@@ -747,7 +747,16 @@
       "PRISMANTIS_PNG_BUTTON": "1"
     },
     "permissions_deny": [
-      "Skill(lps:dogusariturk-python-style)"
+      "Skill(lps:dogusariturk-python-style)",
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.*.local)",
+      "Read(**/.env.production)",
+      "Read(**/keys.env)",
+      "Read(~/.claude/allies/keys.env)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/credentials)",
+      "Read(**/*.pem)"
     ],
     "defaults": {
       "model": "sonnet",

@@ -149,8 +149,10 @@ class AllyWorkers(Sandbox):
         self.fake.timeouts = 1
         run, bus, _ = self.launch()
         self.drain(bus, run)
-        writes = [c["timeout"] for c in self.fake.calls if c["write"]]
-        self.assertEqual(writes[:2], [warroom.ALLY_TIMEOUT, 2 * warroom.ALLY_TIMEOUT])
+        writes = [c for c in self.fake.calls if c["write"]]
+        self.assertEqual([c["timeout"] for c in writes[:2]], [warroom.ALLY_TIMEOUT, 2 * warroom.ALLY_TIMEOUT])
+        self.assertNotIn("timed out", writes[0]["task"])
+        self.assertIn("Check git log and git diff first", writes[1]["task"])  # the retry checks what landed
         self.assertEqual(bus.db.execute("SELECT status FROM tasks WHERE title='Add a feature'").fetchone()[0], "approved")
 
     def test_a_task_held_by_a_dead_job_is_reclaimed_and_its_process_killed(self):

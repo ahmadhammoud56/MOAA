@@ -90,6 +90,8 @@ fresh validator checks the winner (real run, 233 s, compressed):
 
 ## Security, in short
 
+The installer adds deny rules that keep Claude's file tools away from secrets: `.env` files, `keys.env` (allies' keys), `~/.ssh`, `~/.aws/credentials` and `*.pem`. They do not cover scripts run through Bash, so keep secrets out of the repository too.
+
 MOAA installs third-party plugins, and some of them run hooks with your user permissions. Every third-party plugin
 is pinned to a tested commit, but pinning is not an audit. Your `settings.json` is backed up and merged, never
 overwritten, and `--uninstall` reverses every change the installer recorded. War Room launches nothing without your

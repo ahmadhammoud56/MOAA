@@ -309,6 +309,27 @@ class PruneTests(unittest.TestCase):
         self.assertFalse(any(p["enabled"] for p in heavy))
 
 
+class SafetyTests(unittest.TestCase):
+    def test_mcp_rows_classify_health_and_hint_slow_npx_servers(self):
+        out = ("Checking MCP server health...\n\n"
+               "rea: cmd /c npx -y rea-agents@6.4.0 mcp - ✗ Failed to connect\n"
+               "ansys: C:/x/python.exe -m ansys_mcp_server.server - ✔ Connected\n"
+               "claude.ai Slack: https://mcp.slack.com/mcp - ! Needs authentication\n")
+        rows = {r[1]: r for r in install.mcp_rows(out)}
+        self.assertEqual({k: v[2] for k, v in rows.items()},
+                         {"rea": "failed", "ansys": "ok", "claude.ai Slack": "info"})
+        self.assertIn("npm i -g", rows["rea"][3])
+
+    def test_installer_ships_secret_file_deny_rules(self):
+        kit = install.read_json(install.KIT / "config" / "kit.json", None)
+        deny = kit["settings"]["permissions_deny"]
+        for rule in ("Read(**/.env)", "Read(**/keys.env)", "Read(~/.claude/allies/keys.env)", "Read(~/.ssh/**)"):
+            self.assertIn(rule, deny)
+        merged, added = install.merge_settings({"permissions": {"deny": ["Read(mine)"]}}, kit["settings"], [], {})
+        self.assertIn("Read(mine)", merged["permissions"]["deny"])  # the user's own deny rules stay
+        self.assertTrue(set(deny) <= set(merged["permissions"]["deny"]))
+
+
 class WorkProfileTests(unittest.TestCase):
     def test_profiles_add_their_packs_enabled_on_top_of_core(self):
         kit = install.read_json(install.KIT / "config" / "kit.json", None)

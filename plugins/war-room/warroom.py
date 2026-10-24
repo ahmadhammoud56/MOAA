@@ -736,6 +736,8 @@ Protocol:
 - When claim_task returns no task, stop. You are woken automatically when a message or a task arrives.
 - Keep turns few: read every file you need in one turn with parallel tool calls, and after complete_task and
   checkpoint end the turn without a closing summary (each extra turn re-reads the whole conversation).
+- Before retrying anything that timed out or failed partway (a test run that wrote files, a commit, a request to
+  another service), check whether the first attempt already took effect, and say what you found.
 - If claim_task reports paused, checkpoint at once and stop (usage-limit guard).
 - Never push, publish, delete branches or tags, or spend money. Ask the orchestrator with send() instead.
 - Shell commands run unattended against an allow-list: run them from your working directory, one command per call,
@@ -994,13 +996,18 @@ def ally_job(run, w, task_id):
             meta = ally.run(engine, brief, cwd=author.get("cwd") or plan.get("project") or ".", write=False,
                             on_start=started, timeout=limit, cancelled=cancelled)
         else:
-            brief = head + f"\nTASK #{task_id}: {task['title']}\n{task['detail'] or ''}"
+            note = bus.control(f"ally_note_{task_id}")
+            brief = head + f"\nTASK #{task_id}: {task['title']}\n{task['detail'] or ''}" + (f"\n\nNOTE: {note}" if note else "")
             meta = ally.run(engine, brief, cwd=w["cwd"], write=bool(pw.get("write")),
                             workdir=w["cwd"] if pw.get("write") else None, on_start=started,
                             title=f"#{task_id} {task['title']}", timeout=limit, cancelled=cancelled)
         if bus.control("run") == "stop" or meta.get("failure") == "cancelled":  # the result is not reported
             return requeue_ally_task(bus, name, task_id, "stopped or taken away while the ally worked")
         if meta.get("failure") == "timeout":
+            # the retry must not redo blindly: allies committed what the timed-out run left in the worktree
+            bus.control(f"ally_note_{task_id}", f"A previous attempt timed out after {limit // 60} min. Whatever it "
+                        f"finished is already in your working directory{' at commit ' + meta['head'][:10] if meta.get('head') else ''}. "
+                        "Check git log and git diff first, keep what is done, and continue from there.")
             return reopen_ally_task(bus, name, task_id, f"{engine} timed out after {limit // 60} min",
                                     timed_out_after=limit)
         answer = Path(meta["answer"]).read_text(encoding="utf-8").strip() if meta.get("answer") else ""

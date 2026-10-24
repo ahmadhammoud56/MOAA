@@ -4,6 +4,32 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-10-24
+
+Long tasks that finish, after a harness-engineering write-up for long Opus 5.5 runs: a written brief with
+acceptance checks, a progress file, a goal, an evidence review and a resume prompt.
+
+### Added
+- **Specialist Council 1.7.0, `/specialist-council:long-task`:** runs a long or multi-session task to completion.
+  It writes `brief.md` (deliverables, checkable acceptance, constraints, budget) and keeps `progress.md` current after
+  every step, under `.claude/long-task/<slug>/`. It gives the user a `/goal` line built from the acceptance checks,
+  checks whether a timed-out or half-finished step already took effect before retrying it, and ends with an evidence
+  review saved as `checks.md`. If the task is unfinished it writes `resume.md`, a prompt for a fresh session.
+- **Evidence-review claim table:** the peer-reviewer and validation-auditor roles return one row per claim (claim,
+  `verified` / `incorrect` / `unresolved`, source checked, required correction), name the missing evidence for
+  unresolved rows and leave the edits to the parent.
+- **Secret-file deny rules:** the installer adds `Read` deny rules for `.env` files, `keys.env`,
+  `~/.claude/allies/keys.env`, `~/.ssh/**`, `~/.aws/credentials` and `*.pem`. It merges them like every other
+  setting: the user's own rules stay, and `--uninstall` removes only what it added.
+- **MCP health:** `install.py --status --mcp` checks every MCP server's connection (connected, needs
+  authentication, failed) and suggests a one-time global install for a failing `npx` server, which `npx` fetches on
+  every start. `--doctor` lists failing servers as warnings, and `--status` exits 1 when one fails.
+
+### Changed
+- **War Room 0.7.1, retry safety:** when an ally task times out, the retry brief says the first attempt's work is
+  already in the worktree (with its commit) and to check `git log` and `git diff` before redoing anything. Workers
+  are told to check whether a timed-out or partly failed action already took effect before retrying it.
+
 ## [0.12.1] - 2026-10-22
 
 ### Added

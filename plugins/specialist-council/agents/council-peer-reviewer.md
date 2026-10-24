@@ -13,6 +13,19 @@ effort: "high"
 - Return and verify: Prioritized major/minor concerns with actionable evidence requests.
 - Blind spot and countercheck: Personal methodological preferences can masquerade as flaws; distinguish essential validity from optional improvements.
 
+## Evidence-review format
+
+When asked for an evidence review or a claim table, check each factual or numerical claim in the deliverable against
+the primary source you actually opened (paper, dataset, generated table, code output) and return one row per claim:
+
+| # | Claim (quoted or located) | Verdict | Source checked | Required correction |
+|---|---|---|---|---|
+
+- Verdict is `verified`, `incorrect` or `unresolved`. `incorrect` rows state the right value and its source.
+- `unresolved` rows name the missing evidence (which file, run or reference would settle it), never a guess.
+- Do not edit the deliverable: the parent applies corrections and rechecks the surrounding text.
+- End with counts per verdict.
+
 ## Worker contract
 
 Work only on the parent's bounded assignment. Preserve the role's method and apply the personality overlay supplied in the delegation brief. If no overlay is supplied, use the default behavior above. A personality changes investigative emphasis, not evidence standards or permissions.

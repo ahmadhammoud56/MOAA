@@ -529,10 +529,40 @@ def status_rows(home, kit):
     return rows
 
 
+def mcp_rows(output):
+    """[(kind, name, state, detail)] from `claude mcp list` output: ok (connected), info (needs authentication),
+    failed (anything else). A failing npx server gets a hint: npx fetches it on every start and can miss the
+    30 s connect timeout."""
+    rows = []
+    for line in output.splitlines():
+        m = re.match(r"^(.+?): (.+) - (.+)$", line.strip())
+        if not m:
+            continue
+        name, target, health = m.groups()
+        if "Connected" in health:
+            rows.append(("mcp", name, "ok", "connected"))
+        elif "authentication" in health.lower():
+            rows.append(("mcp", name, "info", "needs authentication (/mcp)"))
+        else:
+            hint = ("; npx fetches it on each start: install it once (`npm i -g <package>`) or raise MCP_TIMEOUT"
+                    if "npx" in target else "; check with /mcp, or disable it where it is not used")
+            rows.append(("mcp", name, "failed", health.strip("✗✘! ").strip() + hint))
+    return rows
+
+
+def mcp_health():
+    claude = shutil.which("claude")
+    if not claude:
+        return []
+    out = subprocess.run([claude, "mcp", "list"], capture_output=True, text=True, encoding="utf-8", errors="replace",
+                         timeout=300)
+    return mcp_rows(out.stdout + out.stderr)
+
+
 def status(args):
     home = claude_home()
     kit = read_json(KIT / "config" / "kit.json", None)
-    rows = status_rows(home, kit)
+    rows = status_rows(home, kit) + (mcp_health() if args.mcp else [])
     counts = {}
     for kind, name, state, detail in rows:
         counts[state] = counts.get(state, 0) + 1
@@ -542,7 +572,7 @@ def status(args):
     if counts.get("drift"):
         print("[moaa] drift is informational: upstream-installed plugins move on their own; "
               "`python scripts/sync_catalog.py` re-pins the catalog to what is installed")
-    return 1 if counts.get("missing") or counts.get("outdated") else 0
+    return 1 if counts.get("missing") or counts.get("outdated") or counts.get("failed") else 0
 
 
 SKILL_BUDGET = 300  # skills listed in every session's context before --status/--doctor warn
@@ -893,6 +923,9 @@ def doctor(args):
     if (claude_home() / "plugins" / "installed_plugins.json").is_file():  # informational; never fails the doctor
         _, _, state, detail = context_row(claude_home())
         print(f"  {'WARN' if state == 'heavy' else 'INFO'}  context budget: {detail}")
+        for _, name, state, detail in mcp_health():  # informational too: a down server is not a repo defect
+            if state != "ok":
+                print(f"  {'WARN' if state == 'failed' else 'INFO'}  MCP {name}: {detail}")
     print(f"[moaa] doctor: {'all checks pass' if not failed else 'failed: ' + ', '.join(failed)}")
     return 1 if failed else 0
 
@@ -977,6 +1010,7 @@ def main(argv=None):
     p.add_argument("--status", action="store_true",
                    help="compare what is installed with this repo (changes nothing; exit 1 if anything is missing or outdated)")
     p.add_argument("--verbose", action="store_true", help="with --status: also list third-party plugins that match")
+    p.add_argument("--mcp", action="store_true", help="with --status: also check every MCP server's connection")
     p.add_argument("--doctor", action="store_true", help="run every pre-commit check of the release routine")
     p.add_argument("--prune", action="store_true",
                    help="list enabled plugins unused for --days (changes nothing without --yes)")
