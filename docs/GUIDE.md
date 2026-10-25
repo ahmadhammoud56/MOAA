@@ -166,6 +166,21 @@ output is validated before it is saved, and injected memory is marked as data, n
 /strata:strata forget 42
 ```
 
+**Project RAG (always on).** Strata also indexes each project's own files: text, code, notebooks and, when
+`pdftotext` is on PATH, PDFs. In a git repository it takes the files git does not ignore; elsewhere it walks the
+folder and skips build, cache and hidden folders. Secret files (`.env*`, keys, certificates) are never read, and
+secrets inside indexed text are redacted. At session start a stale index (older than ten minutes) is refreshed in the
+background, reading only changed files. When a request matches the project strongly (most of its key words in a
+passage), up to four passages are added to it with `path:lines`, about 3,000 characters at most; other requests get
+nothing. The index never covers your home folder or a drive root by accident.
+
+```
+py plugins/strata/rag.py search "interlayer bond time gap"    # passages with path:lines
+py plugins/strata/rag.py status                               # files, passages, last refresh
+py plugins/strata/rag.py index --full                         # rebuild now
+py plugins/strata/rag.py off                                  # or STRATA_RAG=off for one shell
+```
+
 Strata needs no worker process or background service; claude-mem is still available with `--with-claude-mem`. Details:
 [plugins/strata/README.md](../plugins/strata/README.md).
 

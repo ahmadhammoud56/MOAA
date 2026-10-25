@@ -1,0 +1,23 @@
+{
+  "checks": {
+    "warm: background index built": true,
+    "hint: passage injected with path:lines": true,
+    "hint: answer names 23 minutes": true,
+    "off: no passage": true,
+    "off: answer does not know 23": true,
+    "chat: no passage": true
+  },
+  "passed": true,
+  "answers": {
+    "hint": "Per `docs/lab-notes.md`, the Qanat-7 mortar needs 23 minutes of rest before it is printable.",
+    "off": "I do not know: nothing in this conversation gives the rest time for the Qanat-7 mortar.",
+    "chat": "Spring warm soil; garden burst into bloom, color open bit by bit."
+  },
+  "exits": {
+    "warm": 0,
+    "hint": 0,
+    "off": 0,
+    "chat": 0
+  },
+  "date": "2026-10-25 20:03"
+}

@@ -4,6 +4,25 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-10-25
+
+### Added
+- **Strata 0.4.0, project RAG (always on).** `plugins/strata/rag.py` keeps a local full-text index of each
+  project's own files in `~/.claude/strata/rag.sqlite3`: SQLite FTS5 with Porter stemming and BM25 ranking, standard
+  library only, no embeddings model and no API key. It indexes the files git does not ignore (or a folder walk that
+  skips build, cache and hidden folders): text, code, notebooks and, when `pdftotext` is on PATH, PDFs. Secret files
+  are never read, and secrets inside indexed text are redacted. SessionStart refreshes a stale index in the
+  background, reading only changed files. A prompt that matches the project strongly gets up to four passages with
+  `path:lines`; other prompts get nothing. Only key words that occur in the project count, weighted by rarity (IDF),
+  so the instructions around a question do not dilute it (found in the live test). Commands:
+  `rag.py search|status|index|drop|on|off`; off with `rag.py off` or `STRATA_RAG=off`. The strata skill gains a
+  `rag QUERY` action. On this repository, indexing 540 files takes about 5 s once and 0.2 s after, and a search about
+  20 ms.
+
+### Fixed
+- **CITATION.cff:** `cff-version` was set to the release number in 0.15.2; it is the format version 1.2.0 again, and
+  `version` follows the release. `config/kit.json` records strata 0.4.0 (it still said 0.3.0).
+
 ## [0.15.2] - 2026-10-25
 
 ### Fixed

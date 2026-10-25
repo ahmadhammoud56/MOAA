@@ -62,6 +62,39 @@ Limits: the transcript records usage per assistant message, so the measure lags 
 the prompt being submitted; a single tool result bigger than the remaining room can still overflow before the hook
 sees it. Sub-agent calls are not counted (their context is separate) and do not trigger the prompt.
 
+## Project RAG
+
+Always on, no command needed. `rag.py` keeps a full-text index of each project's own files in
+`~/.claude/strata/rag.sqlite3` (SQLite FTS5 with Porter stemming and BM25 ranking, standard library only, no
+embeddings model and no API key).
+
+- **What is indexed:** in a git repository, the tracked and untracked files git does not ignore; elsewhere a walk
+  that skips build, cache, virtual-environment and hidden folders. Text, code, LaTeX, BibTeX, CSV, notebooks (cell
+  sources only) and, when `pdftotext` (poppler) is on PATH, PDFs. Files over 1 MB, binaries, lock files and minified
+  bundles are skipped; at most 5,000 files per project (`config rag_max_files N`).
+- **Never read:** `.env*`, `*.pem`, `*.key`, `keys.env`, SSH keys, `*credential*` and `*secret*` files, and the
+  `.ssh`, `.aws` and `.claude` folders. Secrets inside indexed text are redacted with the same patterns as memory.
+- **Refresh:** SessionStart starts a background `rag.py index` when the project's index is older than ten minutes;
+  it reads only new and changed files (by modification time and size) and drops deleted ones. Indexing this
+  repository (540 files) takes about 5 s the first time and 0.2 s after. A home folder or a drive root that is not a
+  git repository is never indexed by a hook.
+- **Prompt hint:** each prompt of at least 15 characters with three or more key words is searched. Only the key
+  words that occur somewhere in the project count, each weighted by its rarity there (IDF), so instructions around a
+  question ("answer in one sentence, no tools") do not dilute it; words found in more than a quarter of a big
+  project's passages count for nothing. A passage is added when it holds two informative words and at least 60% of
+  the weight: up to four passages, about 3,000 characters (`config rag_hint_chars N`), each with
+  `path:first-last line` and marked as file contents, not instructions. Chit-chat, approvals and requests about
+  other topics get nothing. A search takes about 20 ms (`tests/e2e/rag/probe.txt`).
+- **Off:** `rag.py off` (or `strata.py config rag off`), `STRATA_RAG=off` for one shell. `rag.py drop` deletes a
+  project's index.
+
+```
+python rag.py search "QUERY" [--limit N]      passages with path:lines
+python rag.py status                          files, passages, last refresh, pdftotext found or not
+python rag.py index [--full]                  refresh now (--full re-reads every file)
+python rag.py on|off                          python rag.py drop
+```
+
 ## Commands
 
 ```
@@ -75,7 +108,7 @@ python strata.py handoff on|off|status|threshold N|window N
 python strata.py stats
 ```
 
-Data lives in `~/.claude/strata/memory.sqlite3` (or `$MOAA_STRATA_DIR`). Nothing leaves your machine
+Data lives in `~/.claude/strata/memory.sqlite3` and `rag.sqlite3` (or `$MOAA_STRATA_DIR`). Nothing leaves your machine
 except the Haiku extraction call to Anthropic, which is the same service your sessions already use.
 
 ## Safety

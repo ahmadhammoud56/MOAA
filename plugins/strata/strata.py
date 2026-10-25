@@ -44,7 +44,8 @@ CHILD = "MOAA_STRATA_CHILD"  # set on the consolidation subprocess so its own se
 # hidden Haiku session there with this text to summarize a chat (for example when it starts a side session).
 MACHINE_PROMPTS = ("Below is a conversation log from a Claude Code coding session",)
 DEFAULTS = {"auto": True, "engine": "claude-haiku", "min_chars": 1500, "max_input_chars": 60000, "context_chars": 6000,
-            "handoff": True, "handoff_threshold": 85, "handoff_window": 0}
+            "handoff": True, "handoff_threshold": 85, "handoff_window": 0,
+            "rag": True, "rag_hint_chars": 3000, "rag_max_files": 5000}  # rag.py: retrieval over project files
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, project TEXT, transcript TEXT, ended REAL, chars INTEGER,
   consolidated REAL);

@@ -81,14 +81,14 @@ fresh validator checks the winner (real run, 233 s, compressed):
 | **Agent Arena** | Eight modes: judge, tournament, league, swarm, cascade, red team, evolution and synthesis. Every judged result goes to a local library; proven agents are forged into the council. |
 | **War Room** | Several real Claude Code sessions on one big job, with a task board, review gates on a different model, a merge queue and a live local app. [Zero-token demo](docs/GUIDE.md#try-it): `python plugins/war-room/warroom.py demo`. |
 | **Allies** | Hands bounded tasks to Codex, Gemini, Kimi, DeepSeek or a local OmniRoute gateway, each on its own account. Read-only by default; writes land on their own branch. |
-| **Strata** | Layered long-term memory in local SQLite (raw sessions, notes, project scenes, your profile), recalled at session start. **Context handoff** near a full context window, a Karpathy-style **LLM Wiki** (`/strata:wiki`) and a **findings graph** with a grounding check (`/strata:graph`). |
+| **Strata** | Layered long-term memory in local SQLite (raw sessions, notes, project scenes, your profile), recalled at session start. **Project RAG** over each project's files, **context handoff** near a full context window, a Karpathy-style **LLM Wiki** (`/strata:wiki`) and a **findings graph** with a grounding check (`/strata:graph`). |
 | **prompt-refiner** | Turns every prompt into a clear brief before Claude works on it, asks about ambiguous points with concrete options, and hands the brief to every subagent. |
 | **moaa-catalog** | Skills on demand: big skill packs stay installed but disabled, a prompt hook names the one skill a task needs, and a daily check tells you when a MOAA update is out. |
 | **More skills** | `/specialist-council:long-task` (brief, progress file, evidence review, resume), `/agent-arena-mode:karpathy-loop` (keep only changes that move a number), `/agent-arena-mode:effort-trial`, and Anthropic's automation recommender. |
 
 ### Always on, no commands
 
-Four things run on their own once installed, and each has an off switch:
+Five things run on their own once installed, and each has an off switch:
 
 - **Prompt to brief** (prompt-refiner): Claude rewrites each new request as a brief (goal, deliverables, constraints,
   acceptance checks), asks about anything material with 2-4 options, saves the brief to `.briefs/`, and gives
@@ -98,6 +98,10 @@ Four things run on their own once installed, and each has an off switch:
   `HANDOFF.md` and `CONTEXT.md` to `.claude/handoff/`, and tells you to open a new chat in the project; the new chat
   picks the work up with your first message (hidden app sessions in the folder leave it alone). If a conversation is compacted anyway, a snapshot is written first. Off:
   `py plugins/strata/strata.py handoff off`; `handoff threshold 90` moves the trigger.
+- **Project RAG** (strata): each project's docs, code, notebooks and PDFs are indexed locally (SQLite full-text
+  search, refreshed in the background at session start). When a request clearly matches passages in the project,
+  the best few are added with their `path:lines`; chit-chat and unrelated requests get nothing. Off:
+  `py plugins/strata/rag.py off`.
 - **The right skill** (moaa-catalog): a prompt that clearly needs a skill gets it named, from enabled or disabled packs.
 - **Update notices** (moaa-catalog): once a day at session start, a newer MOAA release is announced with the
   command to get it.

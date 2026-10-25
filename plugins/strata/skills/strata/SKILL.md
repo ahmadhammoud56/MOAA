@@ -1,7 +1,7 @@
 ---
 name: strata
-description: Search, show, add to, correct or forget the layered long-term memory kept across Claude Code sessions (profile, project scenes, extracted notes, raw past conversations). Use when the user asks what was decided or discussed before, says "remember this" or "forget that", or when earlier context about this project would help.
-argument-hint: "search QUERY | show | remember TEXT | forget ID | consolidate | stats | config"
+description: Search, show, add to, correct or forget the layered long-term memory kept across Claude Code sessions (profile, project scenes, extracted notes, raw past conversations), and search the project's own files (RAG). Use when the user asks what was decided or discussed before, says "remember this" or "forget that", or when earlier context or the project's docs and code would help.
+argument-hint: "search QUERY | rag QUERY | show | remember TEXT | forget ID | consolidate | stats | config"
 ---
 
 # Strata
@@ -28,6 +28,11 @@ Actions:
 - `forget ID`: `M forget ID`, or `--session ID`, `--scene ID`, `--profile KEY`. Show what will go and ask first.
 - `consolidate`: `M consolidate --pending` processes sessions not yet extracted (one Haiku call each; say so
   first). `--dry-run` shows the size only.
+- `rag QUERY`: `R search "QUERY"`, where `R` means `python "${CLAUDE_PLUGIN_ROOT}/rag.py"`. It searches the
+  project's own files (docs, code, notebooks, PDFs) and prints passages with `path:lines`. Use it when the answer
+  is probably written down in the project but you do not know where, before reading many files. `R status` shows
+  the index, `R index` refreshes it, `R off` / `R on` switch the automatic hint. Passages starting with "Strata
+  RAG:" in a prompt come from the same index: open the file before editing it or relying on a detail.
 - `stats` / `config`: `M stats`; `M config auto off` stops background extraction, `M config engine none` too.
 - `handoff`: `M handoff status | on | off | threshold 50-95 | window 400k`. The context handoff is always on: near
   a full context window (85% by default) a hook asks you to write `HANDOFF.md` and `CONTEXT.md` into
