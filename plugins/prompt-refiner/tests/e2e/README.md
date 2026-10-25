@@ -31,3 +31,13 @@ Paths under the user folder were redacted to `C:/Users/<you>` (`run_e2e.py ... r
 
 `timing.txt` shows the hook process measured end to end (Python start included): a median of 74 ms over 10 runs.
 `validate.txt` holds the output of `claude plugin validate`.
+
+## 0.1.1: the first prompt after a restart, and machine prompts
+
+`first-prompt/` holds the 0.15.1 live run (`plugins/strata/tests/e2e/run_machine_e2e.py`, Haiku, with strata,
+prompt-refiner and moaa-catalog loaded from the checkout and their installed copies switched off). The desktop app
+puts a `<system-reminder>` in front of the user's words on the first prompt after a restart, and 0.1.0 took that for
+a harness notice. Run `C-user` sends that shape and gets the refiner's and the catalog's context. Run `A-summary`
+sends the desktop app's hidden summary prompt, and run `B-child` sends a prompt with strata's helper environment
+(`PROMPT_REFINER=off`). Neither gets any context. The analysis is in
+`plugins/strata/tests/e2e/machine/FINDINGS.md`.

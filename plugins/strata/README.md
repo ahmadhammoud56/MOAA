@@ -28,7 +28,7 @@ A project is its git repository root, so all worktrees of one repo share memory.
 Always on, no command needed. When a conversation fills about 85% of its context window, Claude stops at a safe
 point, writes `HANDOFF.md` (goal, state, done, next actions, open questions, decisions, files, resume commands) and
 `CONTEXT.md` (durable facts, constraints, paths, IDs) to `<project>/.claude/handoff/<stamp>/`, and tells you to open
-a new chat in the same project. That new chat gets the handoff injected at its start and carries on, so nothing has
+a new chat in the same project. That new chat gets the handoff with its first prompt and carries on, so nothing has
 to be compacted.
 
 - **Measure:** the UserPromptSubmit and PostToolUse hooks read the last 256 KB of the transcript and take the newest
@@ -39,10 +39,15 @@ to be compacted.
   below the threshold (a compaction). You see a one-line notice too.
 - **Fallback:** if a conversation is compacted before Claude wrote a handoff, the PreCompact hook writes a script-only
   snapshot (last requests, plan or todo list, recent files, last reply), so the thread survives compaction.
-- **Resume:** SessionStart of a new chat (startup or `/clear`) injects the newest unconsumed handoff of the project
-  (`latest` names it) once, marked as notes from the earlier chat, and Claude confirms in one line. A handoff is
-  consumed when injected and offered again only if its `HANDOFF.md` changes. `--resume` and forks get nothing; they
-  already hold the conversation.
+- **Resume:** a new chat (startup or `/clear`) gets the newest unconsumed handoff of the project (`latest` names it)
+  once, with its first prompt, marked as notes from the earlier chat, and Claude confirms in one line. SessionStart
+  only notes the handoff; the first prompt takes it. That way a hidden machine session in the same folder cannot use
+  it up: the Claude desktop app starts one (Haiku, prompt "Below is a conversation log from a Claude Code coding
+  session ...") to summarize a chat, for example when it starts a side session. Such a prompt, a session that never
+  sends a prompt, and processes strata starts itself (`MOAA_STRATA_CHILD`, which also switches off prompt-refiner and
+  the catalog hints for them) leave the handoff for the next chat. After a compaction the same session gets its own
+  handoff back at SessionStart. A handoff is consumed when injected and offered again only if its `HANDOFF.md`
+  changes. `--resume` and forks get nothing; they already hold the conversation.
 - `.claude/handoff/` gets a `.gitignore` of `*`, so handoffs are never committed by accident.
 
 ```

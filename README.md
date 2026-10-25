@@ -96,7 +96,7 @@ Four things run on their own once installed, and each has an off switch:
   straight through. Off: `py plugins/prompt-refiner/refiner.py off`, or start a prompt with `raw:`.
 - **No more compacting** (strata): at about 85% of the context window Claude stops at a safe point, writes
   `HANDOFF.md` and `CONTEXT.md` to `.claude/handoff/`, and tells you to open a new chat in the project; the new chat
-  picks the work up by itself. If a conversation is compacted anyway, a snapshot is written first. Off:
+  picks the work up with your first message (hidden app sessions in the folder leave it alone). If a conversation is compacted anyway, a snapshot is written first. Off:
   `py plugins/strata/strata.py handoff off`; `handoff threshold 90` moves the trigger.
 - **The right skill** (moaa-catalog): a prompt that clearly needs a skill gets it named, from enabled or disabled packs.
 - **Update notices** (moaa-catalog): once a day at session start, a newer MOAA release is announced with the

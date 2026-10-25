@@ -61,10 +61,21 @@ def words(text):
     return re.findall(r"[\w'-]+", text)
 
 
+REMINDER = re.compile(r"<system-reminder>[\s\S]*?</system-reminder>")
+# Prompts that machines, not the user, send: the Claude desktop app's hidden Haiku run that summarizes a chat.
+MACHINE_PROMPTS = ("Below is a conversation log from a Claude Code coding session",)
+
+
+def user_text(prompt):
+    """The prompt without the <system-reminder> blocks the desktop app puts in front of the user's words (for example
+    the linked-sessions status on the first prompt after a restart)."""
+    return REMINDER.sub("", prompt).strip()
+
+
 def is_notice(prompt):
-    """Slash commands and messages the harness sends on its own (task notifications, side-session events)."""
-    head = prompt.lstrip()
-    return head.startswith(("/", "[SYSTEM", "<")) or "<task-notification>" in prompt
+    """Slash commands, messages the harness sends on its own (task notifications, side-session events) and machine
+    prompts. Expects user_text(prompt)."""
+    return prompt.startswith(("/", "[SYSTEM", "<") + MACHINE_PROMPTS) or "<task-notification>" in prompt
 
 
 def is_structured(prompt):
@@ -156,8 +167,8 @@ def hook_prompt(home, payload):
     cfg = load_config(home)
     if not cfg["enabled"]:
         return None
-    prompt = (payload or {}).get("prompt") or ""
-    if prompt.lstrip().lower().startswith(BYPASS):
+    prompt = user_text((payload or {}).get("prompt") or "")
+    if prompt.lower().startswith(BYPASS):
         return ("prompt-refiner: the user started this prompt with `raw:`. Treat the rest as the request exactly as "
                 "written: no brief, no clarifying round.")
     n = len(words(prompt))

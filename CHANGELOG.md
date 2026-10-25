@@ -4,6 +4,27 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-10-25
+
+Two fixes to the always-on hooks of 0.15.0, found on the first day of use and tested live.
+
+### Fixed
+- **Strata 0.3.1, a handoff was used up by a hidden session.** The Claude desktop app starts a hidden Haiku session
+  in the project folder to summarize a chat (prompt "Below is a conversation log from a Claude Code coding
+  session ..."), for example when it starts a side session. Its SessionStart took the pending handoff, so the next
+  real chat got nothing. A new chat now gets the handoff with its first prompt instead of at SessionStart; the
+  summary prompt, a session that sends no prompt, and processes strata starts itself leave it alone. After a
+  compaction the session still gets its own handoff back at SessionStart. Strata's helper processes now also set
+  `PROMPT_REFINER=off`, `MOAA_CATALOG_HINTS=off` and `MOAA_NO_UPDATE_CHECK=1`.
+- **prompt-refiner 0.1.1 and moaa-catalog 0.4.1, silent on the first prompt after a restart.** The desktop app puts
+  a `<system-reminder>` (the linked-sessions status) in front of the user's words, and both hooks treated any prompt
+  starting with `<` as a harness notice. They now judge the prompt without those blocks. Both also skip the desktop
+  app's summary prompt.
+- **moaa-catalog 0.4.1, hook timeout.** Rebuilding the skill index takes about 5 s for 3,600 skills on a warm disk
+  and timed out the 10 s prompt hook once on a cold one. The hooks now never rebuild it inline: SessionStart and a
+  prompt that finds it stale start a background rebuild (`catalog.py index`) and use the previous index meanwhile.
+- **CITATION.cff:** `cff-version` is the format version (1.2.0) again, and `version` is the release.
+
 ## [0.15.0] - 2026-10-25
 
 Two always-on features, both built and tested live in separate sessions before release.

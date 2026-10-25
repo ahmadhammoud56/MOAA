@@ -5,10 +5,12 @@
   python catalog.py use <SKILL.md path>  print that skill (and log the use; suggests enabling a pack used often)
   python catalog.py packs               disabled plugins and their skill counts
   python catalog.py hook prompt         UserPromptSubmit hook: suggest up to 3 strong matches for the prompt on stdin
-  python catalog.py hook session        SessionStart hook: once a day, say if a newer MOAA release exists
+  python catalog.py hook session        SessionStart hook: once a day, say if a newer MOAA release exists; warms the index
+  python catalog.py index               rebuild the index now if it is stale
 
 The index (~/.claude/moaa-catalog/index.json) is rebuilt only when the plugin record or settings change, so a search
-or a hook call reads one small file. Never changes settings or plugins. Standard library only.
+or a hook call reads one small file; the hooks never rebuild it inline but start a background rebuild.
+MOAA_CATALOG_HINTS=off silences the prompt hook for a process. Never changes settings or plugins. Standard library only.
 """
 import json
 import math
@@ -124,17 +126,41 @@ def build_index(home):
     return {"stamp": stamp(home), "skills": skills, "idf": {w: round(math.log(1 + n / c), 3) for w, c in df.items()}}
 
 
-def load_index(home):
-    """The cached index, rebuilt only when settings.json or the installed-plugin record changed."""
+def load_index(home, wait=True):
+    """The cached index, rebuilt only when settings.json or the installed-plugin record changed. With wait=False (the
+    prompt hook) a stale index is used as it is and the rebuild runs in a detached process: it reads every SKILL.md of
+    every plugin, 5 s warm with ~3,600 skills and over the hook's 10 s timeout on a cold disk."""
     path = home / "moaa-catalog" / "index.json"
     index = read_json(path)
     if index.get("stamp") != stamp(home) or "idf" not in index:
+        if not wait:
+            rebuild_in_background(home)
+            return index if "idf" in index else {}
         index = build_index(home)
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(".tmp")
         tmp.write_text(json.dumps(index), encoding="utf-8")
         os.replace(tmp, path)
     return index
+
+
+def rebuild_in_background(home):
+    """Start `catalog.py index` detached, at most once a minute (a marker file holds back the prompts that follow)."""
+    mark = home / "moaa-catalog" / "index.building"
+    try:
+        if time.time() - mark.stat().st_mtime < 60:
+            return
+    except OSError:
+        pass
+    import subprocess
+    mark.parent.mkdir(parents=True, exist_ok=True)
+    mark.write_text(str(time.time()), encoding="utf-8")
+    argv = [sys.executable, str(Path(__file__).resolve()), "index"]
+    quiet = dict(stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if os.name == "nt":
+        subprocess.Popen(argv, creationflags=0x08000000 | 0x00000200, **quiet)  # no window, own process group
+    else:
+        subprocess.Popen(argv, start_new_session=True, **quiet)
 
 
 def rank(index, query, hints=(), include_on=False):
@@ -204,13 +230,22 @@ def use(home, path):
     return 0
 
 
+REMINDER = re.compile(r"<system-reminder>[\s\S]*?</system-reminder>")
+# Prompts that machines, not the user, send: the Claude desktop app's hidden Haiku run that summarizes a chat.
+MACHINE_PROMPTS = ("Below is a conversation log from a Claude Code coding session",)
+
+
 def hook_prompt(home, payload):
-    """additionalContext naming up to HOOK_MAX strong matches, or None. Short prompts and slash commands are skipped."""
-    prompt = (payload or {}).get("prompt") or ""
-    if prompt.lstrip().startswith(("/", "[SYSTEM", "<")) or "<task-notification>" in prompt or len(words(prompt)) < 3:
-        return None  # slash commands and harness notices (background tasks, side sessions) are not requests
-    index = load_index(home)
-    if not index["skills"]:
+    """additionalContext naming up to HOOK_MAX strong matches, or None. Short prompts and slash commands are skipped.
+    The <system-reminder> blocks the desktop app puts in front of the user's words are dropped first."""
+    if os.environ.get("MOAA_CATALOG_HINTS", "").strip().lower() in ("off", "0", "false", "no"):
+        return None
+    prompt = REMINDER.sub("", (payload or {}).get("prompt") or "").strip()
+    if prompt.startswith(("/", "[SYSTEM", "<") + MACHINE_PROMPTS) or "<task-notification>" in prompt \
+            or len(words(prompt)) < 3:
+        return None  # slash commands, harness notices (background tasks, side sessions), machine prompts
+    index = load_index(home, wait=False)
+    if not index.get("skills"):
         return None
     _, ranked = rank(index, prompt, project_hints(payload.get("cwd")), trimmed(home))
     unit = math.log(1 + len(index["skills"]))  # idf of a word found in one skill only; makes HOOK_MIN corpus-independent
@@ -290,6 +325,11 @@ def main(argv):
         return 0
     if argv[:1] == ["use"] and len(argv) == 2:
         return use(home, argv[1])
+    if argv == ["index"]:
+        n = len(load_index(home)["skills"])
+        (home / "moaa-catalog" / "index.building").unlink(missing_ok=True)
+        print(f"index up to date: {n} skills")
+        return 0
     if argv[:1] == ["packs"]:
         counts = {}
         for s in load_index(home)["skills"]:
@@ -300,6 +340,8 @@ def main(argv):
         return 0
     if argv == ["hook", "session"]:
         try:
+            if stamp(home) != read_json(home / "moaa-catalog" / "index.json").get("stamp"):
+                rebuild_in_background(home)  # so the first prompt finds a fresh index
             notice = update_notice(home)
         except Exception:  # a hook must never block the session
             notice = None

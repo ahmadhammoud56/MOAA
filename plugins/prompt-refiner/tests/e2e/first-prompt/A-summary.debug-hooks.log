@@ -1,0 +1,8 @@
+2026-10-25T11:55:41.090Z [DEBUG] Hooks: SessionStart:startup [catalog.py hook session] (plugin moaa-catalog@inline) finished with status 0 (332ms)
+2026-10-25T11:55:41.140Z [DEBUG] Hooks: SessionStart:startup [strata.py hook session-start] (plugin strata@inline) finished with status 0 (382ms)
+2026-10-25T11:55:41.327Z [DEBUG] hooks module cc-plugin-sec-default@builtin classic.SessionStart settled in 572.5ms (native link, next() included)
+2026-10-25T11:56:04.339Z [DEBUG] flightdeck: classic.UserPromptSubmit bypassed by cc-plugin-sec-default (tier user); beneath runs
+2026-10-25T11:56:04.454Z [DEBUG] Hooks: UserPromptSubmit [catalog.py hook prompt] (plugin moaa-catalog@inline) finished with status 0 (113ms)
+2026-10-25T11:56:04.457Z [DEBUG] Hooks: UserPromptSubmit [refiner.py hook prompt] (plugin prompt-refiner@inline) finished with status 0 (116ms)
+2026-10-25T11:56:04.494Z [DEBUG] Hooks: UserPromptSubmit [strata.py hook context-check] (plugin strata@inline) finished with status 0 (154ms)
+2026-10-25T11:56:04.495Z [DEBUG] hooks module cc-plugin-sec-default@builtin classic.UserPromptSubmit settled in 156.5ms (native link, next() included)

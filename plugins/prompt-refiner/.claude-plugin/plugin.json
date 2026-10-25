@@ -1,6 +1,6 @@
 {
   "name": "prompt-refiner",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Always on: before Claude works on a prompt, it restates it as a brief (goal, deliverables, inputs, constraints, acceptance checks), asks about ambiguous points with concrete options, saves the brief, and hands the brief, not the raw prompt, to subagents. Stays silent for slash commands and short replies; turn off with `refiner.py off` or PROMPT_REFINER=off.",
   "author": { "name": "Ahmad Hammoud", "url": "https://github.com/ahmadhammoud56" },
   "homepage": "https://github.com/ahmadhammoud56/MOAA",

@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import catalog  # noqa: E402
@@ -49,12 +50,47 @@ class Catalog(unittest.TestCase):
         self.assertEqual(catalog.search(self.home, "stripe"), [])  # and listed in full, so nothing to suggest
 
     def test_hook_fires_on_a_strong_match_and_stays_quiet_otherwise(self):
-        hit = catalog.hook_prompt(self.home, {"prompt": "Set up Stripe subscription webhooks for billing"})
+        catalog.load_index(self.home)
+        ask = "Set up Stripe subscription webhooks for billing"
+        hit = catalog.hook_prompt(self.home, {"prompt": ask})
         self.assertIn("stripe-integration", hit or "")
         self.assertIsNone(catalog.hook_prompt(self.home, {"prompt": "fix the typo in my notes please"}))
         self.assertIsNone(catalog.hook_prompt(self.home, {"prompt": "/stripe-integration now"}))  # slash commands
         notice = "<task-notification>Stripe subscription webhooks billing job completed</task-notification>"
         self.assertIsNone(catalog.hook_prompt(self.home, {"prompt": notice}))  # harness notices
+        # the desktop app puts a <system-reminder> before the user's words (first prompt after a restart)
+        tagged = "<system-reminder>\nLinked sessions now: x (idle).\n</system-reminder>\n\n" + ask
+        self.assertIn("stripe-integration", catalog.hook_prompt(self.home, {"prompt": tagged}) or "")
+        self.assertIsNone(catalog.hook_prompt(self.home, {"prompt": "<system-reminder>Stripe webhooks</system-reminder>"}))
+        summary = "Below is a conversation log from a Claude Code coding session.\n" + ask  # desktop summary run
+        self.assertIsNone(catalog.hook_prompt(self.home, {"prompt": summary}))
+        os.environ["MOAA_CATALOG_HINTS"] = "off"  # set on strata's helper processes
+        try:
+            self.assertIsNone(catalog.hook_prompt(self.home, {"prompt": ask}))
+        finally:
+            del os.environ["MOAA_CATALOG_HINTS"]
+
+    def test_prompt_hook_never_rebuilds_the_index_inline(self):
+        ask = {"prompt": "Set up Stripe subscription webhooks for billing"}
+        with mock.patch.object(catalog, "rebuild_in_background") as bg:
+            self.assertIsNone(catalog.hook_prompt(self.home, ask))  # no index yet: quiet, rebuild started
+            self.assertEqual(bg.call_count, 1)
+            self.assertFalse((self.home / "moaa-catalog" / "index.json").exists())
+            index = catalog.load_index(self.home)
+            settings = self.home / "settings.json"
+            os.utime(settings, (index["stamp"][0] + 5,) * 2)  # now stale
+            self.assertIn("stripe-integration", catalog.hook_prompt(self.home, ask))  # the stale index still serves
+            self.assertEqual(bg.call_count, 2)
+        with mock.patch.object(catalog, "claude_home", return_value=self.home):
+            self.assertEqual(catalog.main(["index"]), 0)  # what the background process runs
+        self.assertEqual(catalog.load_index(self.home, wait=False)["stamp"], catalog.stamp(self.home))
+
+    def test_background_rebuild_starts_at_most_once_a_minute(self):
+        with mock.patch("subprocess.Popen") as popen:
+            catalog.rebuild_in_background(self.home)
+            catalog.rebuild_in_background(self.home)
+        self.assertEqual(popen.call_count, 1)
+        self.assertEqual(popen.call_args.args[0][-1], "index")
 
     def test_short_forms_expand_and_project_files_boost_but_never_trigger(self):
         self.assertEqual([r[2]["name"] for r in catalog.search(self.home, "tf aws")], ["terraform-aws-modules"])
@@ -128,6 +164,7 @@ class Catalog(unittest.TestCase):
         (fake / "python3").chmod(0o755)
         env = {**os.environ, "CLAUDE_PLUGIN_ROOT": root.as_posix(), "CLAUDE_CONFIG_DIR": str(self.home),
                "PATH": fake.as_posix() + os.pathsep + os.environ["PATH"]}
+        catalog.load_index(self.home)  # the prompt hook only reads it
         r = subprocess.run([bash, "-c", command["command"]], input=json.dumps({"prompt": "stripe webhooks payments"}),
                            capture_output=True, text=True, env=env)
         self.assertEqual(r.returncode, 0, r.stderr)

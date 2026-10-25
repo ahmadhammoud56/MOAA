@@ -1,0 +1,15 @@
+exit 0, session d865aaf6-ec2f-472e-a338-b598c64aaaa5, 44s
+
+Resumed from the handoff. Its next step is "write tests," but this folder has no app or Stripe code, only handoff and config files, so there is nothing to test here yet.
+
+**Next:**
+1. Point me at the billing project's repo. I'll check the current code and the handoff against it before writing anything.
+2. Then add the Stripe webhook endpoint with signature verification, idempotent handling of subscription events, and a test that replays a signed sample event.
+
+**Skill for Stripe subscription webhooks:** `stripe-integration` (agentic-awesome-skills). It covers checkout, subscriptions, webhooks and refunds, with server-side auth and retry boundaries. It is currently disabled in this setup, so load it with:
+
+`python "~/code/claude-kit/.claude/worktrees/hook-fixes-cc9a06/plugins/moaa-catalog/catalog.py" use "~/.claude/plugins/cache/agentic-awesome-skills/agentic-bundle-aas-saas-launch-revenue/16.9.0/skills/stripe-integration/SKILL.md"`
+
+Skip `customer-billing-ops` (for day-to-day billing support) and `stripe-automation` (drives Stripe via Rube MCP, not code setup).
+
+No files changed.

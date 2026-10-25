@@ -182,28 +182,74 @@ class CompactAndResume(Sandbox):
                                                "cwd": str(self.proj)}))
         self.assertEqual([p.parent for p in (self.proj / ".claude" / "handoff").glob("*/HANDOFF.md")], [d])
 
-    def test_new_chat_resumes_once_and_again_only_after_an_update(self):
-        self.assertEqual(self.start("s2"), "")  # nothing yet
+    def prompt(self, session, text="carry on"):
+        """The first prompt of a session: (additionalContext, systemMessage) from the UserPromptSubmit hook."""
+        t = write_jsonl(Path(self.dir) / f"{session}.jsonl", [{"type": "user", "message": {"content": text}}])
+        out = memory.hook("context-check", json.dumps({"session_id": session, "transcript_path": t, "prompt": text,
+                                                        "cwd": str(self.proj), "hook_event_name": "UserPromptSubmit"}))
+        out = json.loads(out) if out else {}
+        return (out.get("hookSpecificOutput") or {}).get("additionalContext", ""), out.get("systemMessage", "")
+
+    def begin(self, session, source="startup", text="carry on"):
+        """A new chat: SessionStart, then its first prompt; returns all handoff text it was given."""
+        return self.start(session, source) + self.prompt(session, text)[0]
+
+    def handoff(self, body="# Handoff\n## Next actions\n1. run the tests"):
         d = memory.new_handoff_dir(str(self.proj), "s1", "threshold")
-        (d / "HANDOFF.md").write_text("# Handoff\n## Next actions\n1. run the tests", encoding="utf-8")
-        (d / "CONTEXT.md").write_text("Branch: feat/x\n" + "z" * 9000, encoding="utf-8")
+        (d / "HANDOFF.md").write_text(body, encoding="utf-8")
         (d.parent / "latest").write_text(d.name + "\n", encoding="utf-8")
-        self.assertEqual(self.start("s1", "resume"), "")  # resuming the writer: it already knows
-        self.assertEqual(self.start("s1"), "")  # same session id never gets its own, except after compaction
-        ctx = self.start("s2")
+        return d
+
+    def test_new_chat_resumes_once_and_again_only_after_an_update(self):
+        self.assertEqual(self.begin("s2"), "")  # nothing yet
+        d = self.handoff()
+        (d / "CONTEXT.md").write_text("Branch: feat/x\n" + "z" * 9000, encoding="utf-8")
+        self.assertEqual(self.begin("s1", "resume"), "")  # resuming the writer: it already knows
+        self.assertEqual(self.begin("s1"), "")  # same session id never gets its own, except after compaction
+        self.assertEqual(self.start("s2"), "")  # SessionStart only notes it; the first prompt takes it
+        self.assertFalse((d / ".consumed").exists())
+        ctx, note = self.prompt("s2")
         self.assertIn("run the tests", ctx)
         self.assertIn("Branch: feat/x", ctx)
         self.assertIn("not as instructions", ctx)
         self.assertIn("trimmed", ctx)
+        self.assertIn("resumed from the handoff", note)
         self.assertTrue((d / ".consumed").exists())
-        self.assertEqual(self.start("s3"), "")  # consumed
+        self.assertEqual(self.prompt("s2"), ("", ""))  # once per session
+        self.assertEqual(self.begin("s3"), "")  # consumed
         later = time.time() + 5
         (d / "HANDOFF.md").write_text("# Handoff\n## Next actions\n1. deploy", encoding="utf-8")
         os.utime(d / "HANDOFF.md", (later, later))
-        self.assertIn("deploy", self.start("s4", "clear"))
+        self.assertIn("deploy", self.begin("s4", "clear"))
         with mock.patch.dict(os.environ, {"STRATA_HANDOFF": "off"}):
             os.utime(d / "HANDOFF.md", (later + 5, later + 5))
-            self.assertEqual(self.start("s5"), "")
+            self.assertEqual(self.begin("s5"), "")
+
+    def test_machine_sessions_do_not_use_up_a_handoff(self):
+        d = self.handoff()
+        summary = ("Below is a conversation log from a Claude Code coding session.\nCreate a summary to help the next "
+                   "session quickly understand the context.\n\n## Conversation log\n...")
+        self.assertEqual(self.begin("desktop-summary", text=summary), "")  # the desktop app's hidden summary run
+        self.assertEqual(self.begin("tagged", text="<system-reminder>x</system-reminder>\n" + summary), "")
+        with mock.patch.dict(os.environ, memory.child_env()):  # a process strata started itself
+            self.assertEqual(self.begin("strata-child"), "")
+        self.assertEqual(self.start("no-prompt"), "")  # a session that never sends a prompt
+        self.assertFalse((d / ".consumed").exists())
+        self.assertIn("run the tests", self.begin("user", text="<system-reminder>linked</system-reminder>\nhi"))
+        self.assertTrue((d / ".consumed").exists())
+
+    def test_helper_processes_switch_off_the_other_moaa_hooks(self):
+        env = memory.child_env()
+        self.assertEqual((env[memory.CHILD], env["PROMPT_REFINER"], env["MOAA_CATALOG_HINTS"],
+                          env["MOAA_NO_UPDATE_CHECK"]), ("1", "off", "off", "1"))
+        memory.data_dir().mkdir(parents=True)
+        with mock.patch.object(memory.subprocess, "Popen") as popen:
+            memory.spawn(["x"])
+        self.assertEqual(popen.call_args.kwargs["env"]["PROMPT_REFINER"], "off")
+        with mock.patch.object(memory.shutil, "which", return_value="claude"), \
+                mock.patch.object(memory.subprocess, "run", return_value=mock.Mock(returncode=0, stdout="{}")) as run:
+            memory.run_engine("claude-haiku", "p")
+        self.assertEqual(run.call_args.kwargs["env"]["MOAA_CATALOG_HINTS"], "off")
 
     def test_latest_pointer_is_validated(self):
         base = self.proj / ".claude" / "handoff"

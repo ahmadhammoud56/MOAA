@@ -18,7 +18,11 @@ never blocks a prompt: any error means it adds nothing.
 
 It adds nothing for:
 
-- slash commands and harness notices (`<task-notification>`, `[SYSTEM ...]`, other messages starting with `<`);
+- slash commands and harness notices (`<task-notification>`, `[SYSTEM ...]`, other messages starting with `<`),
+  judged after removing the `<system-reminder>` blocks the desktop app puts in front of your words (for example the
+  linked-sessions status on the first prompt after a restart), so such a prompt still gets the brief;
+- the desktop app's hidden summary run ("Below is a conversation log from a Claude Code coding session ...") and
+  processes strata starts (it sets `PROMPT_REFINER=off`);
 - replies under 4 words (`yes`, `ok`, `2`, an option label);
 - replies up to 40 words right after Claude asked a question or called AskUserQuestion (read from the tail of the
   transcript).

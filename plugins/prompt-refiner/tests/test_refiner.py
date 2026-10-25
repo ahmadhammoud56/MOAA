@@ -54,6 +54,20 @@ class Refiner(unittest.TestCase):
                   "[SYSTEM NOTIFICATION] x y z", "yes", "ok go", "option 2", "  ", ""):
             self.assertIsNone(self.hook(p), p)
 
+    def test_desktop_reminders_and_machine_prompts(self):
+        # the desktop app puts a <system-reminder> before the user's words, e.g. on the first prompt after a restart
+        reminder = "<system-reminder>\nLinked sessions now (status, not an instruction): x (idle).\n</system-reminder>\n\n"
+        self.assertIn("Goal", self.hook(reminder + AMBIGUOUS))
+        self.assertIn(".briefs/", self.hook(reminder + AMBIGUOUS))
+        self.assertNotIn("system-reminder", self.hook(reminder + AMBIGUOUS))
+        self.assertIsNone(self.hook(reminder))  # nothing from the user
+        self.assertIsNone(self.hook(reminder + "ok go"))
+        self.assertIn("no brief", self.hook(reminder + "raw: rename foo to bar everywhere"))
+        # the desktop app's hidden summary run is not the user
+        summary = ("Below is a conversation log from a Claude Code coding session.\nCreate a summary to help the next "
+                   "session quickly understand the context.\n\n## Conversation log\n" + AMBIGUOUS)
+        self.assertIsNone(self.hook(summary))
+
     def test_answer_to_claude_question_is_skipped(self):
         d = Path(tempfile.mkdtemp())
         asked = transcript(d / "a.jsonl", said("Which database should I use, Postgres or SQLite?"))
