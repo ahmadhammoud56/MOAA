@@ -1,0 +1,17 @@
+{
+  "description": "Prompt refiner: before Claude works on a prompt, restate it as a brief, ask about open points, and delegate the brief instead of the raw prompt",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 || continue; $p \"${CLAUDE_PLUGIN_ROOT}/refiner.py\" hook prompt; rc=$?; case $rc in 3|49) ;; *) exit $rc;; esac; done; exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

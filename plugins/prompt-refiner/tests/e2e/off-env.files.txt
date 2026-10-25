@@ -1,0 +1,17 @@
+prompt: make the script better
+env: {'PROMPT_REFINER': 'off'}
+exit: 0
+workdir: C:/Users/<you>\AppData\Local\Temp\refiner-e2e-off-env-0nrathxy
+stderr tail: Warning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer.
+
+
+--- greet.py after run ---
+import sys
+
+
+def greet(name: str) -> None:
+    print(f"Hello, {name}!")
+
+
+if __name__ == "__main__":
+    greet(sys.argv[1] if len(sys.argv) > 1 else "world")

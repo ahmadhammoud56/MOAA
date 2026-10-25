@@ -1,0 +1,13 @@
+prompt: make the script better
+env: {}
+exit: 0
+workdir: C:/Users/<you>\AppData\Local\Temp\refiner-e2e-ambiguous-zd_fizm7
+stderr tail: 
+
+--- greet.py after run ---
+def greet(name):
+    print(f"Hello {name}")
+
+
+if __name__ == "__main__":
+    greet("world")
