@@ -1,0 +1,8 @@
+Validating plugin manifest: C:/Users/<you>\code\claude-kit\.claude\worktrees\prompt-refiner-8c9678\plugins\prompt-refiner\.claude-plugin\plugin.json
+
+ℹ Advice (does not change the verdict):
+
+  ❯ C:/Users/<you>\code\claude-kit\.claude\worktrees\prompt-refiner-8c9678\plugins\prompt-refiner\README.md: This README has no line that installs "prompt-refiner" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. Validate the folder that holds its marketplace.json to have <owner>/<repo> filled in, and the name its marketplace lists it under.
+      /plugin install prompt-refiner --marketplace <owner>/<repo>
+
+✔ Validation passed
