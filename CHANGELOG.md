@@ -4,6 +4,25 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-10-25
+
+### Added
+- **Strata 0.5.0, virtual context (always on).** No model has an unlimited context window; strata now keeps what
+  leaves it recallable. L0 also stores tool calls and tool results (cut to 8,000 characters; never sent to the Haiku
+  extraction). PreCompact stores the whole conversation before Claude Code compacts it and records the cut. A
+  handoff's `meta.json` names the transcript that wrote it; the chat that takes the handoff stores that conversation
+  and records its lineage across any number of handoffs. Each prompt in such a chat, or in a compacted one, gets back
+  up to five evicted turns that match it strongly ("Strata recall: ..."), with an excerpt centred on the most
+  specific word. `strata.py handoff mode compact` runs one long chat that compacts instead of handing off;
+  `handoff recall off` or `STRATA_RECALL=off` stops recall. Live test (`plugins/strata/tests/e2e/recall/`): after a
+  handoff that left out one setting of a 119-line file, the next chat answered it only with recall on.
+
+### Changed
+- **Matching (RAG and recall):** identifier-like words (`purge_dwell_s`, `qanat-7`) count double, and common words
+  of instructions around a question ("answer", "sentence", "value", "know") are ignored. Both features share one
+  matcher, `strata.strong_matches`, and passages are excerpted around the most specific word instead of cut at the
+  start. Live e2e scripts drop the `init` and `commands_changed` events, which list the local setup.
+
 ## [0.16.0] - 2026-10-25
 
 ### Added

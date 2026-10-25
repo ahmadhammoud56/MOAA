@@ -19,7 +19,6 @@ are never read, and secrets inside indexed text are redacted with strata's patte
 import argparse
 import fnmatch
 import json
-import math
 import os
 from pathlib import Path
 import re
@@ -65,13 +64,6 @@ MAX_BYTES = 1024 * 1024        # a bigger text file is mostly data, not prose or
 MAX_PDF_CHARS = 400000
 CHUNK = 1500                   # characters per passage
 HEAD = re.compile(r"^(#{1,6} |def |class |async def |function |export |\\(sub)*section\{|\\chapter\{)")
-STOP = set("""a about above after again all also am an and any are as at be because been before being below between
-both but by can could did do does doing done down during each else even every few for from further get gets got had
-has have having he her here hers him his how i if in into is it its itself just let like make me more most much must
-my need no nor not now of off on once only or other our out over own please same she should show so some such tell
-than that the their them then there these they this those through to too try under until up us use used using very
-want was we were what when where which while who whom why will with would you your yours can't don't it's i'm we'll
-okay ok yes thanks thank hi hello now new add fix look see run check work file files thing things way""".split())
 LOG = "rag.log"
 
 
@@ -227,14 +219,10 @@ def index(db, root, full=False, cap=None):
 
 
 # ---------------------------------------------------------------- search
-def terms(text):
-    """Distinct key words of free text (no stop words), at most 24; user text never reaches FTS syntax directly."""
-    words = [w for w in re.findall(r"[a-z0-9][a-z0-9_\-]{2,}", text.lower()) if w not in STOP and not w.isdigit()]
-    return list(dict.fromkeys(words))[:24]
 
 
 def search(db, project, query, limit=8):
-    ts = terms(query)
+    ts = strata.terms(query)
     if not ts:
         return [], ts
     q = " OR ".join(f'"{t}"' for t in ts)
@@ -244,48 +232,18 @@ def search(db, project, query, limit=8):
     return [dict(r) for r in rows], ts
 
 
-def strong_rows(db, project, rows, ts, need=0.6, common=0.25):
-    """The passages that match the request strongly. Only key words that occur somewhere in the project count, so
-    the instructions around a question ("answer in one sentence") do not dilute it; each counts by its rarity in
-    the project (IDF), and words in more than a quarter of the passages of a big project count for nothing. A passage
-    is strong when it holds two informative words and at least 60% of the weight."""
-    if not rows:
-        return []
-    n = db.execute("SELECT COUNT(*) FROM chunks WHERE project=?", (project,)).fetchone()[0] or 1
-    ids = [r["id"] for r in rows]
-    marks = ",".join("?" * len(ids))
-    weight, hits = {}, {}
-    for t in ts:
-        df = db.execute("SELECT COUNT(*) FROM chunks_fts JOIN chunks c ON c.id=chunks_fts.rowid WHERE chunks_fts "
-                        "MATCH ? AND c.project=?", (f'"{t}"', project)).fetchone()[0]
-        if not df or (n >= 20 and df / n > common):
-            continue
-        weight[t] = math.log(1 + n / df)
-        hits[t] = {r[0] for r in db.execute(f"SELECT rowid FROM chunks_fts WHERE chunks_fts MATCH ? AND rowid IN ({marks})",
-                                            (f'"{t}"', *ids))}
-    total = sum(weight.values())
-    if len(weight) < 2:
-        return []
-    out = []
-    for r in rows:
-        got = [t for t in weight if r["id"] in hits[t]]
-        if len(got) >= 2 and sum(weight[t] for t in got) >= need * total:
-            out.append(r)
-    return out
-
-
 def hint(db, project, prompt, budget):
     """The passages to add to a prompt, or "" when the request has fewer than three key words ("commit and push")
-    or nothing in the project matches it strongly (see strong_rows)."""
+    or nothing in the project matches it strongly (see strata.strong_matches)."""
     rows, ts = search(db, project, prompt, limit=12)
     if len(ts) < 3:
         return ""
-    strong = strong_rows(db, project, rows, ts)[:4]
+    strong = strata.strong_matches(db, "chunks_fts", "chunks", "t.project=?", [project], rows, ts)[:4]
     if not strong:
         return ""
     parts, used = [], 0
     for r in strong:
-        body = r["text"] if len(r["text"]) <= 900 else r["text"][:900] + "\n[...]"
+        body = strata.excerpt(r["text"], ts, 900)
         block = f"### {r['path']}:{r['line']}-{r['end_line']}\n```\n{body}\n```"
         if used + len(block) > budget and parts:
             break

@@ -42,7 +42,7 @@ def run(name, workdir, prompt, env_extra):
     out = subprocess.run(argv, cwd=workdir, env=env, capture_output=True, text=True, encoding="utf-8",
                          errors="replace", timeout=600)
     keep = [line for line in out.stdout.splitlines()
-            if '"subtype":"init"' not in line.replace(" ", "")
+            if not any(f'"subtype":"{s}"' in line.replace(" ", "") for s in ("init", "commands_changed"))
             and not ('"hook_' in line and "Strata RAG" not in line)]
     (HERE / f"{name}.stream.jsonl").write_text("\n".join(keep) + "\n", encoding="utf-8")
     events = []

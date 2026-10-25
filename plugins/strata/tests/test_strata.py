@@ -42,13 +42,15 @@ class Layers(Sandbox):
                            {"type": "tool_use", "name": "Bash", "input": {"command": "ls"}}]),
             ("user", [{"type": "tool_result", "content": "file list"}])])
         n, chars = memory.ingest(self.db, "s1", self.proj, t)
-        self.assertEqual(n, 2)
-        rows = [r["text"] for r in self.db.execute("SELECT text FROM l0 ORDER BY ts")]
+        self.assertEqual(n, 4)  # two prose messages, one tool call, one tool result
+        tools = [r["text"] for r in self.db.execute("SELECT text FROM l0 WHERE role='tool' ORDER BY ts")]
+        self.assertEqual(tools, ['[tool call Bash] {"command": "ls"}', "[tool result] file list"])
+        rows = [r["text"] for r in self.db.execute("SELECT text FROM l0 WHERE role!='tool' ORDER BY ts")]
         self.assertIn("[redacted]", rows[0])
         self.assertNotIn("sk-ant", rows[0])
         self.assertEqual(rows[1], "Noted  pytest.")
         memory.ingest(self.db, "s1", self.proj, t)
-        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM l0").fetchone()[0], 2)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM l0").fetchone()[0], 4)
         self.assertEqual(self.db.execute("SELECT chars FROM sessions").fetchone()[0], chars)
 
     def test_apply_validates_and_supersedes_only_live_local_atoms(self):

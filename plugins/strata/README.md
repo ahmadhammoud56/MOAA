@@ -6,7 +6,7 @@ not its code: no proxy, no services, no extra API key, and standard-library Pyth
 
 | Layer | Holds | Written by |
 |---|---|---|
-| L0 raw | every user and assistant message of each session, with secrets redacted | the SessionEnd hook |
+| L0 raw | every user and assistant message of each session, plus tool calls and results (cut to 8,000 characters), with secrets redacted | SessionEnd, PreCompact and the next chat after a handoff |
 | L1 notes | atomic facts, preferences, constraints and events; a newer note supersedes an older one | consolidation |
 | L2 scenes | one block per ongoing topic of a project, rewritten as it moves on | consolidation |
 | L3 profile | stable traits of the user and how they like to work, shared by all projects | consolidation |
@@ -62,6 +62,31 @@ Limits: the transcript records usage per assistant message, so the measure lags 
 the prompt being submitted; a single tool result bigger than the remaining room can still overflow before the hook
 sees it. Sub-agent calls are not counted (their context is separate) and do not trigger the prompt.
 
+## Virtual context
+
+No model has an unlimited context window, so strata makes what leaves the window recallable instead. Always on,
+no command needed.
+
+- **Nothing is dropped:** L0 keeps every user and assistant message plus each tool call and tool result (up to 8,000
+  characters each; tool rows are never sent to the Haiku extraction). PreCompact stores the whole conversation
+  before Claude Code compacts it, and remembers where the cut was.
+- **Chains of chats:** `meta.json` of a handoff names the transcript that wrote it. The chat that takes the handoff
+  stores that conversation and records its lineage (the sessions it continues, newest first, across any number of
+  handoffs).
+- **Recall on demand:** each prompt in a chat that continues a handoff, or that was compacted, is matched against
+  the evicted turns of its lineage and its own turns from before the cut. The ones that match strongly (the same IDF
+  test as the project RAG; identifier-like words such as `purge_dwell_s` count double) are added, up to five and
+  about 4,000 characters (`config recall_chars N`), each with its role and time and an excerpt centred on the most
+  specific word. Unrelated prompts get nothing.
+- **Two ways to run a long job:** the default `handoff` mode asks for a handoff at 85% and you open a new chat;
+  `handoff mode compact` never asks, lets Claude Code compact, and relies on recall, so one chat goes on.
+- **Off:** `strata.py handoff recall off` (or `config recall off`), `STRATA_RECALL=off` for one shell.
+
+Measured live (`tests/e2e/recall/`, Haiku with every tool denied, after Sonnet read a 119-setting `rig.cfg` and
+wrote a handoff that did not mention `purge_dwell_s`): with recall off the next chat said it did not know; with recall
+on it answered `purge_dwell_s = 37` from the recalled tool result. After `/compact` the evicted tool result was
+recalled too (there the compaction summary also kept the value).
+
 ## Project RAG
 
 Always on, no command needed. `rag.py` keeps a full-text index of each project's own files in
@@ -104,7 +129,7 @@ python strata.py scene "TITLE" "BODY"         python strata.py profile KEY "TEXT
 python strata.py forget ID | --session ID | --scene ID | --profile KEY
 python strata.py consolidate --pending [--dry-run]
 python strata.py config auto off              (no background extraction)
-python strata.py handoff on|off|status|threshold N|window N
+python strata.py handoff on|off|status|threshold N|window N|mode handoff|compact|recall on|off
 python strata.py stats
 ```
 

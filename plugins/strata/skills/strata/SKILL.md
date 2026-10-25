@@ -39,6 +39,12 @@ Actions:
   `<project>/.claude/handoff/<stamp>/`; the next new chat in the project gets them at its start. `STRATA_HANDOFF=off`
   turns it off for one shell.
 
+Virtual context: in a chat that continues a handoff, or that was compacted, prompts can arrive with "Strata
+recall: ..." lines. They are turns of this same work that left the context window (tool results included), found
+because they match the request. Use them like your own earlier notes, check anything you change against the
+current files, and use `M search "QUERY"` when you need more of the earlier work. `M handoff mode compact` keeps one
+long chat (Claude Code compacts, recall fills the gaps) instead of handing off; `M handoff recall off` stops recall.
+
 Context handoff, when a hook asks for it ("Strata context handoff: ..."): finish or pause the current step, write
 both files completely (the next chat sees only them), write the folder name to `latest`, and tell the user in one
 short paragraph to open a new chat in this project. When a handoff is injected at session start, continue from its

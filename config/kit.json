@@ -1,6 +1,6 @@
 {
   "name": "moaa",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "marketplaces": {
     "ecc": "https://github.com/affaan-m/ECC.git",
     "karpathy-skills": "https://github.com/multica-ai/andrej-karpathy-skills.git",
@@ -345,7 +345,7 @@
     {
       "id": "strata@moaa",
       "enabled": true,
-      "tested_version": "0.4.0",
+      "tested_version": "0.5.0",
       "profile": "core"
     },
     {

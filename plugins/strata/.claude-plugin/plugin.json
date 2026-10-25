@@ -1,7 +1,7 @@
 {
   "name": "strata",
-  "version": "0.4.0",
-  "description": "Layered long-term memory for Claude Code, after the four-layer design of TencentDB Agent Memory: raw sessions (L0), extracted facts with supersession (L1), per-project topic scenes (L2) and a user profile (L3). Local SQLite with full-text search, standard-library Python, no proxy and no extra API key: recall at session start, capture and consolidation at session end; always-on RAG over each project's own files.",
+  "version": "0.5.0",
+  "description": "Layered long-term memory for Claude Code, after the four-layer design of TencentDB Agent Memory: raw sessions (L0), extracted facts with supersession (L1), per-project topic scenes (L2) and a user profile (L3). Local SQLite with full-text search, standard-library Python, no proxy and no extra API key: recall at session start, capture and consolidation at session end; always-on RAG over each project's own files and virtual context (evicted turns recalled after handoffs and compactions).",
   "author": { "name": "Ahmad Hammoud", "url": "https://github.com/ahmadhammoud56" },
   "homepage": "https://github.com/ahmadhammoud56/MOAA",
   "repository": "https://github.com/ahmadhammoud56/MOAA",

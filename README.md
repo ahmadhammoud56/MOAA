@@ -88,7 +88,7 @@ fresh validator checks the winner (real run, 233 s, compressed):
 
 ### Always on, no commands
 
-Five things run on their own once installed, and each has an off switch:
+Six things run on their own once installed, and each has an off switch:
 
 - **Prompt to brief** (prompt-refiner): Claude rewrites each new request as a brief (goal, deliverables, constraints,
   acceptance checks), asks about anything material with 2-4 options, saves the brief to `.briefs/`, and gives
@@ -98,6 +98,10 @@ Five things run on their own once installed, and each has an off switch:
   `HANDOFF.md` and `CONTEXT.md` to `.claude/handoff/`, and tells you to open a new chat in the project; the new chat
   picks the work up with your first message (hidden app sessions in the folder leave it alone). If a conversation is compacted anyway, a snapshot is written first. Off:
   `py plugins/strata/strata.py handoff off`; `handoff threshold 90` moves the trigger.
+- **Virtual context** (strata): what leaves the context window stays recallable. Every turn, tool results included,
+  is stored before a compaction and when a new chat takes a handoff; later prompts get back the evicted turns that
+  match them. A chat that continues a chain of handoffs, or one long compacted chat (`handoff mode compact`), behaves
+  as if the window had no end. Off: `py plugins/strata/strata.py handoff recall off`.
 - **Project RAG** (strata): each project's docs, code, notebooks and PDFs are indexed locally (SQLite full-text
   search, refreshed in the background at session start). When a request clearly matches passages in the project,
   the best few are added with their `path:lines`; chit-chat and unrelated requests get nothing. Off:

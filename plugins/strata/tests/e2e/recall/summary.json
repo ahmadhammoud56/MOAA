@@ -1,0 +1,23 @@
+{
+  "checks": {
+    "handoff written": true,
+    "off: handoff taken": true,
+    "off: no recall": true,
+    "recall: evicted tool result injected": true,
+    "recall: answer names the value": true,
+    "compact: evicted tool result injected": true,
+    "compact: answer names the value": true
+  },
+  "passed": true,
+  "notes": {
+    "handoff files hold the needle": false,
+    "off answer names the value": false,
+    "compaction summary holds the needle": true
+  },
+  "answers": {
+    "off": "Resumed from the earlier handoff. I don't know the `purge_dwell_s` value: the handoff notes list only some `rig.cfg` keys and never mention that one, and I didn't read the file.",
+    "recall": "Resumed from the earlier handoff. rig.cfg line 91 sets `purge_dwell_s = 37`, per an earlier excerpt I did not re-read.",
+    "compact": "`purge_dwell_s` is set to 37 on line 91 of `rig.cfg`."
+  },
+  "date": "2026-10-25 20:31"
+}

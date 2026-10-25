@@ -166,6 +166,15 @@ output is validated before it is saved, and injected memory is marked as data, n
 /strata:strata forget 42
 ```
 
+**Virtual context (always on).** No model has an unlimited context window, so Strata keeps what leaves it
+recallable. L0 also stores tool calls and results (cut to 8,000 characters). Before Claude Code compacts a
+conversation, the whole conversation is stored; a chat that takes a handoff stores the conversation that wrote it and
+records the chain of chats it continues. Each later prompt in that chat gets back the evicted turns that match it
+strongly, up to five, marked as a record rather than instructions. Two ways to run a long job: the default
+`handoff` mode (open a new chat at 85%) or `strata.py handoff mode compact` (one chat, compacted as needed, recall
+fills the gaps). `strata.py handoff recall off` or `STRATA_RECALL=off` stops recall. In the live test, a chat that
+continued a handoff answered a detail from a 119-line file read in the previous chat only with recall on.
+
 **Project RAG (always on).** Strata also indexes each project's own files: text, code, notebooks and, when
 `pdftotext` is on PATH, PDFs. In a git repository it takes the files git does not ignore; elsewhere it walks the
 folder and skips build, cache and hidden folders. Secret files (`.env*`, keys, certificates) are never read, and

@@ -62,9 +62,11 @@ python scripts/install.py --report
 
 ## 6. Always on
 
-Three features need no command. **prompt-refiner** turns each new request into a clear brief and asks about unclear
+Four features need no command. **prompt-refiner** turns each new request into a clear brief and asks about unclear
 points with options (`refiner.py off` to stop, `raw:` to skip one prompt). **strata's context handoff** writes a
-handoff at about 85% of the context window, so you open a new chat instead of compacting. **strata's project RAG**
+handoff at about 85% of the context window, so you open a new chat instead of compacting, and its **virtual
+context** brings back earlier turns of the work (tool results included) when a prompt needs them, across handoffs and
+compactions (`strata.py handoff recall off` to stop). **strata's project RAG**
 indexes the project's files and adds the matching passages when a request clearly needs them (`rag.py off` to stop).
 
 ## 7. Stay up to date
