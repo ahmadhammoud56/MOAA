@@ -168,13 +168,15 @@ def rank(index, query, hints=(), include_on=False):
     when it is in the skill's name. Project hint words add half their idf to skills that already match the query."""
     q = expand(dict.fromkeys(words(query)))
     hints = [h for h in hints if h not in q]
-    idf, out, seen = index["idf"], [], set()
-    for s in index["skills"]:
-        if s.get("on") and not include_on:  # an enabled skill is already listed with its description
-            continue
-        if s["name"] in seen:  # bundles repeat the same skill; keep the first copy
-            continue
-        seen.add(s["name"])
+    idf, out = index["idf"], []
+    pool = [s for s in index["skills"] if include_on or not s.get("on")]  # enabled skills are listed in full otherwise
+    # Bundles repeat the same skill. Keep one copy per name: an enabled one when there is one (usable through the
+    # Skill tool directly), otherwise the first disabled one.
+    pick = {}
+    for s in pool:
+        if s["name"] not in pick or (s.get("on") and not pick[s["name"]].get("on")):
+            pick[s["name"]] = s
+    for s in pick.values():
         nw, dw = set(s["nw"]), set(s["dw"])
         hit = [w for w in q if w in nw or w in dw]
         if hit:

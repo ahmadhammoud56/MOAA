@@ -170,6 +170,14 @@ class Catalog(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("stripe-integration", r.stdout)
 
+    def test_duplicates_prefer_the_enabled_copy_in_all_on_mode(self):
+        skill(self.home / "cache" / "on", "stripe-integration", "Stripe payments, subscriptions and webhooks")
+        settings = self.home / "settings.json"
+        settings.write_text(json.dumps({"enabledPlugins": {"off@m": False, "on@m": True}, "skillListingMaxDescChars": 200}))
+        os.utime(settings, (settings.stat().st_mtime + 5,) * 2)
+        hits = [r[2] for r in catalog.search(self.home, "stripe webhooks") if r[2]["name"] == "stripe-integration"]
+        self.assertEqual([(h["pid"], h["on"]) for h in hits], [("on@m", True)])
+
 
 if __name__ == "__main__":
     unittest.main()

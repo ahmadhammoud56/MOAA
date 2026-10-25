@@ -4,6 +4,12 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.15.2] - 2026-10-25
+
+### Fixed
+- **moaa-catalog 0.4.2:** when the same skill exists in an enabled plugin and a disabled duplicate bundle, search and
+  the prompt hook now name the enabled copy (usable through the Skill tool directly) instead of the disabled one.
+
 ## [0.15.1] - 2026-10-25
 
 Two fixes to the always-on hooks of 0.15.0, found on the first day of use and tested live.
