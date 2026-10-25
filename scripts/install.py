@@ -78,7 +78,8 @@ ALLOWED = {"specialist-council": ("council.py", ("*",)),
            "war-room": ("warroom.py", ("plan", "status", "post", "send", "wake", "app", "list", "measure", "tile",
                                        "merge", "pause", "unpause", "stop", "resume", "demo", "template")),
            "allies": ("allies.py", ("doctor", "runs", "show", "pick")),
-           "strata": ("strata.py", ("search", "show", "stats")),
+           "strata": ("strata.py", ("search", "show", "stats", "handoff")),
+           "prompt-refiner": ("refiner.py", ("status", "on", "off", "mode")),
            "moaa-catalog": ("catalog.py", ("search", "use", "packs"))}  # read-only; `use` only serves indexed skills
 BARE = {"app", "list", "demo", "template", "doctor", "runs", "stats", "show", "packs"}  # also run with no arguments
 
@@ -957,7 +958,8 @@ def doctor_checks():
     py = sys.executable
     plugins = KIT / "plugins"
     checks = [("installer tests", [py, "-m", "unittest", "discover", "-s", "tests"], KIT)]
-    for name in ("specialist-council", "agent-arena-mode", "war-room", "allies", "strata", "moaa-catalog"):
+    for name in ("specialist-council", "agent-arena-mode", "war-room", "allies", "strata", "moaa-catalog",
+                 "prompt-refiner"):
         checks.append((f"{name} tests", [py, "-m", "unittest", "discover", "-s", "tests"], plugins / name))
     checks += [
         ("war-room bus test", [py, "tests/test_bus.py"], plugins / "war-room"),

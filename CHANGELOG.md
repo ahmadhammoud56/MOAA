@@ -4,6 +4,27 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-25
+
+Two always-on features, both built and tested live in separate sessions before release.
+
+### Added
+- **prompt-refiner 0.1.0 (new core plugin):** a `UserPromptSubmit` hook asks Claude to turn each new request into a
+  brief (goal, deliverables, inputs, constraints, acceptance checks, assumptions, open points). Claude asks about
+  material open points in one AskUserQuestion call with 2-4 options each, saves the brief to `.briefs/` (git-ignored),
+  and passes the brief, not the raw prompt, to subagents, council and War Room members, allies and side sessions.
+  Slash commands, harness notices, short replies and answers to Claude's questions pass through. Long or structured
+  prompts get a one-line confirmation instead of the full brief. Switches: `refiner.py on|off|status|mode ask|silent`,
+  a `raw:` prefix for one prompt, and `PROMPT_REFINER=off` for scripted runs. The hook takes about 75 ms and never
+  blocks a prompt.
+- **Strata 0.3.0, context handoff:** the UserPromptSubmit and PostToolUse hooks measure context use from the
+  transcript (newest assistant `usage`, cache tokens included, 200k or 1M window). At 85% (configurable 50-95) Claude
+  writes `HANDOFF.md` and `CONTEXT.md` to `<project>/.claude/handoff/<stamp>/` and tells you to open a new chat.
+  The next chat's SessionStart injects the handoff once and continues. A PreCompact hook writes a script-only
+  snapshot if compaction comes first. Switches: `strata.py handoff on|off|status|threshold N|window N` and
+  `STRATA_HANDOFF=off`. Handoff folders are git-ignored.
+- **Homepage:** an "Always on, no commands" section, and new rows for prompt-refiner and the newer skills.
+
 ## [0.14.0] - 2026-10-24
 
 Knowledge as a graph, loops judged by a number, Anthropic's setup recommender, and update notices.

@@ -1,6 +1,6 @@
 {
   "name": "moaa",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "marketplaces": {
     "ecc": "https://github.com/affaan-m/ECC.git",
     "karpathy-skills": "https://github.com/multica-ai/andrej-karpathy-skills.git",
@@ -345,7 +345,7 @@
     {
       "id": "strata@moaa",
       "enabled": true,
-      "tested_version": "0.2.0",
+      "tested_version": "0.3.0",
       "profile": "core"
     },
     {
@@ -693,6 +693,12 @@
       "profile": "core"
     },
     {
+      "id": "prompt-refiner@moaa",
+      "enabled": true,
+      "tested_version": "0.1.0",
+      "profile": "core"
+    },
+    {
       "id": "moaa-core@moaa",
       "enabled": true,
       "tested_version": "0.1.0",
@@ -807,6 +813,7 @@
     "plugins/allies",
     "plugins/moaa-catalog",
     "plugins/moaa-core",
+    "plugins/prompt-refiner",
     "plugins/specialist-council",
     "plugins/strata",
     "plugins/war-room",

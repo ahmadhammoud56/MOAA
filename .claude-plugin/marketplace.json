@@ -60,6 +60,11 @@
       "description": "Skills on demand: big skill packs stay installed but disabled; a cached index, a prompt hook and one-call loading bring in a single skill when a task needs it."
     },
     {
+      "name": "prompt-refiner",
+      "source": "./plugins/prompt-refiner",
+      "description": "Always on: turns every prompt into a clear brief, asks about ambiguous points with concrete options, and hands the brief (not the raw prompt) to every subagent. Switch off with refiner.py off."
+    },
+    {
       "name": "academy-guide",
       "source": {
         "source": "github",

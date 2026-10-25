@@ -60,18 +60,24 @@ python scripts/install.py --report
 - Disabled skills are still found: the **moaa-catalog** plugin suggests a matching one when your prompt clearly needs
   it, and Claude can load it into the session with one call.
 
-## 6. Stay up to date
+## 6. Always on
+
+Two features need no command. **prompt-refiner** turns each new request into a clear brief and asks about unclear
+points with options (`refiner.py off` to stop, `raw:` to skip one prompt). **strata's context handoff** writes a
+handoff at about 85% of the context window, so you open a new chat instead of compacting.
+
+## 7. Stay up to date
 
 Clone installs: `python scripts/install.py --update`. Marketplace installs: `python scripts/install.py --auto-update`
 once (or the toggle in `/plugin` > Marketplaces). moaa-catalog tells you at session start when a release is out.
 
-## 7. Knowledge that compounds (optional)
+## 8. Knowledge that compounds (optional)
 
 `/strata:wiki` compiles your papers and notes into linked pages Claude keeps current (Karpathy's LLM Wiki);
 `/strata:graph` records findings with their sources and checks they are grounded; `/agent-arena-mode:karpathy-loop`
 improves anything you can measure, keeping only changes that move the number.
 
-## 8. When something is off
+## 9. When something is off
 
 - `/moaa-catalog:moaa-help` explains what is installed and how to use it, from inside Claude Code.
 - `python scripts/install.py --status` compares your install with this repo (changes nothing).
