@@ -23,6 +23,40 @@ not its code: no proxy, no services, no extra API key, and standard-library Pyth
 
 A project is its git repository root, so all worktrees of one repo share memory.
 
+## Context handoff
+
+Always on, no command needed. When a conversation fills about 85% of its context window, Claude stops at a safe
+point, writes `HANDOFF.md` (goal, state, done, next actions, open questions, decisions, files, resume commands) and
+`CONTEXT.md` (durable facts, constraints, paths, IDs) to `<project>/.claude/handoff/<stamp>/`, and tells you to open
+a new chat in the same project. That new chat gets the handoff injected at its start and carries on, so nothing has
+to be compacted.
+
+- **Measure:** the UserPromptSubmit and PostToolUse hooks read the last 256 KB of the transcript and take the newest
+  assistant message's `usage` (input + cache read + cache write tokens). The window is 1M for a `[1m]` model and for
+  the models that run with 1M natively (Fable, Sonnet 5+, Haiku 5.5+, Opus 4.7+), else 200k; an auto-compact window
+  (`CLAUDE_CODE_AUTO_COMPACT_WINDOW` or `autoCompactWindow`) lowers it, and `CLAUDE_CODE_DISABLE_1M_CONTEXT` sets 200k.
+- **Prompt once:** Claude is asked once at the threshold, and again only 5 points later or after the context fell
+  below the threshold (a compaction). You see a one-line notice too.
+- **Fallback:** if a conversation is compacted before Claude wrote a handoff, the PreCompact hook writes a script-only
+  snapshot (last requests, plan or todo list, recent files, last reply), so the thread survives compaction.
+- **Resume:** SessionStart of a new chat (startup or `/clear`) injects the newest unconsumed handoff of the project
+  (`latest` names it) once, marked as notes from the earlier chat, and Claude confirms in one line. A handoff is
+  consumed when injected and offered again only if its `HANDOFF.md` changes. `--resume` and forks get nothing; they
+  already hold the conversation.
+- `.claude/handoff/` gets a `.gitignore` of `*`, so handoffs are never committed by accident.
+
+```
+python strata.py handoff status               python strata.py handoff off | on
+python strata.py handoff threshold 90         (50-95)
+python strata.py handoff window 400k          (0 = from the model)
+STRATA_HANDOFF=off                            (env: off for one shell; STRATA_HANDOFF_THRESHOLD and
+                                               STRATA_HANDOFF_WINDOW override too, the threshold down to 1 for tests)
+```
+
+Limits: the transcript records usage per assistant message, so the measure lags one model call and does not count
+the prompt being submitted; a single tool result bigger than the remaining room can still overflow before the hook
+sees it. Sub-agent calls are not counted (their context is separate) and do not trigger the prompt.
+
 ## Commands
 
 ```
@@ -32,6 +66,7 @@ python strata.py scene "TITLE" "BODY"         python strata.py profile KEY "TEXT
 python strata.py forget ID | --session ID | --scene ID | --profile KEY
 python strata.py consolidate --pending [--dry-run]
 python strata.py config auto off              (no background extraction)
+python strata.py handoff on|off|status|threshold N|window N
 python strata.py stats
 ```
 

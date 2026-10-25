@@ -1,0 +1,47 @@
+{
+  "workdir": "~\\AppData\\Local\\Temp\\claude\\C--Users-Death-Star-code-claude-kit--claude-worktrees-context-handoff-0cddd6\\4486389b-fd2b-4906-950f-98c799f93070\\scratchpad\\e2e-run2",
+  "handoff_dir": "~\\AppData\\Local\\Temp\\claude\\C--Users-Death-Star-code-claude-kit--claude-worktrees-context-handoff-0cddd6\\4486389b-fd2b-4906-950f-98c799f93070\\scratchpad\\e2e-run2\\.claude\\handoff\\20261025-130304-b815681b",
+  "runs": {
+    "1-trigger": {
+      "exit": 0,
+      "session": "b815681b-4bd4-447c-ab29-2c75bf45f158",
+      "result": "`plan.md` is written with a five-step plan. `ls` showed only `plan.md`, because it ran before the handoff files existed.\n\nThe five steps:\n1. Create `wc.py` with an `argparse` path argument.\n2. Read the file as UTF-8, with a clear error if it's missing or unreadable.\n3. Count words with `len(text.split())`.\n4. Print the count and exit 0.\n5. Add an assert-based self-check and run `py wc.py sample.txt`.\n\nA hook asked for a handoff, so I saved one in `.claude\\handoff\\20261025-130304-b815681b` (inside the same folder as `plan.md`). A new chat in this project resumes from it automatically. I haven't written `wc.py` itself."
+    },
+    "2-resume": {
+      "exit": 0,
+      "session": "48969f67-7f08-431a-9a5d-bdd06460a4fb",
+      "result": "Resumed from the earlier handoff. `plan.md` is done, and it's the only file in the folder.\n\nNext step: write `wc.py` from the plan, which is about 10 lines of stdlib plus an assert-based self-check. Run it on a sample file.\n\nWant me to build it? Or do you have something else in mind?"
+    },
+    "3-off": {
+      "exit": 0,
+      "session": "c49ee65c-5e12-4427-b6c2-8841a69dbe29",
+      "result": "Done. Directory has one file: `plan.md`."
+    },
+    "4a-compact-setup": {
+      "exit": 0,
+      "session": "e22018f2-cd05-4c99-8469-418254dd9e33",
+      "result": "OK"
+    },
+    "4b-compact": {
+      "exit": 0,
+      "session": "e22018f2-cd05-4c99-8469-418254dd9e33",
+      "result": ""
+    }
+  },
+  "checks": {
+    "trigger: hook prompt reached Claude": true,
+    "trigger: systemMessage shown": true,
+    "trigger: HANDOFF.md written": true,
+    "trigger: CONTEXT.md written": true,
+    "trigger: user told to open a new chat": true,
+    "resume: handoff injected at SessionStart": true,
+    "resume: Claude confirms it resumed": true,
+    "resume: marked consumed": true,
+    "resume: different session ids": true,
+    "off: no new handoff folder": true,
+    "off: no hook prompt and no injection": true,
+    "compact: automatic snapshot written": true,
+    "compact: snapshot holds the last request": true
+  },
+  "passed": true
+}
