@@ -65,6 +65,11 @@
       "description": "Always on: turns every prompt into a clear brief, asks about ambiguous points with concrete options, and hands the brief (not the raw prompt) to every subagent. Switch off with refiner.py off."
     },
     {
+      "name": "team",
+      "source": "./plugins/team",
+      "description": "Team board: people on separate Claude accounts work on one git repository together, with task claims, path locks, handoffs and messages on a shared board branch. Never shares credentials or usage between accounts."
+    },
+    {
       "name": "academy-guide",
       "source": {
         "source": "github",

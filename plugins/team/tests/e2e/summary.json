@@ -1,0 +1,19 @@
+{
+  "checks": {
+    "bob: briefed at session start": true,
+    "bob: claimed his task on the board": true,
+    "bob: reply names the branch": true,
+    "alice: briefed with bob's message": true,
+    "race: exactly one claim on the board": true,
+    "race: winner says MINE, loser says TAKEN": true
+  },
+  "passed": true,
+  "race_owner": "alice",
+  "answers": {
+    "bob": "Claimed t6ade3fac9613 (Write the solver docs). Branch: `team/t6ade3fac9613-write-the-solver-docs`. Locked path: `docs`.\n\nSent alice: \"I am on the docs (t6ade3fac9613, Write the solver docs). Mesh profiling waits.\" Message id m6ade3fd39365.",
+    "alice": "One free task is open for you: \"Profile the mesh step\" (t6ade3fadef3e), with nothing assigned yet. Bob messaged that he's on the solver docs and that mesh profiling should wait, so hold off on claiming it until he says it's clear.",
+    "race_alice": "MINE\n\nt6ade3fadef3e, \"Profile the mesh step\", is claimed. Branch: `team/t6ade3fadef3e-profile-the-mesh-step`, paths: `src/mesh`.\n\nBob's unread message said mesh profiling waits while he does the solver docs. The claim went through, so nobody else holds the task. Check with Bob before you start if his wait still applies.",
+    "race_bob": "TAKEN \u2014 claimed by alice."
+  },
+  "date": "2026-10-25 20:45"
+}

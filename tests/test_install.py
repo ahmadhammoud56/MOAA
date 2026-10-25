@@ -385,7 +385,8 @@ class ProfileTests(unittest.TestCase):
         # 14th: moaa-catalog, which lets the full profile ship packs disabled; 15th: moaa-core, a meta plugin with no
         # components of its own (its dependencies are already in core); 16th: claude-code-setup, Anthropic's read-only
         # automation recommender (one skill)
-        # 17th: prompt-refiner, the always-on prompt-to-brief hook
-        self.assertLessEqual(len(core), 17)
+        # 17th: prompt-refiner, the always-on prompt-to-brief hook; 18th: team, the board for people on separate
+        # accounts (silent in repositories without a board)
+        self.assertLessEqual(len(core), 18)
         self.assertTrue(all(p.get("profile") in ("core", "full") for p in kit["plugins"]))
         self.assertFalse(any(p.get("optional") for p in kit["plugins"] if p["id"] in core))

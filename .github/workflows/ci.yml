@@ -52,6 +52,12 @@ jobs:
       - name: moaa-catalog tests
         working-directory: plugins/moaa-catalog
         run: python -m unittest discover -s tests
+      - name: prompt-refiner tests
+        working-directory: plugins/prompt-refiner
+        run: python -m unittest discover -s tests
+      - name: Team tests
+        working-directory: plugins/team
+        run: python -m unittest discover -s tests
       - name: Benchmark scoring and answer keys
         working-directory: benchmarks/council-vs-solo
         run: |

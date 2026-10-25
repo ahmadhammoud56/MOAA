@@ -1,6 +1,6 @@
 {
   "name": "moaa",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "marketplaces": {
     "ecc": "https://github.com/affaan-m/ECC.git",
     "karpathy-skills": "https://github.com/multica-ai/andrej-karpathy-skills.git",
@@ -689,11 +689,17 @@
     {
       "id": "moaa-catalog@moaa",
       "enabled": true,
-      "tested_version": "0.4.2",
+      "tested_version": "0.4.3",
       "profile": "core"
     },
     {
       "id": "prompt-refiner@moaa",
+      "enabled": true,
+      "tested_version": "0.1.1",
+      "profile": "core"
+    },
+    {
+      "id": "team@moaa",
       "enabled": true,
       "tested_version": "0.1.0",
       "profile": "core"

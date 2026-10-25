@@ -1,0 +1,81 @@
+{
+  "members": [
+    {
+      "joined": 1792950187.3593328,
+      "name": "alice",
+      "role": "lead",
+      "capacity": "",
+      "email": "member@example.invalid",
+      "last_seen": 1792950307.861791
+    },
+    {
+      "joined": 1792950188.4355643,
+      "name": "bob",
+      "role": "docs",
+      "capacity": "",
+      "email": "member@example.invalid",
+      "last_seen": 1792950227.8633413
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t6ade3fac9613",
+      "title": "Write the solver docs",
+      "detail": "",
+      "status": "claimed",
+      "owner": "bob",
+      "assign": "bob",
+      "paths": [
+        "docs"
+      ],
+      "after": [],
+      "created": 1792950188.9515903,
+      "by": "alice",
+      "lease": 1793036625.28451,
+      "handoffs": [],
+      "log": [
+        {
+          "ts": 1792950188.9515927,
+          "who": "alice",
+          "what": "created"
+        },
+        {
+          "ts": 1792950225.284513,
+          "who": "bob",
+          "what": "claimed"
+        }
+      ],
+      "updated": 1792950225.2845135
+    },
+    {
+      "id": "t6ade3fadef3e",
+      "title": "Profile the mesh step",
+      "detail": "",
+      "status": "claimed",
+      "owner": "alice",
+      "assign": null,
+      "paths": [
+        "src/mesh"
+      ],
+      "after": [],
+      "created": 1792950189.440115,
+      "by": "alice",
+      "lease": 1793036707.8612578,
+      "handoffs": [],
+      "log": [
+        {
+          "ts": 1792950189.4401176,
+          "who": "alice",
+          "what": "created"
+        },
+        {
+          "ts": 1792950307.861261,
+          "who": "alice",
+          "what": "claimed"
+        }
+      ],
+      "updated": 1792950307.8612614
+    }
+  ],
+  "notes": []
+}

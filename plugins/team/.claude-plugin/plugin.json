@@ -1,0 +1,10 @@
+{
+  "name": "team",
+  "version": "0.1.0",
+  "description": "Team board: several people, each on their own Claude account, work on one git repository together. Tasks with claims, path locks, dependencies and handoffs, messages and a decision log live on a separate board branch, synced through the shared remote; a claim that loses a push race is redone on the newest board. Hooks brief each session on its tasks and new messages. Standard-library Python and git; never shares credentials or usage between accounts.",
+  "author": { "name": "Ahmad Hammoud", "url": "https://github.com/ahmadhammoud56" },
+  "homepage": "https://github.com/ahmadhammoud56/MOAA",
+  "repository": "https://github.com/ahmadhammoud56/MOAA",
+  "license": "MIT",
+  "keywords": ["team", "collaboration", "task-board", "git", "multi-user", "coordination"]
+}

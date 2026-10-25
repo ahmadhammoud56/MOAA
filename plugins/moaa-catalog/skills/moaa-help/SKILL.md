@@ -19,7 +19,9 @@ in it. Keep the answer short and point to the one tool that fits the user's task
 | A skill that is not listed | `/moaa-catalog:moaa-catalog`: searches installed but disabled packs and loads one skill into this session. |
 | What to set up for this project | `claude-code-setup` (Anthropic's automation recommender): ask "recommend automations for this project". It reads the code and suggests 1-2 hooks, subagents, skills, plugins and MCP servers; prefer the MOAA tools above where they fit. |
 | Clearer requests, automatically | `prompt-refiner` (always on): every prompt becomes a brief; ambiguous points come back as questions with options. `refiner.py off` or a `raw:` prefix skips it. |
-| A chat that is running out of context | strata's context handoff (always on): at ~85% Claude writes `.claude/handoff/` and you open a new chat that resumes. `strata.py handoff off` or `strata.py handoff threshold N`. |
+| A chat that is running out of context | strata's context handoff (always on): at ~85% Claude writes `.claude/handoff/` and you open a new chat that resumes; its virtual context brings back evicted turns when a prompt needs them. `strata.py handoff off`, `handoff threshold N`, `handoff mode compact` (one long chat), `handoff recall off`. |
+| Answers from this project's own files | strata's project RAG (always on): matching passages with `path:lines` are added to prompts that clearly need them; `rag.py search "QUERY"` to search, `rag.py off` to stop. |
+| Several people on one project, each on their own account | `/team:team`: a board on its own git branch with task claims, path locks, handoffs, messages and a decision log. `team.py init`, then `team.py join NAME`. |
 | A long or multi-session task | `/specialist-council:long-task`: brief with acceptance checks, progress file, evidence review, resume prompt. |
 | A knowledge base that compounds | `/strata:wiki`: Karpathy-style LLM Wiki; Claude compiles sources into linked pages (ingest, query, lint of the link graph). |
 | Findings with their sources | `/strata:graph`: typed claim-source graph shared by parallel agents, with a grounding check (score, specific failures). |

@@ -193,6 +193,35 @@ py plugins/strata/rag.py off                                  # or STRATA_RAG=of
 Strata needs no worker process or background service; claude-mem is still available with `--with-claude-mem`. Details:
 [plugins/strata/README.md](../plugins/strata/README.md).
 
+## Team: several people, several accounts, one project
+
+**Each person keeps their own Claude account; the team board splits the work between them.** It never shares
+credentials or routes one account's usage through another (Anthropic's terms do not allow that; a Team or
+Enterprise plan is the official way to pool usage under one bill). Three members on three plans get about three
+plans' worth of work done on one repository, without two of them doing the same task.
+
+The board is an orphan branch (`team-board`) of the shared repository, checked out in a hidden worktree under
+`.git/`, so it never touches anyone's working files or code branches. Every change is applied to the newest board,
+committed and pushed; when someone else pushed first it is redone on their board, so a task is never claimed twice.
+Tasks carry an owner, an optional assignee, locked `paths`, `after` dependencies and handoff notes; a claim lasts 24
+hours from the owner's last update. Messages (`send NAME|all`, `inbox`) and a decision log (`note`) live there too.
+At session start the hook tells Claude what is this member's, what is free for them and what is unread; later
+prompts announce new messages and assignments. Teammates' text is marked as not coming from the user.
+
+```
+py plugins/team/team.py init                       # once per clone; creates or joins team-board on origin
+py plugins/team/team.py join alice --role "lead"   # once per member
+py plugins/team/team.py add "Port the solver" --paths src/solver --assign bob
+py plugins/team/team.py claim                      # the next free task, yours first; prints the branch to use
+py plugins/team/team.py update t6ade3f --status review --note "PR #12"
+py plugins/team/team.py handoff t6ade3f "boundary conditions left; see notes in docs/bc.md"
+py plugins/team/team.py board                      # members, tasks by status, notes, unread messages
+```
+
+In the live test (`plugins/team/tests/e2e/`) two headless sessions in two clones were told at the same moment to
+claim the same task: one got it, the other reported it taken by the first. Details:
+[plugins/team/README.md](../plugins/team/README.md).
+
 ## Using it: council, arena, saving, forging
 
 All four work at any time and on their own. Nothing needs to be started first.

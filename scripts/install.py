@@ -80,8 +80,10 @@ ALLOWED = {"specialist-council": ("council.py", ("*",)),
            "allies": ("allies.py", ("doctor", "runs", "show", "pick")),
            "strata": ("strata.py", ("search", "show", "stats", "handoff")),
            "prompt-refiner": ("refiner.py", ("status", "on", "off", "mode")),
+           "team": ("team.py", ("board", "whoami", "inbox", "sync")),  # claims, messages and notes push: user's call
            "moaa-catalog": ("catalog.py", ("search", "use", "packs"))}  # read-only; `use` only serves indexed skills
-BARE = {"app", "list", "demo", "template", "doctor", "runs", "stats", "show", "packs"}  # also run with no arguments
+BARE = {"app", "list", "demo", "template", "doctor", "runs", "stats", "show", "packs", "board", "whoami", "inbox",
+        "sync"}  # also run with no arguments
 
 
 def plugin_root(home, plugin):
@@ -959,7 +961,7 @@ def doctor_checks():
     plugins = KIT / "plugins"
     checks = [("installer tests", [py, "-m", "unittest", "discover", "-s", "tests"], KIT)]
     for name in ("specialist-council", "agent-arena-mode", "war-room", "allies", "strata", "moaa-catalog",
-                 "prompt-refiner"):
+                 "prompt-refiner", "team"):
         checks.append((f"{name} tests", [py, "-m", "unittest", "discover", "-s", "tests"], plugins / name))
     checks += [
         ("war-room bus test", [py, "tests/test_bus.py"], plugins / "war-room"),

@@ -4,6 +4,27 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-10-25
+
+### Added
+- **team 0.1.0 (new core plugin): several people, each on their own Claude account, on one repository.** The board
+  is an orphan `team-board` branch of the shared repository in a hidden worktree under `.git/`, so it never touches
+  working files or code branches. Tasks (open, claimed, review, done, blocked) with an owner, an assignee, locked
+  `paths`, `after` dependencies, a 24-hour claim lease and handoff notes; messages to a member or `all`; a decision
+  log. Every change is applied to the newest board, committed and pushed, and redone when someone else pushed first,
+  so a task is never claimed twice. SessionStart briefs Claude on the member's tasks, free tasks and unread messages;
+  later prompts announce new messages and assignments (background refresh at most every five minutes). Teammates'
+  text is marked as not coming from the user. The board splits work between accounts and never shares credentials
+  or usage; the docs point to Team or Enterprise plans for pooled usage. Commands: `team.py init|join|add|claim|
+  update|handoff|send|inbox|note|board|sync|whoami|on|off`; skill `/team:team`. Live test
+  (`plugins/team/tests/e2e/`): two headless sessions told at the same moment to claim one task; one got it, the
+  other reported it taken.
+- **moaa-catalog 0.4.3:** the `moaa-help` skill lists project RAG, virtual context and the team board.
+
+### Changed
+- CI now runs the prompt-refiner and team test suites; `--doctor` runs the team suite. `team.py board|whoami|inbox|
+  sync` run without a permission prompt; claims, messages and notes push, so they stay the user's call.
+
 ## [0.17.0] - 2026-10-25
 
 ### Added

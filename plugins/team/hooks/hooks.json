@@ -1,0 +1,30 @@
+{
+  "description": "Team board: brief each session on the member's tasks and messages, and announce new messages and assignments on later prompts. Silent in repositories without a board.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 || continue; $p \"${CLAUDE_PLUGIN_ROOT}/team.py\" hook session-start; rc=$?; case $rc in 3|49) ;; *) exit 0;; esac; done; exit 0",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 || continue; $p \"${CLAUDE_PLUGIN_ROOT}/team.py\" hook prompt; rc=$?; case $rc in 3|49) ;; *) exit 0;; esac; done; exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

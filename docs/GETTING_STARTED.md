@@ -45,6 +45,10 @@ War Room starts several real Claude Code sessions with council roles, a shared t
 queue, and opens a local app to watch them. Templates (`feature team`, `bug hunt`, `review swarm`, ...) give you a
 plan to start from. With the allies plugin, a worker can be Codex or Gemini instead of Claude.
 
+Working with other people, each on their own Claude account? Ask Claude to "set up the team board" (or run
+`team.py init` and `team.py join NAME`): tasks, claims, handoffs and messages then live on a `team-board` branch of
+the shared repository, and every member's session is briefed on what is theirs.
+
 ## 5. Keep it lean (1 minute)
 
 Every enabled plugin lists all its skills in every request, used or not. Check what yours costs:
