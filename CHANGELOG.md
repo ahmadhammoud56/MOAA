@@ -4,6 +4,15 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.19.1] - 2026-10-26
+
+### Fixed
+- **Strata 0.6.1, canary false alarm in chats opened before the update.** A chat that started before strata 0.6.0 was
+  installed never got the canary rule at SessionStart, so every long reply counted as a miss and the Stop hook asked
+  for a handoff it did not need (seen live on the day of release). SessionStart now records that it gave the rule,
+  and the Stop hook judges only chats that have it; a resumed chat gets the rule, and the record, at its next
+  SessionStart. New unit test; the strata suite has 61 tests and the canary live suite passes.
+
 ## [0.19.0] - 2026-10-26
 
 ### Added

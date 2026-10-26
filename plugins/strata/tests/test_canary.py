@@ -20,8 +20,13 @@ class Canary(Sandbox):
         super().setUp()
         os.environ["STRATA_CANARY"] = "on"
 
-    def stop(self, reply, tokens=120000, session="s1", **kw):
-        """One Stop hook call after a reply; the transcript's newest usage sets the context (120k = 60% of 200k)."""
+    def stop(self, reply, tokens=120000, session="s1", given_rule=True, **kw):
+        """One Stop hook call after a reply; the transcript's newest usage sets the context (120k = 60% of 200k).
+        given_rule: the chat's SessionStart injected the canary rule (as it does in every chat since strata 0.6)."""
+        if given_rule:
+            st = memory.load_state(session)
+            st["canary_rule"] = True
+            memory.save_state(session, st)
         t = write_jsonl(Path(self.dir) / f"{session}.jsonl", [assistant(tokens)])
         data = {"session_id": session, "transcript_path": t, "cwd": str(self.proj), "hook_event_name": "Stop",
                 "stop_hook_active": False, **kw}
@@ -49,6 +54,16 @@ class Canary(Sandbox):
         d = Path(memory.load_state("s1")["dir"])
         self.assertEqual(memory.meta_of(d)["reason"], "canary missed")
         self.assertIsNone(self.stop(MISS))  # once per session: the handoff turn itself is not judged
+
+    def test_a_chat_never_given_the_rule_never_misses(self):
+        """A chat opened before strata 0.6 was installed got no rule at SessionStart: its replies are no evidence."""
+        for _ in range(3):
+            self.assertIsNone(self.stop(MISS, session="old", given_rule=False))
+        self.assertNotIn("canary_misses", memory.load_state("old"))
+        memory.hook("session-start", json.dumps({"session_id": "old", "cwd": str(self.proj)}))  # resumed after update
+        self.assertTrue(memory.load_state("old")["canary_rule"])
+        self.assertIsNone(self.stop(MISS, session="old", given_rule=False))
+        self.assertIsNotNone(self.stop(MISS, session="old", given_rule=False))
 
     def test_a_hit_resets_the_count(self):
         self.assertIsNone(self.stop(MISS))

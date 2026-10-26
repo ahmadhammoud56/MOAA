@@ -1,5 +1,6 @@
 {
+  "canary_rule": true,
   "canary_misses": 1,
-  "canary_fired": 13.3309,
-  "dir": "~\\AppData\\Local\\Temp\\moaa-e2e-strata-canary-hhztr3f5\\work\\.claude\\handoff\\20261026-140719-26135d58"
+  "canary_fired": 13.3296,
+  "dir": "~\\AppData\\Local\\Temp\\moaa-e2e-strata-canary-5ncd59aj\\work\\.claude\\handoff\\20261026-143632-f87be591"
 }

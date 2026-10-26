@@ -981,7 +981,7 @@ def canary_check(data):
     if not on or not session or data.get("agent_id"):
         return ""
     st = load_state(session)
-    if st.get("canary_fired") is not None:
+    if st.get("canary_fired") is not None or not st.get("canary_rule"):  # no rule: a chat opened before strata 0.6
         return ""
     reply = last_reply(data)
     if CANARY_RX.search(reply):
@@ -1117,6 +1117,10 @@ def hook(event, stdin=None):
             st["resume"] = str(d)
             save_state(data["session_id"], st)
         canary = CANARY_RULE if canary_settings(cfg)[0] else ""
+        if canary and data.get("session_id"):  # only a chat that was given the rule can miss it
+            st = load_state(data["session_id"])
+            st["canary_rule"] = True
+            save_state(data["session_id"], st)
         text = "\n\n".join(t for t in (resumed, text, canary) if t)
         out = {"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": text}}
         if note:

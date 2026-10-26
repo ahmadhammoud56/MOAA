@@ -2,13 +2,13 @@
   "runs": {
     "1-hit": {
       "exit": 0,
-      "session": "806f2038-d0ea-4684-a65d-b1209341cb47",
-      "result": "A context window is the maximum amount of text, measured in tokens, that a language model can read and consider at one time. It holds everything the model sees: the system prompt, your messages, earlier replies, attached documents, tool results, and the answer it is writing.\n\nThe model has no memory outside this window. It only \"remembers\" what is currently inside it. When a conversation exceeds the limit, the oldest content must be dropped, summarized, or retrieved again later.\n\nLarger windows let the model handle long documents or codebases in one pass. Cost and latency grow with window size. Models can also attend less reliably to details buried in the middle of very long inputs.\n\n[//]: # (strata:ok)"
+      "session": "ca16c209-ab0d-426e-9288-22a4d539d1cd",
+      "result": "Context window = max text a language model can see at once when it generates a reply. Measured in tokens, which are word pieces, roughly 3/4 of a word each.\n\nWindow holds everything: system prompt, chat history, pasted files, tool results, and the reply being written. Model has no memory outside it. Text that falls outside window is invisible to the model.\n\nBigger window means longer documents and chats fit. Cost also rises: more compute, more latency, more money. Quality can drop too. Models sometimes miss details buried in the middle of very long input.\n\nWhen the window fills, apps must act. Common fixes:\n- Truncate old messages.\n- Summarize earlier turns.\n- Retrieve only relevant passages, as in RAG.\n\nWindow size differs per model. Check the model's docs for the exact limit.\n\n[//]: # (strata:ok)"
     },
     "2-miss": {
       "exit": 0,
-      "session": "26135d58-8c36-4e9b-ae10-34cf68a97d7b",
-      "result": "Handoff saved in `~\\AppData\\Local\\Temp\\moaa-e2e-strata-canary-hhztr3f5\\work\\.claude\\handoff\\20261026-140719-26135d58`. It holds `HANDOFF.md` and `CONTEXT.md`, and `.claude\\handoff\\latest` points to it. Open a new chat in this project and it resumes from the handoff automatically.\n\n[//]: # (strata:ok)"
+      "session": "f87be591-4f74-4f7e-9529-de39ac43a2d0",
+      "result": "Handoff saved in `~\\AppData\\Local\\Temp\\moaa-e2e-strata-canary-5ncd59aj\\work\\.claude\\handoff\\20261026-143632-f87be591`. It holds `HANDOFF.md` and `CONTEXT.md`, and `latest` points to it. Open a new chat in this project and it resumes from the handoff automatically.\n\n[//]: # (strata:ok)"
     }
   },
   "checks": {

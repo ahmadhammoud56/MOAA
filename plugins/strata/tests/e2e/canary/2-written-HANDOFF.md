@@ -1,29 +1,31 @@
 Reason: canary missed.
 
-# Goal
-User asked (one-off question, no code work): explain in about 150 words why instructions slip in very long chats. For that reply only, omit the strata canary line.
+# Handoff
 
-# Current state
-Question answered in chat. No files in the project were changed. No open work.
+## Goal
+Answer user's one-off question: explain in ~150 words why instructions slip in very long chats. No file work needed.
 
-# Done
-- Gave ~150-word caveman-style answer: attention dilution, recency bias, noise buildup, conflicting cues, compaction loss, self-imitation; fixes listed.
-- Left out the canary line as the user asked for that reply only.
+## Current state
+Question answered (caveman style, ~150 words, canary line omitted at user's request for that reply only). No open work.
 
-# Next actions
-1. Wait for the next user request. Nothing pending.
-2. Resume ending replies with the canary line (blank line, then `[//]: # (strata:ok)`), since the one-off exemption has ended.
+## Done
+- Explained causes: attention dilution, competing signals, lost-in-the-middle, compaction loss, self-imitation.
+- Listed fixes: restate rules, keep rules in system prompt/CLAUDE.md, fresh chat with handoff, short unambiguous instructions.
 
-# Open questions
+## Next actions
+1. Wait for user's next request. Nothing pending.
+2. Resume canary line `[//]: # (strata:ok)` at end of every reply (user's omission applied to one reply only).
+
+## Open questions
 None.
 
-# Key decisions
-- Omitted the canary line in the answer: user explicitly said to leave it out for that reply only, and user instructions outrank the hook.
-- Skipped a prompt-refiner brief: the prompt was a pure question needing no work beyond the answer.
-- Replied in caveman full style per the active SessionStart hook.
+## Key decisions
+- Omitted canary on that one reply: user asked explicitly, and user instruction overrides hook.
+- Skipped prompt-refiner brief: pure question, no work beyond the answer.
+- Replied in caveman style: session hook active (full level).
 
-# Files touched
-None in the project. Only these handoff files were written.
+## Files touched
+None in project besides this handoff.
 
-# Commands to resume
-Open a new chat in this project; strata resumes from `.claude/handoff/latest` automatically.
+## Commands to resume
+None. Open a new chat in this project; it resumes from this handoff.
