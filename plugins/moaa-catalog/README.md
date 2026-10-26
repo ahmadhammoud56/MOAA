@@ -20,8 +20,15 @@ and this plugin makes their skills reachable anyway:
   times in 30 days gets an "enable it" suggestion; enabling stays a visible `claude plugin enable` command that loads
   from the next session.
 
+- **Updates.** Once a day, SessionStart checks GitHub for a newer MOAA release and says so in one line. While a ruflo
+  plugin is enabled, it also starts `catalog.py ruflo-update` in a background process with no window: it installs
+  the global `ruflo` CLI, or updates it when npm has a newer version, and logs to `~/.claude/moaa-catalog/ruflo.log`.
+  ruflo-core's hooks use that CLI; without it they run `npx ruflo@latest` on every tool call, which on Windows opens
+  a console window each time. `MOAA_RUFLO_UPDATE=off` stops the ruflo step; `MOAA_NO_UPDATE_CHECK=1` or
+  `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` stops both.
+
 In MOAA's `all-on` mode (every plugin enabled, listing cut to names plus short descriptions) the index and the hook
 also cover enabled skills, pointing to the Skill tool for them.
 
 Only disabled skills are served by `use`; a pack's hooks, agents and MCP servers need it enabled. Standard library only,
-read-only apart from its own index and usage log. MIT licensed.
+read-only apart from its own index, usage log and the ruflo CLI update. MIT licensed.

@@ -7,6 +7,8 @@
   python catalog.py hook prompt         UserPromptSubmit hook: suggest up to 3 strong matches for the prompt on stdin
   python catalog.py hook session        SessionStart hook: once a day, say if a newer MOAA release exists; warms the index
   python catalog.py index               rebuild the index now if it is stale
+  python catalog.py ruflo-update        install or update the global ruflo CLI (the session hook runs this daily, in
+                                        the background, while a ruflo plugin is enabled; MOAA_RUFLO_UPDATE=off stops it)
 
 The index (~/.claude/moaa-catalog/index.json) is rebuilt only when the plugin record or settings change, so a search
 or a hook call reads one small file; the hooks never rebuild it inline but start a background rebuild.
@@ -315,8 +317,112 @@ def update_notice(home, fetch=latest_release, now=None):
             f"Changes: https://github.com/{UPDATE_REPO}/releases/tag/v{latest}")
 
 
+RUFLO_EVERY = 86400  # seconds between checks of the global ruflo CLI
+
+
+def ruflo_wanted(home, now=None):
+    """True when the daily ruflo CLI check is due: a ruflo plugin is enabled, npm is on PATH, the check is not off,
+    and the last one is a day old. ruflo-core's hooks fall back to `npx ruflo@latest` without a global CLI, and on
+    Windows that opens a console window on every tool call; the global CLI also no longer updates itself."""
+    import shutil
+    if any(os.environ.get(k) for k in ("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "MOAA_NO_UPDATE_CHECK")) \
+            or os.environ.get("MOAA_RUFLO_UPDATE", "").lower() in ("off", "0", "false"):
+        return False
+    if not any(pid.startswith("ruflo-") and on for pid, (_, on) in installed_plugins(home).items()):  # @ruflo or @moaa
+        return False
+    if not shutil.which("npm"):
+        return False
+    stamp_path = home / "moaa-catalog" / "ruflo.json"
+    return (now or time.time()) - read_json(stamp_path).get("checked", 0) >= RUFLO_EVERY
+
+
+def ruflo_update_in_background(home):
+    """Start `catalog.py ruflo-update` detached with no window, at most once a day (the stamp is written first, so
+    sessions that start together spawn it once)."""
+    import subprocess
+    path = home / "moaa-catalog" / "ruflo.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"checked": time.time()}), encoding="utf-8")
+    argv = [sys.executable, str(Path(__file__).resolve()), "ruflo-update"]
+    quiet = dict(stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if os.name == "nt":
+        subprocess.Popen(argv, creationflags=0x08000000 | 0x00000200, **quiet)  # no window, own process group
+    else:
+        subprocess.Popen(argv, start_new_session=True, **quiet)
+
+
+def ruflo_update(home, run=None):
+    """Install the ruflo CLI globally, or update it when npm has a newer version. Logs to moaa-catalog/ruflo.log.
+    Runs inside the windowless background process, so npm and its cmd.exe children get no window either."""
+    import shutil
+    import subprocess
+    run = run or (lambda argv: subprocess.run(argv, capture_output=True, text=True, encoding="utf-8",
+                                              errors="replace", timeout=600))
+    npm = shutil.which("npm")
+    if not npm:
+        return "npm not found"
+    have = run([npm, "ls", "-g", "ruflo", "--depth=0", "--json"])
+    try:
+        installed = json.loads(have.stdout or "{}").get("dependencies", {}).get("ruflo", {}).get("version", "")
+    except ValueError:
+        installed = ""
+    latest = run([npm, "view", "ruflo", "version"]).stdout.strip()
+    if not latest:
+        note = f"npm view failed; ruflo stays at {installed or 'not installed'}"
+    elif installed and version_tuple(installed) >= version_tuple(latest):
+        note = f"ruflo {installed} is current"
+    elif installed:
+        note = ruflo_swap(npm, installed, latest, run)
+    else:  # first install: npm also writes the ruflo shims on PATH
+        done = run([npm, "install", "-g", f"ruflo@{latest}"])
+        note = (f"ruflo none -> {latest}" if done.returncode == 0
+                else f"npm install -g ruflo@{latest} failed: {(done.stderr or done.stdout).strip()[-300:]}")
+    log = home / "moaa-catalog" / "ruflo.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with open(log, "a", encoding="utf-8") as f:
+        f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {note}\n")
+    return note
+
+
+def ruflo_swap(npm, installed, latest, run):
+    """Update an installed ruflo with no gap. A plain `npm install -g` removes the old copy first, and for the half
+    minute it takes ruflo-core's hooks find no CLI, fall back to npx and flash console windows (seen live). So npm
+    installs the new version into a staging prefix, and two folder renames swap it in; the shims on PATH stay valid
+    because they name node_modules/ruflo/<bin>. A changed bin entry gets a plain install instead."""
+    import shutil
+    root = Path(run([npm, "root", "-g"]).stdout.strip())  # .../npm/node_modules, or .../lib/node_modules
+    target, old, stage = root / "ruflo", root / ".ruflo-old", root.parent / ".moaa-ruflo-stage"
+    shutil.rmtree(stage, ignore_errors=True)
+    done = run([npm, "install", "-g", "--prefix", str(stage), f"ruflo@{latest}"])
+    new = next((p for p in (stage / "node_modules" / "ruflo", stage / "lib" / "node_modules" / "ruflo")
+                if (p / "package.json").is_file()), None)
+    if done.returncode or new is None:
+        shutil.rmtree(stage, ignore_errors=True)
+        return f"staged install of ruflo@{latest} failed; ruflo stays at {installed}"
+    if read_json(new / "package.json").get("bin") != read_json(target / "package.json").get("bin"):
+        shutil.rmtree(stage, ignore_errors=True)
+        done = run([npm, "install", "-g", f"ruflo@{latest}"])
+        return f"ruflo {installed} -> {latest} (plain install: bin changed)" if done.returncode == 0 \
+            else f"npm install -g ruflo@{latest} failed; ruflo may be missing"
+    shutil.rmtree(old, ignore_errors=True)
+    try:
+        os.replace(target, old)
+        os.replace(new, target)
+    except OSError as e:  # a running hook can hold a file open on Windows: keep the old copy, try again tomorrow
+        if not target.exists() and old.exists():
+            os.replace(old, target)
+        shutil.rmtree(stage, ignore_errors=True)
+        return f"swap to ruflo@{latest} failed ({e.__class__.__name__}); ruflo stays at {installed}"
+    shutil.rmtree(old, ignore_errors=True)
+    shutil.rmtree(stage, ignore_errors=True)
+    return f"ruflo {installed} -> {latest}"
+
+
 def main(argv):
     home = claude_home()
+    if argv == ["ruflo-update"]:
+        print(ruflo_update(home))
+        return 0
     if argv[:1] == ["search"] and len(argv) > 1:
         found = search(home, " ".join(argv[1:]))
         catalog = Path(__file__).resolve().as_posix()
@@ -347,6 +453,11 @@ def main(argv):
             notice = update_notice(home)
         except Exception:  # a hook must never block the session
             notice = None
+        try:
+            if ruflo_wanted(home):
+                ruflo_update_in_background(home)
+        except Exception:
+            pass
         if notice:
             print(json.dumps({"systemMessage": notice, "hookSpecificOutput": {
                 "hookEventName": "SessionStart",

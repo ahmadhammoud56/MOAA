@@ -349,6 +349,8 @@ def install(args):
         install_mcp(r, kit["mcp"], record, home, skip_ansys=args.skip_ansys or not wants_ansys, dry=args.dry_run)
     if args.with_omniroute:
         install_omniroute(r, kit["tools"]["omniroute"], record)
+    if any(p["id"].startswith("ruflo-") and p["enabled"] for p in plugins):  # pinned copies are ruflo-*@moaa
+        install_ruflo(r, record)
 
     write_json(home / MANIFEST, record, args.dry_run)
     if not args.dry_run:
@@ -1022,6 +1024,24 @@ def install_omniroute(r, spec, record):
         log("  omniroute was already installed before MOAA; --uninstall will leave it")
     elif "omniroute" not in record["tools"]:
         record["tools"].append("omniroute")
+
+
+def install_ruflo(r, record):
+    """npm install of the ruflo CLI when a ruflo plugin is enabled. Without it, ruflo-core's hooks run
+    `npx ruflo@latest` on every tool call, which on Windows opens a console window each time. moaa-catalog's session
+    hook keeps it current (once a day, in the background)."""
+    if not shutil.which("npm"):
+        log("ruflo CLI: npm not found; skipped (ruflo hooks fall back to npx)")
+        return
+    npm = ["npm"] if not WINDOWS else ["cmd", "/c", "npm"]
+    if r.run(npm + ["ls", "-g", "ruflo", "--depth=0"]).returncode == 0:
+        return  # already there; moaa-catalog updates it
+    log("ruflo CLI: npm install -g ruflo (used by ruflo-core's hooks instead of npx)")
+    result = r.run(npm + ["install", "-g", "ruflo"])
+    if result.returncode:
+        log("  ruflo CLI install failed: " + (result.stderr or result.stdout).strip()[-300:])
+    elif "ruflo" not in record["tools"]:
+        record["tools"].append("ruflo")
 
 
 def uninstall(args):

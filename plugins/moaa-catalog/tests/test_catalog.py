@@ -179,5 +179,121 @@ class Catalog(unittest.TestCase):
         self.assertEqual([(h["pid"], h["on"]) for h in hits], [("on@m", True)])
 
 
+class Ruflo(unittest.TestCase):
+    """The daily check of the global ruflo CLI that ruflo-core's hooks need (without it they run npx)."""
+
+    def setUp(self):
+        self.home = Path(tempfile.mkdtemp())
+        (self.home / "plugins").mkdir()
+        (self.home / "plugins" / "installed_plugins.json").write_text(json.dumps({"plugins": {}}))
+
+    def enable_ruflo(self, on=True):
+        (self.home / "plugins" / "installed_plugins.json").write_text(json.dumps({"plugins": {
+            "ruflo-core@ruflo": [{"installPath": str(self.home)}]}}))
+        (self.home / "settings.json").write_text(json.dumps({"enabledPlugins": {"ruflo-core@ruflo": on}}))
+
+    def wanted(self, now=None, env=None):
+        clean = {k: v for k, v in os.environ.items()
+                 if k not in ("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "MOAA_NO_UPDATE_CHECK", "MOAA_RUFLO_UPDATE")}
+        with mock.patch.dict(os.environ, {**clean, **(env or {})}, clear=True), \
+                mock.patch("shutil.which", return_value="npm"):
+            return catalog.ruflo_wanted(self.home, now)
+
+    def test_due_once_a_day_only_while_a_ruflo_plugin_is_enabled(self):
+        self.assertFalse(self.wanted())  # no ruflo plugin
+        self.enable_ruflo(on=False)
+        self.assertFalse(self.wanted())  # installed but disabled
+        self.enable_ruflo()
+        self.assertTrue(self.wanted())
+        stamp = self.home / "moaa-catalog" / "ruflo.json"
+        stamp.parent.mkdir(parents=True, exist_ok=True)
+        stamp.write_text(json.dumps({"checked": 1000.0}))
+        self.assertFalse(self.wanted(now=1000.0 + catalog.RUFLO_EVERY - 1))
+        self.assertTrue(self.wanted(now=1000.0 + catalog.RUFLO_EVERY))
+        for env in ({"MOAA_RUFLO_UPDATE": "off"}, {"MOAA_NO_UPDATE_CHECK": "1"},
+                    {"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"}):
+            self.assertFalse(self.wanted(now=10 ** 10, env=env))
+
+    def fake_npm(self, installed, latest, install_ok=True, bin_entry="bin/ruflo.js"):
+        """A fake npm over a real folder: <home>/npm/node_modules is the global root, and an install with --prefix
+        writes the staged package the way npm does on Windows (<prefix>/node_modules/ruflo)."""
+        calls, root = [], self.home / "npm" / "node_modules"
+
+        def package(where, version, entry="bin/ruflo.js"):
+            where.mkdir(parents=True, exist_ok=True)
+            (where / "package.json").write_text(json.dumps({"version": version, "bin": {"ruflo": entry}}))
+
+        if installed:
+            package(root / "ruflo", installed)
+
+        def run(argv):
+            calls.append(argv[1:])
+            out = ""
+            if argv[1] == "ls":
+                out = json.dumps({"dependencies": {"ruflo": {"version": installed}}} if installed else {})
+            elif argv[1] == "view":
+                out = latest + "\n"
+            elif argv[1] == "root":
+                out = str(root) + "\n"
+            elif argv[1] == "install" and install_ok:
+                if "--prefix" in argv:
+                    package(Path(argv[argv.index("--prefix") + 1]) / "node_modules" / "ruflo", latest, bin_entry)
+                else:
+                    package(root / "ruflo", latest, bin_entry)
+            return mock.Mock(stdout=out, stderr="", returncode=0 if install_ok or argv[1] != "install" else 1)
+        return calls, run, root
+
+    def version_at(self, root):
+        return json.loads((root / "ruflo" / "package.json").read_text())["version"]
+
+    def test_update_installs_when_missing_or_older_and_skips_when_current(self):
+        with mock.patch("shutil.which", return_value="npm"):
+            calls, run, root = self.fake_npm("", "3.63.1")
+            self.assertEqual(catalog.ruflo_update(self.home, run), "ruflo none -> 3.63.1")
+            self.assertIn(["install", "-g", "ruflo@3.63.1"], calls)  # first install: plain, npm writes the shims
+            calls, run, root = self.fake_npm("3.63.1", "3.63.1")
+            self.assertEqual(catalog.ruflo_update(self.home, run), "ruflo 3.63.1 is current")
+            self.assertNotIn("install", [c[0] for c in calls])
+            calls, run, root = self.fake_npm("3.63.1", "")  # offline: nothing installed or removed
+            self.assertIn("npm view failed", catalog.ruflo_update(self.home, run))
+        log = (self.home / "moaa-catalog" / "ruflo.log").read_text(encoding="utf-8")
+        self.assertEqual(len(log.splitlines()), 3)
+
+    def test_an_update_is_staged_and_swapped_in_so_the_cli_never_goes_missing(self):
+        with mock.patch("shutil.which", return_value="npm"):
+            calls, run, root = self.fake_npm("3.62.0", "3.63.1")
+            self.assertEqual(catalog.ruflo_update(self.home, run), "ruflo 3.62.0 -> 3.63.1")
+        self.assertEqual(self.version_at(root), "3.63.1")
+        self.assertNotIn(["install", "-g", "ruflo@3.63.1"], calls)  # never the plain in-place install
+        self.assertTrue(any("--prefix" in c for c in calls))
+        self.assertEqual(sorted(x.name for x in root.parent.iterdir()), ["node_modules"])  # stage cleaned up
+        self.assertEqual([x.name for x in root.iterdir()], ["ruflo"])  # old copy removed
+
+    def test_a_failed_or_blocked_swap_keeps_the_old_cli(self):
+        with mock.patch("shutil.which", return_value="npm"):
+            calls, run, root = self.fake_npm("3.62.0", "3.63.1", install_ok=False)
+            self.assertIn("ruflo stays at 3.62.0", catalog.ruflo_update(self.home, run))
+            self.assertEqual(self.version_at(root), "3.62.0")
+            calls, run, root = self.fake_npm("3.62.0", "3.63.1")
+            real = os.replace
+            moves = []
+
+            def locked(src, dst):  # the second rename fails, as a held file would on Windows
+                moves.append(dst)
+                if len(moves) == 2:
+                    raise PermissionError("in use")
+                return real(src, dst)
+            with mock.patch("os.replace", side_effect=locked):
+                self.assertIn("ruflo stays at 3.62.0", catalog.ruflo_update(self.home, run))
+            self.assertEqual(self.version_at(root), "3.62.0")
+
+    def test_a_changed_bin_entry_gets_a_plain_install(self):
+        with mock.patch("shutil.which", return_value="npm"):
+            calls, run, root = self.fake_npm("3.62.0", "4.0.0", bin_entry="dist/cli.js")
+            self.assertIn("plain install", catalog.ruflo_update(self.home, run))
+        self.assertIn(["install", "-g", "ruflo@4.0.0"], calls)
+        self.assertEqual(self.version_at(root), "4.0.0")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -119,7 +119,9 @@ Nine things run on their own once installed, and each has an off switch:
   never blocks). Off: `MOAA_GUARD=off` or `guard.py off`.
 - **The right skill** (moaa-catalog): a prompt that clearly needs a skill gets it named, from enabled or disabled packs.
 - **Update notices** (moaa-catalog): once a day at session start, a newer MOAA release is announced with the
-  command to get it.
+  command to get it. While a ruflo plugin is enabled, the same daily check installs or updates the global `ruflo` CLI
+  in a hidden background process; ruflo's hooks otherwise run `npx ruflo@latest` on every tool call, which on Windows
+  flashes a console window. Off: `MOAA_RUFLO_UPDATE=off`.
 
 ![War Room run view: a team of Claude, Codex and Gemini workers, the board, review gates and a needs-attention strip](plugins/war-room/docs/media/run-live.png)
 

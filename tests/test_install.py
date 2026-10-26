@@ -358,6 +358,29 @@ class UpdateTests(unittest.TestCase):
                          {"source": {"source": "github", "repo": "ahmadhammoud56/MOAA"}, "autoUpdate": True})
         self.assertEqual(s["model"], "opus")
 
+    def test_ruflo_cli_is_installed_once_and_recorded_for_uninstall(self):
+        from unittest import mock
+        import subprocess
+
+        class FakeRunner:
+            def __init__(self, have):
+                self.have, self.calls = have, []
+
+            def run(self, args):
+                self.calls.append(args)
+                code = 0 if "install" in args or self.have else 1
+                return subprocess.CompletedProcess(args, code, "", "")
+
+        with mock.patch("shutil.which", return_value="npm"):
+            r, record = FakeRunner(have=False), {"tools": []}
+            install.install_ruflo(r, record)
+            self.assertTrue(any("install" in c and "ruflo" in c for c in r.calls))
+            self.assertEqual(record["tools"], ["ruflo"])
+            r, record = FakeRunner(have=True), {"tools": []}
+            install.install_ruflo(r, record)  # already there: moaa-catalog keeps it current
+            self.assertFalse(any("install" in c for c in r.calls))
+            self.assertEqual(record["tools"], [])
+
 
 class WorkProfileTests(unittest.TestCase):
     def test_profiles_add_their_packs_enabled_on_top_of_core(self):

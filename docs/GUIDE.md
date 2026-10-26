@@ -361,6 +361,11 @@ Both wrappers pass these flags through to `scripts/install.py`:
 | `--status --mcp` | Also check every MCP server's connection, with a hint for slow `npx` servers. `--doctor` lists any that fail. |
 | `--doctor` | Run every pre-commit check: all test suites, `MODELS.md`, the catalog, the public-release scan and `claude plugin validate`. For maintainers. |
 
+When a ruflo plugin is enabled, the installer also installs the `ruflo` CLI from npm (unless it is already there), and
+moaa-catalog's daily session-start check keeps it current in a background process with no window
+(`MOAA_RUFLO_UPDATE=off` stops that). ruflo's hooks use the CLI; without it they run `npx ruflo@latest` on every tool
+call, which on Windows briefly opens a console window each time.
+
 Restart Claude Code afterwards. The installer respects `CLAUDE_CONFIG_DIR`, so you can trial it in a throwaway config directory:
 
 ```bash

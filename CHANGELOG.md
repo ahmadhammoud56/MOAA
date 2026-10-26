@@ -4,6 +4,23 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.19.2] - 2026-10-26
+
+### Fixed
+- **Console windows flashing on Windows during tool calls.** ruflo-core's hooks run `npx ruflo@latest` on every
+  Bash, Write and Edit call when no global `ruflo` CLI exists; npx starts `cmd.exe` with no hidden-window flag, so
+  Windows Terminal opened a window for a split second each time and could take focus. A process watch matched 5 of 5
+  ruflo hook calls to 5 windows; with the global CLI installed, 261 new processes over 150 s opened none.
+  - **moaa-catalog 0.4.5:** while a ruflo plugin is enabled, the daily SessionStart check also starts
+    `catalog.py ruflo-update` in a background process with no window. It installs the global `ruflo` CLI, or updates
+    it when npm has a newer version (what `npx ruflo@latest` used to do on every call), and logs to
+    `~/.claude/moaa-catalog/ruflo.log`. Off: `MOAA_RUFLO_UPDATE=off`. An update is staged: npm installs the new
+    version into a separate prefix and two folder renames swap it in, because a plain `npm install -g` removes the
+    old copy first and the hooks fell back to npx (4 windows in about 20 s in the live test). Live test of the staged
+    update: 3.63.0 to 3.63.1 with tool calls running throughout, 192 new processes, no window, no npx fallback.
+  - **Installer:** a full or core install with a ruflo plugin enabled installs the ruflo CLI with npm, recorded so
+    `--uninstall` removes it.
+
 ## [0.19.1] - 2026-10-26
 
 ### Fixed
