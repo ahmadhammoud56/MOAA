@@ -1,0 +1,22 @@
+{
+  "id": "20261026-133100-7099",
+  "member": "opencode",
+  "write": true,
+  "model": "opencode/glm-5.3-flash-free",
+  "cwd": "~\\AppData\\Local\\Temp\\tmp.J5pQOUeU4G",
+  "started": 1793010660.4351535,
+  "worktree": "~\\.claude\\allies\\worktrees\\tmp.J5pQOUeU4G-20261026-133100-7099",
+  "branch": "ally/opencode-20261026-133100-7099",
+  "repo": "~/AppData/Local/Temp/tmp.J5pQOUeU4G",
+  "base": "9d3f1f9666ab650d94ba4cef30fe321b5c7dbd38",
+  "exit": 0,
+  "seconds": 10.3,
+  "answer": "~\\.claude\\allies\\runs\\20261026-133100-7099\\opencode.answer.md",
+  "ok": true,
+  "failure": null,
+  "timeout": 400,
+  "commits": "1",
+  "diffstat": "calc.py | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)",
+  "uncommitted": false,
+  "head": "f372c69deec7c0af70f061fc04d5c68ef7b61448"
+}

@@ -18,7 +18,8 @@ if mode == "write":
     open("made_by_member.txt", "w").write("hello\\n")
 if len(sys.argv) > 2 and sys.argv[2] == "--fail":
     sys.exit(3)
-print("ANSWER", mode, "key=" + os.environ.get("FAKE_KEY", "none"), "task-seen=" + str("TASK:" in prompt))
+print("ANSWER", mode, "key=" + os.environ.get("FAKE_KEY", "none"), "task-seen=" + str("TASK:" in prompt),
+      "pwd-ok=" + str(os.environ.get("PWD") == os.getcwd()))
 """
 
 
@@ -67,6 +68,7 @@ class Runs(Sandbox):
         answer = Path(meta["answer"]).read_text(encoding="utf-8")
         self.assertIn("ANSWER read", answer)
         self.assertIn("task-seen=True", answer)
+        self.assertIn("pwd-ok=True", answer)  # OpenCode works in $PWD: it must be the run's folder, not the caller's
         task = (self.tmp / "allies" / "runs" / meta["id"] / "task.md").read_text(encoding="utf-8")
         self.assertIn("read-only mode", task)
         self.assertTrue((self.tmp / "allies" / "runs" / meta["id"] / "meta-alpha.json").is_file())
@@ -146,6 +148,13 @@ class Hardening(Sandbox):
             self.assertEqual((argv, via_cmd), (["node.exe", str(self.tmp / "node_modules" / "tool" / "cli.js")], False))
             shim.write_text("@echo off\r\nsomething else %*\r\n")
             self.assertEqual(allies.launcher(str(shim)), ([str(shim)], True))
+            # OpenCode's npm shim points at a native .exe: run it directly, never through cmd.exe
+            exe = self.tmp / "node_modules" / "opencode-ai" / "bin" / "opencode.exe"
+            shim.write_text('@ECHO off\r\n"%dp0%\\node_modules\\opencode-ai\\bin\\opencode.exe"   %*\r\n')
+            self.assertEqual(allies.launcher(str(shim)), ([str(shim)], True))  # target missing: still guarded
+            exe.parent.mkdir(parents=True)
+            exe.write_bytes(b"MZ")
+            self.assertEqual(allies.launcher(str(shim)), ([str(exe)], False))
         self.assertTrue(allies.CMD_META.search('fix "& calc &"'))
         with self.assertRaises(SystemExit):
             allies.run("alpha", "x", cwd=self.tmp, model="--dangerous-flag")
@@ -161,6 +170,18 @@ class Hardening(Sandbox):
             env = allies.child_env({"pass_env": "^OPENAI_"}, {"X": "1"})
         self.assertEqual({k for k in ("ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "GITHUB_TOKEN", "AWS_SECRET_ACCESS_KEY",
                                       "OPENAI_API_KEY", "PATH", "X") if k in env}, {"OPENAI_API_KEY", "PATH", "X"})
+        with mock.patch.dict(os.environ, {"OPENCODE_CONFIG_DIR": "p", "OPENAI_API_KEY": "d"}):
+            self.assertNotIn("OPENCODE_CONFIG_DIR", allies.child_env({"pass_env": "^OPENAI_"}, {}))
+            env = allies.child_env({"pass_env": "^OPENCODE_"}, {})
+        self.assertEqual(("OPENCODE_CONFIG_DIR" in env, "OPENAI_API_KEY" in env), (True, False))
+
+    def test_model_allowlist_needs_an_explicit_opt_in(self):
+        self.members["alpha"]["models"] = ["free/one"]
+        self.assertTrue(allies.run("alpha", "x", cwd=self.tmp, model="free/one")["ok"])
+        with self.assertRaises(SystemExit):
+            allies.run("alpha", "x", cwd=self.tmp, model="paid/other")
+        with mock.patch.dict(os.environ, {"MOAA_ALLIES_MODELS": "paid/other"}):
+            self.assertTrue(allies.run("alpha", "x", cwd=self.tmp, model="paid/other")["ok"])
 
     def test_timeout_kills_the_process_tree(self):
         code = ("import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)']);"
@@ -189,7 +210,7 @@ class Lifecycle(unittest.TestCase):
 class ShippedMembers(unittest.TestCase):
     def test_members_file_is_well_formed_and_claude_members_never_use_the_users_login(self):
         members = json.loads((Path(allies.__file__).parent / "members.json").read_text(encoding="utf-8"))["members"]
-        self.assertEqual(set(members), {"codex", "gemini", "kimi", "deepseek", "omniroute"})
+        self.assertEqual(set(members), {"codex", "gemini", "kimi", "deepseek", "opencode", "omniroute"})
         for name, spec in members.items():
             with self.subTest(member=name):
                 for key in ("label", "bin", "install", "login", "read", "write", "good_for"):
@@ -203,6 +224,22 @@ class ShippedMembers(unittest.TestCase):
         for tool in ("run_shell_command", "write_file", "replace"):  # denied, so headless Gemini never hangs on approval
             self.assertIn(f'toolName = "{tool}"', policy)
         self.assertIn("{plugin}/gemini-read-only.toml", members["gemini"]["read"])
+
+    def test_opencode_is_locked_down(self):
+        spec = json.loads((Path(allies.__file__).parent / "members.json").read_text(encoding="utf-8"))["members"]["opencode"]
+        self.assertIn("opencode-ai@1", spec["install"])  # v2 (@opencode/cli) changed the API
+        self.assertEqual(spec["read"][spec["read"].index("--agent") + 1], "plan")
+        self.assertNotIn("--auto", spec["read"])  # auto-approval would let ask-gated tools through in a read run
+        self.assertIn("--auto", spec["write"])
+        self.assertIn(spec["default_model"], spec["models"])
+        self.assertTrue(all(m.endswith("-free") for m in spec["models"]))
+        with mock.patch.dict(os.environ, {"MOAA_ALLIES_DIR": tempfile.mkdtemp()}):
+            env, missing = allies.member_env(spec)
+        self.assertEqual((missing, env["OPENCODE_DISABLE_CLAUDE_CODE"]), ([], "1"))  # no ~/.claude skills or CLAUDE.md
+        # inline config: it outranks an opencode.json in the inspected project, which could otherwise loosen it
+        cfg = json.loads(env["OPENCODE_CONFIG_CONTENT"])
+        self.assertEqual(cfg["permission"]["external_directory"], "deny")
+        self.assertEqual({k: cfg["agent"]["plan"]["permission"][k] for k in ("edit", "bash")}, {"edit": "deny", "bash": "deny"})
 
 
 if __name__ == "__main__":

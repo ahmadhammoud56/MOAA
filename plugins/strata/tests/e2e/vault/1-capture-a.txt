@@ -1,0 +1,2 @@
+$ graph.py capture Decided: the Qanat-9 mix prints with a 28 mm nozzle; 25 mm clogged twice. --project ~\AppData\Local\Temp\moaa-e2e-strata-vault-3grou204\work
+captured in ~\AppData\Local\Temp\moaa-e2e-strata-vault-3grou204\data\brain\inbox\2026-10-26.md

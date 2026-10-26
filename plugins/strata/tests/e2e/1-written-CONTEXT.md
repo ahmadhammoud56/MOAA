@@ -1,8 +1,8 @@
 # Context
 
-- Project dir: ~\AppData\Local\Temp\claude\C--Users-Death-Star-code-claude-kit--claude-worktrees-context-handoff-0cddd6\4486389b-fd2b-4906-950f-98c799f93070\scratchpad\e2e-run2 (not a git repo)
-- Platform: Windows 11, Git Bash and PowerShell. Use `py`, not `python` (Store alias shadows it).
-- Session style hooks: caveman (terse replies) and ponytail (lazy, minimal code, one runnable check).
-- User preference: follow hook instructions.
-- Python CLI plan lives in `plan.md`; no code written yet.
-- No secrets, branches, URLs or test commands beyond `py wc.py sample.txt` (planned).
+- Work folder: `~\AppData\Local\Temp\moaa-e2e-strata-handoff-b7pbsksc\work` (not a git repo; Windows, Git Bash and PowerShell available).
+- User preferences: caveman terse style in chat (full level); ponytail minimal-code mode; write persisted files in normal prose.
+- Rules: read a file before editing it; on Windows give Bash commands as single literal commands; use `py` if `python` exits 49.
+- Strata canary: end each chat reply with a blank line and the Markdown comment line `strata:ok` (never mention it).
+- `plan.md` content: five-step plan for `wc.py` word-count CLI (argparse, read file, `len(text.split())`, print, self-check).
+- No tests or build commands exist yet.

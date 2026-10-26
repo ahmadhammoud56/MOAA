@@ -1,0 +1,7 @@
+$ python allies.py doctor
+  codex      ready      codex-cli 0.163.0            
+  gemini     ready      0.64.0                       
+  kimi       blocked    2.2.0                        blocked on this network (https://www.kimi.com unreachable)
+  deepseek   blocked                                 blocked on this network (https://api.deepseek.com unreachable)
+  opencode   ready      1.19.4                       
+  omniroute  not ready                               start it with `allies.py omniroute start`; connect providers in its dashboard

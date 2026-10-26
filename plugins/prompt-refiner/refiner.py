@@ -136,6 +136,9 @@ ASK_LIGHT = ("Only if a material point is still ambiguous, ask about it first wi
              "options, recommended first); in a headless or delegated session, assume the recommended option. ")
 SILENT = ("Do not ask the user anything: where a point is open, choose the most sensible option, record it under "
           "Assumptions, and proceed.")
+# superpowers:brainstorming (v7+), grilling and interview skills gather context and then ask; asking here too doubles it
+DEFER = ("If a questioning skill (brainstorming, grilling, an interview) is invoked for this prompt, let that skill do "
+         "the asking and only save the brief from its answers; do not ask the user twice. ")
 
 
 def context(prompt, cwd, mode, now=None):
@@ -147,12 +150,12 @@ def context(prompt, cwd, mode, now=None):
     if len(words(prompt)) >= DETAILED_WORDS or is_structured(prompt):
         return ("prompt-refiner: this prompt is already detailed. Before working, confirm your understanding in one "
                 "line (goal and deliverable) and name any assumption you are making. "
-                + (ASK_LIGHT if mode == "ask" else "") + "Then proceed. " + handoff)
+                + (ASK_LIGHT + DEFER if mode == "ask" else "") + "Then proceed. " + handoff)
     return ("prompt-refiner: before acting on this prompt, rewrite it into a brief with these headings: Goal, "
             "Deliverables, Inputs (files, data, context it relies on), Constraints, Acceptance checks (how to tell "
             "it is done), Assumptions, Open points. Fill it from the prompt, the conversation and a quick look at "
             "the project; do not invent requirements the user did not imply. "
-            + (ASK if mode == "ask" else SILENT)
+            + (ASK + " " + DEFER.rstrip() if mode == "ask" else SILENT)
             + f" Once settled, update the brief with the answers and save it to {path} (if that folder is new, also "
             f"write {BRIEFS}/.gitignore containing `*`, so briefs stay out of git), show "
             "the user a short version of it, and work from the brief, not the raw prompt. " + handoff

@@ -1,6 +1,6 @@
 ---
 name: allies
-description: Hand a bounded task to another agent CLI (OpenAI Codex, Google Gemini, Moonshot Kimi, DeepSeek, or a local OmniRoute gateway) and check what comes back. Use for a second opinion or independent review from a different model family, for bulk or long-context work that would burn Claude usage, when Claude usage is running low, or when the user asks for codex, gemini, kimi, deepseek or the allies.
+description: Hand a bounded task to another agent CLI (OpenAI Codex, Google Gemini, Moonshot Kimi, DeepSeek, OpenCode on free models, or a local OmniRoute gateway) and check what comes back. Use for a second opinion or independent review from a different model family, for bulk or long-context work that would burn Claude usage, when Claude usage is running low, or when the user asks for codex, gemini, kimi, deepseek, opencode or the allies.
 argument-hint: "doctor | run MEMBER -- TASK | ask M1,M2 -- TASK | write MEMBER -- TASK | runs | omniroute start|stop|status"
 ---
 
@@ -21,6 +21,7 @@ and never present it as checked when you have not checked it.
 | `gemini` | Google Gemini CLI (Google sign-in with a free tier) | research, long context, review |
 | `kimi` | Moonshot Kimi Code CLI | code, research |
 | `deepseek` | Claude Code on DeepSeek's Anthropic-format API (`DEEPSEEK_API_KEY`) | code, debugging, bulk |
+| `opencode` | OpenCode v1 on free zero-retention Zen models (no sign-in) | code, review, bulk |
 | `omniroute` | Claude Code through a local OmniRoute gateway on free tiers | bulk, research |
 
 Run `C doctor` first in a session that uses the allies. Only use members marked `ready`; a member marked
@@ -44,6 +45,18 @@ Run `C doctor` first in a session that uses the allies. Only use members marked 
   API key required, no conversation tracking, no browser-cookie providers). Its dashboard password is in
   `~/.claude/allies/omniroute.env`. Connect only API-key or free-tier providers there; never subscription logins or
   web cookies of other services, and never your Claude account.
+
+## OpenCode models and autonomy
+
+- The user decides which models are allowed; you pick one per task from that set. Allies allows only the free
+  zero-retention Zen models (`opencode/glm-5.3-flash-free`, the default, and `opencode/deepseek-v4.1-flash-free`).
+  Never try another model on your own: many are billed per token or keep data. If the task needs a stronger model,
+  ask the user; they sign in with that provider (`opencode auth login`) and allow it with
+  `MOAA_ALLIES_MODELS=provider/model`.
+- Match the model to the brief: the default for mechanical sweeps and reviews; say so when a subtle or
+  security-sensitive change deserves a stronger model the user would have to allow.
+- Read-only runs use the `plan` agent without `--auto`, so nothing can approve an edit or a shell command. Only
+  `--write` runs get `--auto`, and only inside an allies worktree, so your diff review is the safety net there.
 
 ## Stretching Claude limits
 

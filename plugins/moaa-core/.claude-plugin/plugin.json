@@ -1,7 +1,7 @@
 {
   "name": "moaa-core",
-  "version": "0.1.0",
-  "description": "MOAA in one install: the Specialist Council, the Agent Arena and moaa-catalog, pulled in as dependencies. Add war-room, allies or strata on their own when you want them.",
+  "version": "0.2.0",
+  "description": "MOAA in one install: the Specialist Council, the Agent Arena and moaa-catalog, pulled in as dependencies, plus an inline-Python guard (a note, never a block, for long or multi-line python -c) and a project-docs skill. Add war-room, allies or strata on their own when you want them.",
   "author": {
     "name": "Ahmad Hammoud",
     "url": "https://github.com/ahmadhammoud56"

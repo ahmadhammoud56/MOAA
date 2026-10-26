@@ -1,8 +1,8 @@
-2026-10-25T11:56:59.115Z [DEBUG] Hooks: SessionStart:startup [catalog.py hook session] (plugin moaa-catalog@inline) finished with status 0 (226ms)
-2026-10-25T11:56:59.275Z [DEBUG] Hooks: SessionStart:startup [strata.py hook session-start] (plugin strata@inline) finished with status 0 (387ms)
-2026-10-25T11:56:59.363Z [DEBUG] hooks module cc-plugin-sec-default@builtin classic.SessionStart settled in 477.2ms (native link, next() included)
-2026-10-25T11:57:26.990Z [DEBUG] flightdeck: classic.UserPromptSubmit bypassed by cc-plugin-sec-default (tier user); beneath runs
-2026-10-25T11:57:27.110Z [DEBUG] Hooks: UserPromptSubmit [refiner.py hook prompt] (plugin prompt-refiner@inline) finished with status 0 (118ms)
-2026-10-25T11:57:27.122Z [DEBUG] Hooks: UserPromptSubmit [catalog.py hook prompt] (plugin moaa-catalog@inline) finished with status 0 (130ms)
-2026-10-25T11:57:27.141Z [DEBUG] Hooks: UserPromptSubmit [strata.py hook context-check] (plugin strata@inline) finished with status 0 (150ms)
-2026-10-25T11:57:27.143Z [DEBUG] hooks module cc-plugin-sec-default@builtin classic.UserPromptSubmit settled in 153.4ms (native link, next() included)
+2026-10-26T10:58:54.094Z [DEBUG] Hooks: SessionStart:startup [catalog.py hook session] (plugin moaa-catalog@inline) finished with status 0 (200ms)
+2026-10-26T10:58:54.162Z [DEBUG] Hooks: SessionStart:startup [strata.py hook session-start] (plugin strata@inline) finished with status 0 (270ms)
+2026-10-26T10:58:54.267Z [DEBUG] hooks module cc-plugin-sec-default@builtin classic.SessionStart settled in 377.8ms (native link, next() included)
+2026-10-26T10:59:16.189Z [DEBUG] flightdeck: classic.UserPromptSubmit bypassed by cc-plugin-sec-default (tier user); beneath runs
+2026-10-26T10:59:16.325Z [DEBUG] Hooks: UserPromptSubmit [catalog.py hook prompt] (plugin moaa-catalog@inline) finished with status 0 (135ms)
+2026-10-26T10:59:16.326Z [DEBUG] Hooks: UserPromptSubmit [refiner.py hook prompt] (plugin prompt-refiner@inline) finished with status 0 (136ms)
+2026-10-26T10:59:16.345Z [DEBUG] Hooks: UserPromptSubmit [strata.py hook context-check] (plugin strata@inline) finished with status 0 (155ms)
+2026-10-26T10:59:16.359Z [DEBUG] hooks module cc-plugin-sec-default@builtin classic.UserPromptSubmit settled in 170.3ms (native link, next() included)

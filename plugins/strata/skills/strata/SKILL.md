@@ -1,7 +1,7 @@
 ---
 name: strata
 description: Search, show, add to, correct or forget the layered long-term memory kept across Claude Code sessions (profile, project scenes, extracted notes, raw past conversations), and search the project's own files (RAG). Use when the user asks what was decided or discussed before, says "remember this" or "forget that", or when earlier context or the project's docs and code would help.
-argument-hint: "search QUERY | rag QUERY | show | remember TEXT | forget ID | consolidate | stats | config"
+argument-hint: "search QUERY | rag QUERY | show | remember TEXT | forget ID | capture TEXT | consolidate | stats | config"
 ---
 
 # Strata
@@ -38,6 +38,12 @@ Actions:
   a full context window (85% by default) a hook asks you to write `HANDOFF.md` and `CONTEXT.md` into
   `<project>/.claude/handoff/<stamp>/`; the next new chat in the project gets them at its start. `STRATA_HANDOFF=off`
   turns it off for one shell.
+
+- `canary`: `M canary status | on | off | misses N | floor N`. Always on: end every reply with the canary line
+  SessionStart gives you (`[//]: # (strata:ok)`, invisible when rendered). When it goes missing in 2 long replies in
+  a row above 30% context, the Stop hook asks for the handoff now ("canary missed"); write it as below.
+- `capture TEXT` / `vault`: `M capture "TEXT"` appends to the second-brain vault's inbox (`~/code/brain` by default).
+  `M vault status | init [PATH] | off`. `/strata:wiki distill` files the inbox and daily notes into wiki pages.
 
 Virtual context: in a chat that continues a handoff, or that was compacted, prompts can arrive with "Strata
 recall: ..." lines. They are turns of this same work that left the context window (tool results included), found

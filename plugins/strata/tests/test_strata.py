@@ -25,7 +25,7 @@ def transcript(path, turns):
 class Sandbox(unittest.TestCase):
     def setUp(self):
         self.dir = tempfile.mkdtemp()
-        env = mock.patch.dict(os.environ, {"MOAA_STRATA_DIR": self.dir})
+        env = mock.patch.dict(os.environ, {"MOAA_STRATA_DIR": self.dir, "STRATA_CANARY": "off", "STRATA_VAULT": "off"})
         env.start()
         self.addCleanup(env.stop)
         os.environ.pop(memory.CHILD, None)

@@ -1,0 +1,5 @@
+{
+  "exit": 0,
+  "events_mentioning_guard": 3,
+  "final_reply": "2432902008176640000\n\nNote, quoted verbatim. It came as PreToolUse hook context on the Bash call, not inside the tool output:\n\n> moaa-core guard: this command runs inline Python (`python -c`) that is multi-line or longer than 150 characters. On Windows, Bash and PowerShell quoting often breaks such code. The call was not blocked. If it failed, and from now on, write the code to a .py file in your scratchpad directory (or a temp folder) and run that file instead; use `py` if `python` exits 49. Off switch: MOAA_GUARD=off or `guard.py off`.\n\n[//]: # (strata:ok)"
+}

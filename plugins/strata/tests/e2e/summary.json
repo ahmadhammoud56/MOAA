@@ -1,30 +1,30 @@
 {
-  "workdir": "~\\AppData\\Local\\Temp\\claude\\C--Users-Death-Star-code-claude-kit--claude-worktrees-context-handoff-0cddd6\\4486389b-fd2b-4906-950f-98c799f93070\\scratchpad\\e2e-run2",
-  "handoff_dir": "~\\AppData\\Local\\Temp\\claude\\C--Users-Death-Star-code-claude-kit--claude-worktrees-context-handoff-0cddd6\\4486389b-fd2b-4906-950f-98c799f93070\\scratchpad\\e2e-run2\\.claude\\handoff\\20261025-130304-b815681b",
+  "workdir": "~\\AppData\\Local\\Temp\\moaa-e2e-strata-handoff-b7pbsksc\\work",
+  "handoff_dir": "~\\AppData\\Local\\Temp\\moaa-e2e-strata-handoff-b7pbsksc\\work\\.claude\\handoff\\20261026-141345-3b5af6f0",
   "runs": {
     "1-trigger": {
       "exit": 0,
-      "session": "b815681b-4bd4-447c-ab29-2c75bf45f158",
-      "result": "`plan.md` is written with a five-step plan. `ls` showed only `plan.md`, because it ran before the handoff files existed.\n\nThe five steps:\n1. Create `wc.py` with an `argparse` path argument.\n2. Read the file as UTF-8, with a clear error if it's missing or unreadable.\n3. Count words with `len(text.split())`.\n4. Print the count and exit 0.\n5. Add an assert-based self-check and run `py wc.py sample.txt`.\n\nA hook asked for a handoff, so I saved one in `.claude\\handoff\\20261025-130304-b815681b` (inside the same folder as `plan.md`). A new chat in this project resumes from it automatically. I haven't written `wc.py` itself."
+      "session": "3b5af6f0-9996-412d-9542-54bf085eb006",
+      "result": "`plan.md` is written with a five-step plan for a `wc.py` word-count CLI (argparse, read the file, count with `len(text.split())`, print, one assert-based self-check). `ls` showed only `plan.md`, and `wc.py` itself isn't built.\n\nThe Strata hook asked for a context handoff, so I saved one in `.claude\\handoff\\20261026-141345-3b5af6f0`. A new chat in this project resumes from it automatically.\n\n[//]: # (strata:ok)"
     },
     "2-resume": {
       "exit": 0,
-      "session": "48969f67-7f08-431a-9a5d-bdd06460a4fb",
-      "result": "Resumed from the earlier handoff. `plan.md` is done, and it's the only file in the folder.\n\nNext step: write `wc.py` from the plan, which is about 10 lines of stdlib plus an assert-based self-check. Run it on a sample file.\n\nWant me to build it? Or do you have something else in mind?"
+      "session": "845c09b7-f8c0-4fb7-b9f1-fb3a4568b7d4",
+      "result": "Resumed from handoff `20261026-141345-3b5af6f0`. Prior task done: `plan.md` written, `ls` shown.\n\nNext options:\n1. Build `wc.py` from `plan.md` (argparse, `len(text.split())`, one assert self-check). Recommended, about 15 lines.\n2. Start something new. Tell me the goal.\n3. Open to-dos from your notes: claude-mem provider switch, Claude CLI update to 2.1.304+.\n\nWhich one?\n\n[//]: # (strata:ok)"
     },
     "3-off": {
       "exit": 0,
-      "session": "c49ee65c-5e12-4427-b6c2-8841a69dbe29",
-      "result": "Done. Directory has one file: `plan.md`."
+      "session": "156f4339-6e1a-4c67-9f4d-3b56e1f3f6c6",
+      "result": "Done. Directory has `plan.md`.\n\n[//]: # (strata:ok)"
     },
     "4a-compact-setup": {
       "exit": 0,
-      "session": "e22018f2-cd05-4c99-8469-418254dd9e33",
-      "result": "OK"
+      "session": "798d3f6b-cada-43cf-867c-7f7946c0d2fa",
+      "result": "OK\n\n[//]: # (strata:ok)"
     },
     "4b-compact": {
       "exit": 0,
-      "session": "e22018f2-cd05-4c99-8469-418254dd9e33",
+      "session": "798d3f6b-cada-43cf-867c-7f7946c0d2fa",
       "result": ""
     }
   },
@@ -34,7 +34,7 @@
     "trigger: HANDOFF.md written": true,
     "trigger: CONTEXT.md written": true,
     "trigger: user told to open a new chat": true,
-    "resume: handoff injected at SessionStart": true,
+    "resume: handoff injected with the first prompt": true,
     "resume: Claude confirms it resumed": true,
     "resume: marked consumed": true,
     "resume: different session ids": true,

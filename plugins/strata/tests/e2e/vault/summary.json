@@ -1,0 +1,30 @@
+{
+  "vault": "~\\AppData\\Local\\Temp\\moaa-e2e-strata-vault-3grou204\\data\\brain",
+  "runs": {
+    "3-distill": {
+      "exit": 0,
+      "session": "29b922e5-e07e-4c8f-84c6-f48b69182a27",
+      "result": "Distill done. Lint clean: 3 pages, 6 links, no broken links, orphans or index gaps.\n\nCreated under `wiki/`:\n- `projects/Qanat-9 printing`: decision to use a 28 mm nozzle, since 25 mm clogged twice.\n- `projects/Strata RAG ideas`: try the FTS5 trigram tokenizer on code identifiers.\n- `Open loops`: book the vane rheometer for Thursday's calibration run, plus the trigram idea.\n\nUpdated `wiki/index.md` and `wiki/log.md`.\n\nThe 3 inbox captures moved to `inbox/archive/2026-10-26.md`. The one daily note, a hello exchange, was chit-chat, so I dropped it and left it in `daily/`.\n\nI did not commit the vault; that's yours to do."
+    },
+    "4-rag": {
+      "exit": 0,
+      "session": "d10b7397-921d-40a8-995e-3519efeceb55",
+      "result": "The Qanat-9 mix was decided to print with a 28 mm nozzle, because a 25 mm nozzle clogged twice (per the vault note dated 2026-10-26)."
+    }
+  },
+  "checks": {
+    "init: layout": true,
+    "init: no commit": true,
+    "capture: three lines with time and project": true,
+    "daily: SessionEnd added a line for the chat": true,
+    "distill: new wiki page(s)": true,
+    "distill: a page holds the captured decision": true,
+    "distill: inbox archived": true,
+    "distill: log.md appended": true,
+    "distill: lint has no broken links": true,
+    "distill: no commit in the vault": true,
+    "rag: vault passage injected": true,
+    "rag: answer names 28 mm": true
+  },
+  "passed": true
+}

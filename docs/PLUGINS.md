@@ -10,14 +10,14 @@ Every plugin in the `moaa` marketplace. Install any of them with `/plugin instal
 
 | Install | Description |
 |---|---|
-| `moaa-core@moaa` | MOAA in one install: Specialist Council, Agent Arena and moaa-catalog, pulled in as dependencies. |
+| `moaa-core@moaa` | MOAA in one install: Specialist Council, Agent Arena and moaa-catalog as dependencies, plus an inline-Python… |
 | `specialist-council@moaa` | Specialist Council: 60 role agents with per-role model/effort and arena-forged members; assembles teams and d… |
 | `agent-arena-mode@moaa` | Eight multi-agent arena modes with a persistent best-agent library that forges Specialist Council members. |
 | `flightdeck@moaa` | Live agent dashboard for Claude Code. |
 | `plot-deck@moaa` | Side panel listing plot images; Enter copies and opens one. |
 | `prismantis@moaa` | Colorful, themeable rendering for Claude Code replies. |
 | `war-room@moaa` | War Room: a team of real, parallel Claude Code workers with council roles, review gates, a merge queue, usage… |
-| `allies@moaa` | Allies: hand bounded tasks from Claude Code to Codex, Gemini, Kimi, DeepSeek or a local OmniRoute gateway, ea… |
+| `allies@moaa` | Allies: hand bounded tasks from Claude Code to Codex, Gemini, OpenCode, Kimi, DeepSeek or a local OmniRoute g… |
 | `strata@moaa` | Layered long-term memory (raw sessions, extracted notes, project scenes, user profile) in local SQLite with f… |
 | `moaa-catalog@moaa` | Skills on demand: big skill packs stay installed but disabled; a cached index, a prompt hook and one-call loa… |
 | `prompt-refiner@moaa` | Always on: turns every prompt into a clear brief, asks about ambiguous points with concrete options, and hand… |

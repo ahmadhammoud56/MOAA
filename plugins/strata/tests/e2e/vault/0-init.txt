@@ -1,0 +1,8 @@
+$ strata.py vault init
+vault ready at ~\AppData\Local\Temp\moaa-e2e-strata-vault-3grou204\data\brain (git init only; strata never commits)
+{
+  "enabled": true,
+  "path": "~\\AppData\\Local\\Temp\\moaa-e2e-strata-vault-3grou204\\data\\brain",
+  "exists": true,
+  "env": "~\\AppData\\Local\\Temp\\moaa-e2e-strata-vault-3grou204\\data\\brain"
+}

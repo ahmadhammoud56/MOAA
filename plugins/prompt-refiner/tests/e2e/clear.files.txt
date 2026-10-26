@@ -1,9 +1,8 @@
 prompt: In greet.py, change the greeting from Hello to Hi. Change nothing else.
 env: {}
 exit: 0
-workdir: C:/Users/<you>\AppData\Local\Temp\refiner-e2e-clear-7sp3nux5
-stderr tail: Warning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer.
-
+workdir: C:\Users\<you>\AppData\Local\Temp\refiner-e2e-clear-wcno3v_f
+stderr tail: 
 
 --- greet.py after run ---
 def greet(n):

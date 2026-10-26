@@ -15,9 +15,9 @@
     "compaction summary holds the needle": true
   },
   "answers": {
-    "off": "Resumed from the earlier handoff. I don't know the `purge_dwell_s` value: the handoff notes list only some `rig.cfg` keys and never mention that one, and I didn't read the file.",
-    "recall": "Resumed from the earlier handoff. rig.cfg line 91 sets `purge_dwell_s = 37`, per an earlier excerpt I did not re-read.",
-    "compact": "`purge_dwell_s` is set to 37 on line 91 of `rig.cfg`."
+    "off": "I don't know: the handoff notes from the earlier chat list other `rig.cfg` keys, such as `pump_rpm` and `nozzle_diameter_mm`, but not `purge_dwell_s`, and I can't read the file without tools.\n\n[//]: # (strata:ok)",
+    "recall": "Resumed from handoff 20261026-140204-f6996c8e.\n\n`purge_dwell_s` is set to 37 at line 91 of `rig.cfg`, per an earlier read in the recalled context; I did not re-check the file.\n\n[//]: # (strata:ok)",
+    "compact": "`purge_dwell_s` is set to 37 (line 91 of `rig.cfg`).\n\n[//]: # (strata:ok)"
   },
-  "date": "2026-10-25 20:31"
+  "date": "2026-10-26 14:05"
 }

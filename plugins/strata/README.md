@@ -62,6 +62,48 @@ Limits: the transcript records usage per assistant message, so the measure lags 
 the prompt being submitted; a single tool result bigger than the remaining room can still overflow before the hook
 sees it. Sub-agent calls are not counted (their context is separate) and do not trigger the prompt.
 
+## Context canary
+
+Always on (`strata.py canary off`, or `STRATA_CANARY=off` for one shell). A percentage says how full the context is,
+not whether Claude still follows what it was told at the start; the canary checks that directly, at about 10 tokens
+per reply.
+
+- **Marker:** SessionStart (also after a compaction) asks Claude to end each reply with a blank line and
+  `[//]: # (strata:ok)`. That is a Markdown link reference definition, which renders as nothing: Claude Code's
+  terminal renderer returns an empty string for it (an HTML comment such as `<!-- ok -->` would show there as text),
+  and CommonMark views (the desktop app, GitHub, Obsidian) drop it too. Exact-format output (JSON, commit messages,
+  file contents) is exempt.
+- **Hit or miss:** the Stop hook reads the reply (`last_assistant_message`, else the transcript tail). With the line
+  it is a hit and resets the count. Without it, a reply of 200+ characters is a miss; a shorter or tool-only reply
+  counts for nothing, so "Done." never trips it.
+- **Trigger:** 2 misses in a row (`canary misses N`) while the context is at least 30% full (`canary floor N`) start
+  the context handoff now: the Stop hook keeps Claude going with the handoff prompt, and `HANDOFF.md` starts with
+  `Reason: canary missed` (`meta.json` says so too). Once per chat. With the handoff off or in compact mode you get a
+  one-line notice instead.
+- Measured live (`tests/e2e/canary/`, Sonnet): a normal reply ended with the line and was recorded as a hit; a reply
+  the user asked to leave it out of (forced with `STRATA_CANARY_MISSES=1 STRATA_CANARY_FLOOR=0`) made Claude write the
+  handoff with the reason.
+
+## Second-brain vault
+
+On by default; it starts working once the folder exists. One folder of Markdown for all projects, default
+`~/code/brain` (`STRATA_VAULT=PATH` moves it, `STRATA_VAULT=off` or `strata.py vault off` stops it). It is a local git
+repository that strata never commits or pushes. Open it in Obsidian if you like.
+
+- `strata.py vault init [PATH]`: creates `inbox/` (with `archive/`), `daily/`, `wiki/index.md`, `wiki/log.md`, a
+  README and `.gitignore`, and runs `git init`.
+- `graph.py capture "TEXT"` (or `strata.py capture`): appends `- HH:MM [project] TEXT` to `inbox/<date>.md`,
+  secrets redacted. It creates the vault if needed.
+- **Daily notes:** SessionEnd adds one line per chat to `daily/<date>.md` from what L0 already holds: prompt count,
+  the first request and the last reply (no model call). Machine sessions are skipped; a resumed chat's line is replaced.
+- `/strata:wiki distill`: Claude files the inbox and the last week's daily notes into pages under `wiki/`, indexes
+  them, moves the processed captures to `inbox/archive/` (`graph.py archive`), logs the pass and runs `graph.py lint`.
+  `[[Page]]` resolves by file name anywhere under `wiki/`, as in Obsidian.
+- **RAG:** the project RAG also refreshes and searches the vault, next to the current project, even from a home folder
+  that is not a repository.
+- Measured live (`tests/e2e/vault/`): init, three captures, a daily line from a real chat, a distill run that wrote
+  three linked pages with clean lint, and a Haiku chat with tools denied that answered from the vault passage.
+
 ## Virtual context
 
 No model has an unlimited context window, so strata makes what leaves the window recallable instead. Always on,
@@ -130,6 +172,8 @@ python strata.py forget ID | --session ID | --scene ID | --profile KEY
 python strata.py consolidate --pending [--dry-run]
 python strata.py config auto off              (no background extraction)
 python strata.py handoff on|off|status|threshold N|window N|mode handoff|compact|recall on|off
+python strata.py canary on|off|status|misses N|floor N
+python strata.py vault status|on|off|init [PATH]     python strata.py capture "TEXT"
 python strata.py stats
 ```
 

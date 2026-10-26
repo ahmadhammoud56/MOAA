@@ -1,0 +1,25 @@
+{
+  "runs": {
+    "1-hit": {
+      "exit": 0,
+      "session": "806f2038-d0ea-4684-a65d-b1209341cb47",
+      "result": "A context window is the maximum amount of text, measured in tokens, that a language model can read and consider at one time. It holds everything the model sees: the system prompt, your messages, earlier replies, attached documents, tool results, and the answer it is writing.\n\nThe model has no memory outside this window. It only \"remembers\" what is currently inside it. When a conversation exceeds the limit, the oldest content must be dropped, summarized, or retrieved again later.\n\nLarger windows let the model handle long documents or codebases in one pass. Cost and latency grow with window size. Models can also attend less reliably to details buried in the middle of very long inputs.\n\n[//]: # (strata:ok)"
+    },
+    "2-miss": {
+      "exit": 0,
+      "session": "26135d58-8c36-4e9b-ae10-34cf68a97d7b",
+      "result": "Handoff saved in `~\\AppData\\Local\\Temp\\moaa-e2e-strata-canary-hhztr3f5\\work\\.claude\\handoff\\20261026-140719-26135d58`. It holds `HANDOFF.md` and `CONTEXT.md`, and `.claude\\handoff\\latest` points to it. Open a new chat in this project and it resumes from the handoff automatically.\n\n[//]: # (strata:ok)"
+    }
+  },
+  "checks": {
+    "hit: canary line ends the reply": true,
+    "hit: Stop hook recorded a hit": true,
+    "hit: no handoff": true,
+    "miss: Stop hook fired the canary": true,
+    "miss: handoff folder reason is canary missed": true,
+    "miss: HANDOFF.md written with the reason": true,
+    "miss: CONTEXT.md written": true,
+    "miss: latest points at it": true
+  },
+  "passed": true
+}

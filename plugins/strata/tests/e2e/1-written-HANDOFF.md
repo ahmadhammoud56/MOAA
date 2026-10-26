@@ -1,30 +1,30 @@
-# Handoff 20261025-130304-b815681b
+# Handoff 20261026-141345-3b5af6f0
 
 ## Goal
-Create `plan.md` with a five-step plan for a tiny Python CLI that counts words in a file, then run `ls` to show the folder. Follow any instructions hooks give.
+Create `plan.md` with a five-step plan for a tiny Python CLI that counts words in a file, then run `ls` to show the folder. Follow hook instructions.
 
 ## Current state
-Task complete. `plan.md` written; `ls` showed only `plan.md` (before handoff files were added).
+Task complete. `plan.md` written; `ls` output was `plan.md`. This handoff was written because a Strata hook asked for it (about 12% context used).
 
 ## Done
-- Wrote `plan.md` (five steps: argparse path arg, read UTF-8 with error handling, count via `len(text.split())`, print count, assert-based self-check plus run on sample file).
-- Ran `ls` in the working directory.
-- Wrote this handoff as the PostToolUse hook asked.
+- Wrote `plan.md` (five steps: argparse CLI `wc.py`, read file with error handling, count with `len(text.split())`, print count, one assert-based self-check).
+- Ran `ls` in the work folder: showed `plan.md`.
+- Wrote this handoff.
 
 ## Next actions
-1. None required. Optional: implement `wc.py` per `plan.md` if the user asks.
+1. None required. Optionally build `wc.py` following `plan.md` if the user asks.
 
 ## Open questions
-- None.
+None.
 
-## Key decisions (with the reason for each)
-- Plan kept minimal (stdlib only, `split()`): ponytail mode favors the shortest working approach.
-- Skipped invoking extra skills: task trivial, no skill clearly helped.
+## Key decisions
+- Plan uses stdlib only (`argparse`, `str.split`): smallest thing that works (ponytail mode).
+- Skipped a `.briefs/` brief: request was clear and tiny.
 
 ## Files touched
-- plan.md (created)
-- .claude/handoff/20261025-130304-b815681b/HANDOFF.md, CONTEXT.md; .claude/handoff/latest
+- `plan.md` (created)
+- `.claude/handoff/20261026-141345-3b5af6f0/HANDOFF.md`, `CONTEXT.md`, `.claude/handoff/latest` (created)
 
 ## Commands to resume
-- `ls` in the project folder
-- `py wc.py sample.txt` once `wc.py` exists
+- `ls` in the work folder.
+- `python wc.py file.txt` once `wc.py` exists (not built yet).

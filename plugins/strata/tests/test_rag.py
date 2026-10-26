@@ -28,7 +28,7 @@ class Sandbox(unittest.TestCase):
     def setUp(self):
         self.data = tempfile.mkdtemp()
         self.proj = Path(tempfile.mkdtemp())
-        env = mock.patch.dict(os.environ, {"MOAA_STRATA_DIR": self.data})
+        env = mock.patch.dict(os.environ, {"MOAA_STRATA_DIR": self.data, "STRATA_VAULT": "off"})
         env.start()
         self.addCleanup(env.stop)
         for k in (strata.CHILD, "STRATA_RAG"):

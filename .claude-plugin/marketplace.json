@@ -6,13 +6,13 @@
     "url": "https://github.com/ahmadhammoud56"
   },
   "metadata": {
-    "description": "MOAA: Mother of All Agents. A 60-role Specialist Council, an Agent Arena that forges winning agents into the council, War Room parallel teams, allies (Codex, Gemini) and layered memory. Start with moaa-core."
+    "description": "MOAA: Mother of All Agents. A 60-role Specialist Council, an Agent Arena that forges winning agents into the council, War Room parallel teams, allies (Codex, Gemini, OpenCode) and layered memory. Start with moaa-core."
   },
   "plugins": [
     {
       "name": "moaa-core",
       "source": "./plugins/moaa-core",
-      "description": "MOAA in one install: Specialist Council, Agent Arena and moaa-catalog, pulled in as dependencies."
+      "description": "MOAA in one install: Specialist Council, Agent Arena and moaa-catalog as dependencies, plus an inline-Python guard and a project-docs skill."
     },
     {
       "name": "specialist-council",
@@ -47,12 +47,12 @@
     {
       "name": "allies",
       "source": "./plugins/allies",
-      "description": "Allies: hand bounded tasks from Claude Code to Codex, Gemini, Kimi, DeepSeek or a local OmniRoute gateway, each with its own account; read-only by default, writes land on their own branch."
+      "description": "Allies: hand bounded tasks from Claude Code to Codex, Gemini, OpenCode, Kimi, DeepSeek or a local OmniRoute gateway, each with its own account; read-only by default, writes land on their own branch."
     },
     {
       "name": "strata",
       "source": "./plugins/strata",
-      "description": "Layered long-term memory (raw sessions, extracted notes, project scenes, user profile) in local SQLite with full-text search; recall at session start, consolidation at session end."
+      "description": "Layered long-term memory (raw sessions, extracted notes, project scenes, user profile) in local SQLite with full-text search; recall at session start, consolidation at session end; context handoff and canary, project RAG, a second-brain vault and an LLM wiki."
     },
     {
       "name": "moaa-catalog",

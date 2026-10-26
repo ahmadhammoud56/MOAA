@@ -29,8 +29,18 @@ turns, tool results included, that match it strongly (the same IDF test as the p
   python strata.py forget ATOM_ID | --session ID | --scene ID | --profile KEY
   python strata.py consolidate [--session ID | --pending] [--engine claude-haiku|none] [--dry-run]
   python strata.py config [auto on|off] [engine NAME]      python strata.py stats
+Context canary (always on, `canary off` or STRATA_CANARY=off to stop): SessionStart asks Claude to end each reply with
+an invisible Markdown comment line; the Stop hook records hit or miss, and N misses in a row (2) above a context floor
+(30%) start the handoff early, since instructions from the start of the chat are evidently slipping.
+
+Second-brain vault (on, `vault off` or STRATA_VAULT=off; STRATA_VAULT=PATH moves it from ~/code/brain): `capture`
+appends to inbox/<date>.md, SessionEnd adds a line per chat to daily/<date>.md, /strata:wiki distill files both into
+wiki/, and rag.py indexes the vault. Strata never commits or pushes it.
+
   python strata.py handoff [on|off|status|threshold N|window N|mode handoff|compact|recall on|off]
-  python strata.py hook session-start|session-end|context-check|pre-compact      (reads the hook JSON on stdin)
+  python strata.py canary [on|off|status|misses N|floor N]
+  python strata.py vault [status|on|off|init [PATH]]      python strata.py capture TEXT [--project PATH]
+  python strata.py hook session-start|session-end|context-check|pre-compact|stop      (reads the hook JSON on stdin)
 """
 import argparse
 import json
@@ -53,7 +63,10 @@ MACHINE_PROMPTS = ("Below is a conversation log from a Claude Code coding sessio
 DEFAULTS = {"auto": True, "engine": "claude-haiku", "min_chars": 1500, "max_input_chars": 60000, "context_chars": 6000,
             "handoff": True, "handoff_threshold": 85, "handoff_window": 0,
             "rag": True, "rag_hint_chars": 3000, "rag_max_files": 5000,  # rag.py: retrieval over project files
-            "recall": True, "recall_chars": 4000, "handoff_mode": "handoff"}  # virtual context
+            "recall": True, "recall_chars": 4000, "handoff_mode": "handoff",  # virtual context
+            "canary": True, "canary_misses": 2, "canary_floor": 30,  # drift detector
+            "vault": True, "vault_path": "~/code/brain"}  # second-brain vault
+OFF = ("off", "0", "false", "no")
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, project TEXT, transcript TEXT, ended REAL, chars INTEGER,
   consolidated REAL);
@@ -635,12 +648,15 @@ def unconsumed(d):
     return not c.exists() or (d / "HANDOFF.md").stat().st_mtime > c.stat().st_mtime
 
 
-def handoff_prompt(d, root, pct, tokens, window):
+def handoff_prompt(d, root, pct, tokens, window, reason=""):
     rel = d.name
-    return f"""Strata context handoff: this conversation now uses about {pct:.0f}% of its context window \
+    why = (f" ({reason}: your recent replies left out the canary line, a sign that instructions from early in this "
+           "long conversation are slipping)") if reason else ""
+    first = f"a first line `Reason: {reason}.` and " if reason else ""
+    return f"""Strata context handoff{why}: this conversation now uses about {pct:.0f}% of its context window \
 ({tokens:,} of {window:,} tokens). Finish the step you are on, or stop at the next safe point, and start no new \
 large piece of work. Then save a handoff so a fresh chat can continue with nothing lost and no compaction:
-1. Write {d / 'HANDOFF.md'} with these sections: Goal; Current state; Done; Next actions (numbered, concrete, in \
+1. Write {d / 'HANDOFF.md'} with {first}these sections: Goal; Current state; Done; Next actions (numbered, concrete, in \
 order); Open questions; Key decisions (with the reason for each); Files touched; Commands to resume.
 2. Write {d / 'CONTEXT.md'} with the durable facts the next chat needs: constraints, preferences the user stated, \
 paths, IDs, branch names, URLs, test commands. No secrets or credentials.
@@ -913,6 +929,162 @@ def take_handoff(d, session):
     return text, f"Strata: resumed from the handoff in {d}."
 
 
+# ---------------------------------------------------------------- context canary
+# A Markdown link reference definition renders as nothing in Claude Code's terminal (marked `def` token -> "") and in
+# any CommonMark view (the desktop app, GitHub, Obsidian); an HTML comment would show as text in the terminal.
+CANARY = "[//]: # (strata:ok)"
+CANARY_RX = re.compile(r"\[//\]:\s*#\s*\(strata:ok\)")
+CANARY_MIN = 200  # a reply shorter than this (or tool-only) without the line is no evidence either way
+CANARY_RULE = (f"Strata canary: end every reply to the user with a blank line and then exactly this line: {CANARY} "
+               "It is a Markdown comment that renders as nothing; a hook uses it to notice when instructions start to "
+               "slip in a long chat. Never mention it. Leave it out only where output must have an exact format "
+               "(JSON, a commit message, file contents) or when the user asks you to.")
+
+
+def env_num(name, default):
+    try:
+        return float(os.environ.get(name) or default)
+    except ValueError:
+        return float(default)
+
+
+def canary_settings(cfg=None):
+    """(enabled, misses in a row that trigger, context floor %) from config, with STRATA_CANARY* env vars on top."""
+    cfg = cfg or config()
+    env = os.environ.get("STRATA_CANARY", "").strip().lower()
+    return (cfg["canary"] if not env else env not in OFF, max(1, int(env_num("STRATA_CANARY_MISSES", cfg["canary_misses"]))),
+            env_num("STRATA_CANARY_FLOOR", cfg["canary_floor"]))
+
+
+def last_reply(data):
+    """The reply that just ended: Stop's last_assistant_message, else the trailing assistant text of the transcript."""
+    if isinstance(data.get("last_assistant_message"), str):
+        return data["last_assistant_message"]
+    parts = []
+    for rec in reversed(tail_records(data.get("transcript_path") or "")):
+        if rec.get("isSidechain") or rec.get("isMeta"):
+            continue
+        if rec.get("type") == "user":
+            break
+        if rec.get("type") == "assistant":
+            parts.append(text_of((rec.get("message") or {}).get("content")))
+    return "\n".join(reversed([p for p in parts if p]))
+
+
+def canary_check(data):
+    """Stop: a reply with the canary line is a hit (resets the count); a reply of CANARY_MIN+ characters without it is a
+    miss; shorter or tool-only replies count for nothing. At N misses in a row with the context above the floor, ask
+    once for the handoff now (a Stop block), or only tell the user when the handoff is off or in compact mode."""
+    cfg = config()
+    on, need, floor = canary_settings(cfg)
+    session, transcript = data.get("session_id"), data.get("transcript_path")
+    if not on or not session or data.get("agent_id"):
+        return ""
+    st = load_state(session)
+    if st.get("canary_fired") is not None:
+        return ""
+    reply = last_reply(data)
+    if CANARY_RX.search(reply):
+        st.update(canary_misses=0, canary_hits=st.get("canary_hits", 0) + 1)
+    elif len(reply.strip()) >= CANARY_MIN:
+        st["canary_misses"] = st.get("canary_misses", 0) + 1
+    else:
+        return ""
+    tokens, model = usage_of(tail_records(transcript)) if st["canary_misses"] >= need else (0, "")
+    window = context_window(f"{model} {st.get('model', '')}", tokens, handoff_settings(cfg)[2]) if tokens else 1
+    pct = 100.0 * tokens / window
+    if st["canary_misses"] < need or pct < floor:
+        save_state(session, st)
+        return ""
+    st["canary_fired"] = pct
+    note = (f"Strata canary: the last {st['canary_misses']} replies left out the canary line at {pct:.0f}% context, a "
+            "sign that Claude is losing its instructions.")
+    if not handoff_settings(cfg)[0] or cfg["handoff_mode"] == "compact" or data.get("stop_hook_active"):
+        save_state(session, st)
+        return json.dumps({"systemMessage": note + " Consider a fresh chat."})
+    root = root_of(data.get("cwd"))
+    d = new_handoff_dir(root, session, "canary missed", transcript)
+    st.update(fired=pct, dir=str(d))
+    save_state(session, st)
+    return json.dumps({"decision": "block", "reason": handoff_prompt(d, root, pct, tokens, window, "canary missed"),
+                       "systemMessage": note + f" Claude is saving a handoff to {d}; then open a new chat here."})
+
+
+# ---------------------------------------------------------------- second-brain vault
+VAULT_README = """# Brain
+
+A second-brain vault kept by the strata plugin of MOAA. Plain Markdown; open the folder in Obsidian if you like.
+
+- `inbox/`: quick captures (`strata.py capture "TEXT"`), one file per day, with time and source project.
+- `daily/`: one line per Claude Code chat, written when the chat ends.
+- `wiki/`: pages distilled from the inbox and daily notes by `/strata:wiki distill`; `wiki/index.md` lists them,
+  `wiki/log.md` records each pass. Link pages as `[[Page]]`; a link resolves by file name anywhere under `wiki/`.
+- `inbox/archive/`: captures already distilled.
+
+Strata never commits or pushes this repository; commit when you want history.
+"""
+
+
+def vault_dir(cfg=None):
+    """The vault folder (STRATA_VAULT=PATH, else vault_path), or None when it is off (STRATA_VAULT=off, `vault off`)."""
+    env = os.environ.get("STRATA_VAULT", "").strip()
+    if env:
+        return None if env.lower() in OFF else Path(env).expanduser()
+    cfg = cfg or config()
+    return Path(cfg["vault_path"]).expanduser() if cfg["vault"] else None
+
+
+def vault_init(path):
+    """Create the vault layout; existing files are kept. `git init` only, never a commit."""
+    path = Path(path).expanduser()
+    for d in ("inbox/archive", "daily", "wiki"):
+        (path / d).mkdir(parents=True, exist_ok=True)
+    for name, text in (("README.md", VAULT_README), (".gitignore", ".obsidian/workspace*\n.trash/\n.DS_Store\n"),
+                       ("wiki/index.md", "# Index\n\nOne line per page, grouped by category.\n"),
+                       ("wiki/log.md", "# Log\n\n")):
+        if not (path / name).exists():
+            (path / name).write_text(text, encoding="utf-8")
+    if not (path / ".git").exists() and shutil.which("git"):
+        subprocess.run(["git", "init", "-q", str(path)], capture_output=True, timeout=30)
+    return path
+
+
+def capture(text, project=None):
+    """Append a redacted line `- HH:MM [project] text` to inbox/<date>.md, creating the vault if needed."""
+    vault = vault_dir()
+    if vault is None:
+        raise SystemExit("strata: the vault is off (`strata.py vault on`, or unset STRATA_VAULT=off)")
+    if not (vault / "inbox").is_dir():
+        vault_init(vault)
+    f = vault / "inbox" / time.strftime("%Y-%m-%d.md")
+    head = "" if f.exists() else f"# Inbox {time.strftime('%Y-%m-%d')}\n\n"
+    with f.open("a", encoding="utf-8") as out:
+        out.write(f"{head}- {time.strftime('%H:%M')} [{Path(root_of(project)).name}] {clip(text, 4000)}\n")
+    return f
+
+
+def daily_note(db, session, project):
+    """SessionEnd: one line for the chat in daily/<date>.md of an existing vault, from what L0 already holds (no
+    model call): prompts, the first request and the last reply. Machine sessions are skipped; a resumed chat's line
+    is replaced."""
+    vault = vault_dir()
+    if vault is None or not vault.is_dir():
+        return
+    asks = db.execute("SELECT text FROM l0 WHERE session=? AND role='user' ORDER BY ts", (session,)).fetchall()
+    if not asks or asks[0][0].startswith(MACHINE_PROMPTS):
+        return
+    last = db.execute("SELECT text FROM l0 WHERE session=? AND role='assistant' ORDER BY ts DESC LIMIT 1",
+                      (session,)).fetchone()
+    cut = lambda t, n: (lambda s: s if len(s) <= n else s[:n] + "...")(" ".join(CANARY_RX.sub("", t).split()))  # noqa: E731
+    tag = f"(session {session[:8]})"
+    line = (f"- {time.strftime('%H:%M')} [{Path(project).name}] {len(asks)} prompt(s). Asked: \"{cut(asks[0][0], 200)}\""
+            + (f" Last reply: \"{cut(last[0], 240)}\"" if last else "") + f" {tag}\n")
+    (vault / "daily").mkdir(exist_ok=True)
+    f = vault / "daily" / time.strftime("%Y-%m-%d.md")
+    old = f.read_text(encoding="utf-8").splitlines(True) if f.exists() else [f"# {time.strftime('%Y-%m-%d')}\n\n"]
+    f.write_text("".join(x for x in old if tag not in x) + line, encoding="utf-8")
+
+
 # ---------------------------------------------------------------- hooks
 def hook(event, stdin=None):
     if os.environ.get(CHILD):
@@ -927,6 +1099,8 @@ def hook(event, stdin=None):
         return context_check(data, data.get("hook_event_name") or "PostToolUse")
     if event == "pre-compact":
         return pre_compact(data)
+    if event == "stop":
+        return canary_check(data)
     cfg, db = config(), connect()
     project = project_of(data.get("cwd"))
     if event == "session-start":
@@ -942,7 +1116,8 @@ def hook(event, stdin=None):
             st = load_state(data["session_id"])
             st["resume"] = str(d)
             save_state(data["session_id"], st)
-        text = "\n\n".join(t for t in (resumed, text) if t)
+        canary = CANARY_RULE if canary_settings(cfg)[0] else ""
+        text = "\n\n".join(t for t in (resumed, text, canary) if t)
         out = {"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": text}}
         if note:
             out["systemMessage"] = note
@@ -952,7 +1127,8 @@ def hook(event, stdin=None):
         if not session or not transcript:
             return ""
         _, chars = ingest(db, session, project, transcript)
-        done = db.execute("SELECT COALESCE(consolidated_chars, 0) FROM sessions WHERE id=?", (session,)).fetchone()[0]
+        daily_note(db, session, project)
+        done =db.execute("SELECT COALESCE(consolidated_chars, 0) FROM sessions WHERE id=?", (session,)).fetchone()[0]
         if cfg["auto"] and cfg["engine"] != "none" and chars - done >= cfg["min_chars"]:  # a resume adds only its growth
             spawn([sys.executable, str(HERE / "strata.py"), "consolidate", "--session", session])
         return ""
@@ -1005,6 +1181,47 @@ def handoff_cli(p, args):
     return 0
 
 
+def canary_cli(p, args):
+    """canary [on|off|status|misses N|floor N]: switch and tune the context canary; prints the status."""
+    cfg = config()
+    if args[:1] in (["on"], ["off"]):
+        cfg["canary"] = args[0] == "on"
+    elif args[:1] == ["misses"] and len(args) == 2 and args[1].isdigit() and 1 <= int(args[1]) <= 10:
+        cfg["canary_misses"] = int(args[1])
+    elif args[:1] == ["floor"] and len(args) == 2 and args[1].isdigit() and int(args[1]) <= 95:
+        cfg["canary_floor"] = int(args[1])
+    elif args not in ([], ["status"]):
+        p.error("canary on | off | status | misses 1-10 | floor 0-95")
+    if args and args != ["status"]:
+        save_config(cfg)
+    on, misses, floor = canary_settings(cfg)
+    print(json.dumps({"enabled": on, "misses": misses, "floor_percent": floor, "marker": CANARY,
+                      "env": {k: os.environ[k] for k in ("STRATA_CANARY", "STRATA_CANARY_MISSES", "STRATA_CANARY_FLOOR")
+                              if k in os.environ}}, indent=2))
+    return 0
+
+
+def vault_cli(p, args):
+    """vault [status|on|off|init [PATH]]: switch the second-brain vault, or create it (PATH also becomes its home)."""
+    cfg = config()
+    if args[:1] in (["on"], ["off"]) and len(args) == 1:
+        cfg["vault"] = args[0] == "on"
+    elif args[:1] == ["init"] and len(args) <= 2:
+        if len(args) == 2:
+            cfg["vault_path"] = str(Path(args[1]).expanduser().resolve())
+        cfg["vault"] = True
+        save_config(cfg)
+        print(f"vault ready at {vault_init(vault_dir(cfg) or cfg['vault_path'])} (git init only; strata never commits)")
+    elif args not in ([], ["status"]):
+        p.error("vault status | on | off | init [PATH]")
+    if args[:1] in (["on"], ["off"]):
+        save_config(cfg)
+    v = vault_dir(cfg)
+    print(json.dumps({"enabled": v is not None, "path": str(v) if v else None, "exists": bool(v and v.is_dir()),
+                      "env": os.environ.get("STRATA_VAULT")}, indent=2))
+    return 0
+
+
 def main(argv=None):
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -1024,8 +1241,11 @@ def main(argv=None):
     s = sub.add_parser("config"); s.add_argument("pairs", nargs="*")
     sub.add_parser("stats")
     s = sub.add_parser("handoff"); s.add_argument("pairs", nargs="*")
+    s = sub.add_parser("canary"); s.add_argument("pairs", nargs="*")
+    s = sub.add_parser("vault"); s.add_argument("pairs", nargs="*")
+    s = sub.add_parser("capture"); s.add_argument("text", nargs="+"); s.add_argument("--project")
     s = sub.add_parser("hook"); s.add_argument("event", choices=("session-start", "session-end", "context-check",
-                                                                  "pre-compact"))
+                                                                  "pre-compact", "stop"))
     a = p.parse_args(argv)
     if a.cmd == "hook":
         try:
@@ -1038,6 +1258,13 @@ def main(argv=None):
         return 0
     if a.cmd == "handoff":
         return handoff_cli(p, a.pairs)
+    if a.cmd == "canary":
+        return canary_cli(p, a.pairs)
+    if a.cmd == "vault":
+        return vault_cli(p, a.pairs)
+    if a.cmd == "capture":
+        print(f"captured in {capture(' '.join(a.text), a.project)}")
+        return 0
     db = connect()
     proj = lambda: project_of(a.project)  # noqa: E731
     if a.cmd == "search":

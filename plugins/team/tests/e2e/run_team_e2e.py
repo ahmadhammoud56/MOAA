@@ -88,6 +88,7 @@ def scrub():
             text = f.read_text(encoding="utf-8")
             for s in sorted(spellings, key=len, reverse=True):
                 text = text.replace(s, "~")
+            text = re.sub(r"(?i)[A-Z]:(?:\\+|/)Users(?:\\+|/)[^\\/\"']+", "~", text)  # 8.3 short names too
             text = re.sub(r"[\w.+\-]+@[\w\-]+(\.[\w\-]+)+", "member@example.invalid", text)  # git user.email
             f.write_text(text, encoding="utf-8")
 

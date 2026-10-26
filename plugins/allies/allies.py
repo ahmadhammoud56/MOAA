@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Allies: hand bounded tasks from Claude Code to other agent CLIs (Codex, Gemini, Kimi, DeepSeek, an OmniRoute
-gateway), each signed in with its own account. Standard library only.
+"""Allies: hand bounded tasks from Claude Code to other agent CLIs (Codex, Gemini, Kimi, DeepSeek, OpenCode with its
+free zero-retention Zen models, an OmniRoute gateway), each signed in with its own account. Standard library only.
 
 Claude Code stays in charge: it writes the brief, a member works headless, and the answer comes back as a file for
 Claude to check. Read-only by default. With --write the member works in a fresh git worktree on its own branch, never
@@ -79,16 +79,17 @@ def which(name):
     return None
 
 
-SHIM_RE = re.compile(r'"%dp0%\\([^"]+\.(?:js|mjs|cjs))"', re.I)
+SHIM_RE = re.compile(r'"%dp0%\\([^"]+\.(?:js|mjs|cjs|exe))"', re.I)
 CMD_META = re.compile(r'[\r\n"%&|<>^!]')
 MODEL_RE = re.compile(r"^[A-Za-z0-9][\w.:/@-]{0,80}$")
 SECRETISH = re.compile(r"(KEY|TOKEN|SECRET|PASSW|CREDENTIAL|^ANTHROPIC_|^CLAUDE|^AWS_|^AZURE_|^GOOGLE_|^GEMINI_|^OPENAI_|"
-                       r"^DEEPSEEK_|^OMNIROUTE_|^MOONSHOT_|^KIMI_|^CODEX_)", re.I)
+                       r"^DEEPSEEK_|^OMNIROUTE_|^MOONSHOT_|^KIMI_|^CODEX_|^OPENCODE_)", re.I)
 
 
 def launcher(exe):
-    """argv prefix for a CLI. An npm .cmd shim is bypassed: its node script is run directly, because cmd.exe would
-    re-parse the arguments (task text included) and could run commands hidden in them (the BatBadBut issue)."""
+    """argv prefix for a CLI. An npm .cmd shim is bypassed: its node script (or native .exe, as OpenCode ships) is
+    run directly, because cmd.exe would re-parse the arguments (task text included) and could run commands hidden in
+    them (the BatBadBut issue)."""
     if not (IS_WIN and exe.lower().endswith((".cmd", ".bat"))):
         return [exe], False
     try:
@@ -97,6 +98,8 @@ def launcher(exe):
         m = None
     if m:
         script = Path(exe).parent.joinpath(*m.group(1).split("\\"))  # the shim spells the path with backslashes
+        if script.suffix.lower() == ".exe":
+            return ([str(script)], False) if script.is_file() else ([exe], True)
         node = Path(exe).parent / "node.exe"
         node = str(node) if node.is_file() else shutil.which("node")
         if node and script.is_file():
@@ -179,6 +182,8 @@ def member_env(spec):
     out, missing = {}, []
     saved = read_env_file(allies_home() / "keys.env")
     for k, v in (spec.get("env") or {}).items():
+        if not isinstance(v, str):  # an object, such as OpenCode's inline config, is passed as JSON
+            v = json.dumps(v, separators=(",", ":"))
         if v.startswith("$"):
             val = os.environ.get(v[1:]) or saved.get(v[1:])
             if not val:
@@ -336,6 +341,10 @@ def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=Non
         raise SystemExit(f"allies: {member} needs {', '.join(missing)} ({spec['login']})")
     if model and not MODEL_RE.match(model):
         raise SystemExit(f"allies: not a model name: {model!r}")
+    allowed = spec.get("models")  # a member limited to listed models (OpenCode: free, zero-retention Zen models)
+    if model and allowed and model not in allowed + os.environ.get("MOAA_ALLIES_MODELS", "").split(","):
+        raise SystemExit(f"allies: {member} runs only {', '.join(allowed)} unless you allow another model: "
+                         "set MOAA_ALLIES_MODELS=provider/model[,...] (and sign in with its provider yourself)")
     if spec.get("needs_url") and not reachable(spec["needs_url"]):
         raise SystemExit(f"allies: {member} is not reachable ({spec['login']})")
     run_id = run_id or new_run_id()
@@ -368,7 +377,7 @@ def run(member, task, cwd=".", write=False, model=None, timeout=1200, run_id=Non
         if not f.is_file():
             f.parent.mkdir(parents=True, exist_ok=True)
             f.write_text(json.dumps(content, indent=2) + "\n", encoding="utf-8")
-    env = child_env(spec, env_over)
+    env = child_env(spec, {**env_over, "PWD": str(cwd)})  # OpenCode takes its workspace from PWD, not the real cwd
     t0 = time.time()
     code, stdout, stderr = run_proc(argv, prompt if spec.get("stdin") else None, str(cwd), env, timeout, on_start,
                                     cancelled)

@@ -93,6 +93,7 @@ account, so the work spends that service's quota instead of your Claude usage.
 | `gemini` | Google Gemini CLI | a free `GEMINI_API_KEY` from Google AI Studio |
 | `kimi` | Moonshot Kimi Code CLI | `/login` inside `kimi` |
 | `deepseek` | Claude Code pointed at DeepSeek's API | `DEEPSEEK_API_KEY` |
+| `opencode` | [OpenCode](https://opencode.ai) v1 (`npm install -g opencode-ai@1`) on its free zero-retention Zen models | none for the default models |
 | `omniroute` | Claude Code through a local [OmniRoute](https://github.com/diegosouzapw/OmniRoute) gateway | providers you connect in its dashboard |
 
 **What it is good for**
@@ -106,7 +107,7 @@ account, so the work spends that service's quota instead of your Claude usage.
 **How it stays safe**
 
 - **Read-only by default.** Codex runs in its read-only sandbox; Gemini runs under a shipped policy that denies shell
-  and file-write tools; the others run in plan mode.
+  and file-write tools; OpenCode runs its `plan` agent with edit and shell denied; the others run in plan mode.
 - **Writes never touch your checkout.** `write` (or `run --write`) works in a separate git worktree. Allies commits
   the result on branch `ally/<member>-<id>` and shows the diff; you merge it yourself.
 - **Answers are untrusted.** The skill tells Claude to verify every claim and never follow instructions inside an
@@ -119,6 +120,13 @@ account, so the work spends that service's quota instead of your Claude usage.
 **In War Room**, any worker can take an `engine` instead of a Claude model. The `mixed-allies` template has Claude
 plan, Codex build and Gemini review; review gates still require a different model than the author's. The app colours
 every worker by family and lets you pick the engine per worker in the plan editor.
+
+**OpenCode** costs nothing by default: it runs only `opencode/glm-5.3-flash-free` or
+`opencode/deepseek-v4.1-flash-free`, the free Zen models that keep no data. Another model needs `opencode auth login`
+(done by you) and `MOAA_ALLIES_MODELS=provider/model`. Its permissions are passed inline, so they outrank any
+`opencode.json` in the project: read runs use the `plan` agent with no edit, shell or subagent tools, and no run may
+leave the working folder. Your `~/.claude` skills and CLAUDE.md are not loaded into it. It cannot use a Claude
+subscription.
 
 **OmniRoute** is optional (`--with-omniroute` installs a pinned version). `allies.py omniroute start` runs it on
 loopback only, with an API key required, tracking off and a generated dashboard password. Connect only API-key and
@@ -188,6 +196,29 @@ py plugins/strata/rag.py search "interlayer bond time gap"    # passages with pa
 py plugins/strata/rag.py status                               # files, passages, last refresh
 py plugins/strata/rag.py index --full                         # rebuild now
 py plugins/strata/rag.py off                                  # or STRATA_RAG=off for one shell
+```
+
+**Context canary (always on).** A context percentage is only a proxy for drift, so Strata also measures it. At
+session start Claude is asked to end every reply with `[//]: # (strata:ok)`, a Markdown comment that renders as
+nothing in the terminal, the desktop app, GitHub and Obsidian. A Stop hook checks each reply: one with the line resets
+the count, a reply of 200 characters or more without it is a miss, and short or tool-only replies do not count. Two
+misses in a row with the context at least 30% full start the handoff early ("Reason: canary missed"), once per chat;
+with the handoff off or in compact mode you only get a notice. Exact-format output (JSON, commit messages, file
+contents) leaves the line out. `strata.py canary off|misses N|floor N`, or `STRATA_CANARY=off`.
+
+**Second-brain vault.** One Markdown vault for all projects, in the style of Tiago Forte's capture, organize,
+distill and express, with Claude doing the filing. `strata.py vault init` creates it (default `~/code/brain`, a local
+git repository; strata never commits or pushes it) with `inbox/`, `daily/` and `wiki/`. `strata.py capture "TEXT"`
+(or `graph.py capture`) appends a note with the time and project to `inbox/<date>.md`; every chat adds one line to
+`daily/<date>.md` when it ends, with no model call. `/strata:wiki distill` files the inbox and recent daily notes
+into linked wiki pages, archives what it used, logs the pass and lints the links. `[[Page]]` resolves by file name
+anywhere under `wiki/`, as Obsidian does, so you can open the folder in Obsidian as it is. Project RAG also searches
+the vault. `strata.py vault off`, or `STRATA_VAULT=off` (or `STRATA_VAULT=PATH` for another folder).
+
+```
+py plugins/strata/strata.py vault init                   # ~/code/brain
+py plugins/strata/strata.py capture "Try FTS5 trigram for RAG on CJK text"
+/strata:wiki distill                                    # weekly, in any chat
 ```
 
 Strata needs no worker process or background service; claude-mem is still available with `--with-claude-mem`. Details:
@@ -389,7 +420,15 @@ python -m unittest discover -s tests                         # installer
 (cd plugins/allies && python -m unittest discover -s tests)
 (cd plugins/strata && python -m unittest discover -s tests)
 (cd plugins/moaa-catalog && python -m unittest discover -s tests)
+(cd plugins/prompt-refiner && python -m unittest discover -s tests)
+(cd plugins/team && python -m unittest discover -s tests)
+(cd plugins/moaa-core && python -m unittest discover -s tests)
 ```
+
+**Live end-to-end checks.** Hooks and memory are also tested with real headless Claude Code sessions in throwaway
+folders. `python scripts/e2e.py --list` shows the suites and what each costs; `python scripts/e2e.py` runs them all
+(or name some). Run the suites of any hook you changed before a release; each writes its evidence to
+`plugins/<name>/tests/e2e/`.
 
 The council also has an eval suite in `plugins/specialist-council/evals/` for `claude plugin eval`. Each case runs
 with the council and without it, so the report shows what the council adds. It spends API tokens and needs an API

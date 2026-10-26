@@ -6,7 +6,7 @@ import re
 import sys
 
 KIT = Path(__file__).resolve().parents[1]
-SKIP_DIRS = {".git", "__pycache__", ".claude-flow", ".claude", "node_modules", ".venv"}
+SKIP_DIRS = {".git", "__pycache__", ".claude-flow", ".claude", "node_modules", ".venv", ".briefs"}  # .briefs: prompt-refiner, git-ignored
 PATTERNS = {
     "anthropic key": r"sk-ant-[A-Za-z0-9_-]{20,}",
     "github token": r"gh[pousr]_[A-Za-z0-9]{30,}",

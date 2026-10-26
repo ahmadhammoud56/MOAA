@@ -5,7 +5,13 @@ Wiki (pages are nodes, [[links]] are edges; the LLM writes the pages, these comm
   python graph.py init DIR [--title T]     raw/, wiki/, index.md, log.md, CLAUDE.md (schema), graph/
   python graph.py log DIR TEXT             append a dated line to log.md (ingest, query, lint)
   python graph.py lint DIR [--json]        broken links, orphan pages, pages missing from index.md, hubs,
-                                           raw sources no page cites; exit 1 on broken links
+                                           raw sources no page cites; exit 1 on broken links. `[[Page]]` resolves
+                                           by file name anywhere under wiki/ (Obsidian); a DIR without wiki/
+                                           holds the pages itself (a vault's wiki/ folder)
+
+Second-brain vault (its path comes from strata: STRATA_VAULT or `strata.py vault`):
+  python graph.py capture TEXT [--project P]   append `- HH:MM [project] TEXT` to <vault>/inbox/<date>.md
+  python graph.py archive VAULT [FILES...]     move distilled inbox files (default all) to inbox/archive/
 
 Findings graph (graph engineering: agents record claims with their sources instead of transcripts):
   python graph.py node DIR ID TYPE TEXT [--ref URL_OR_PATH]   TYPE: claim, source, entity, decision, task
@@ -77,10 +83,15 @@ def log(root, text):
 
 
 def lint(root):
-    """Link graph of the wiki: {pages, links, broken, orphans, not_in_index, hubs, uncited_raw}."""
-    wiki = root / "wiki"
-    pages = {page_name(p, wiki): p for p in sorted(wiki.rglob("*.md"))} if wiki.is_dir() else {}
+    """Link graph of the wiki: {pages, links, broken, orphans, not_in_index, hubs, uncited_raw}. Pages live in
+    root/wiki/, or in root itself when it has no wiki/ folder (a vault's wiki/ with its own index.md and log.md).
+    `[[Page]]` resolves by path or, as in Obsidian, by file name anywhere under the pages folder."""
+    wiki = root / "wiki" if (root / "wiki").is_dir() else root
+    pages = {page_name(p, wiki): p for p in sorted(wiki.rglob("*.md")) if wiki != root or
+             p.relative_to(root).as_posix() not in ("index.md", "log.md", "CLAUDE.md")}
     lower = {k.lower(): k for k in pages}
+    for k in sorted(pages, key=lambda k: (k.count("/"), k)):  # Obsidian: the shortest path wins a name clash
+        lower.setdefault(k.rsplit("/", 1)[-1].lower(), k)
     inbound = {k: 0 for k in pages}
     broken, cited, edges = [], set(), 0
     sources = [(name, p.read_text(encoding="utf-8", errors="replace")) for name, p in pages.items()]
@@ -106,6 +117,24 @@ def lint(root):
             "not_in_index": sorted(set(pages) - in_index),
             "hubs": sorted(((n, k) for k, n in inbound.items() if n), reverse=True)[:5],
             "uncited_raw": [r for r in raw if not any(r == c or r.startswith(c.rstrip("/")) for c in cited)]}
+
+
+def archive(vault, files=()):
+    """Move distilled inbox files (default: all of inbox/*.md) to inbox/archive/, appending to a file of the same
+    name there. Returns the archived paths."""
+    inbox = vault / "inbox"
+    todo = [vault / f if not Path(f).is_absolute() else Path(f) for f in files] or sorted(inbox.glob("*.md"))
+    (inbox / "archive").mkdir(parents=True, exist_ok=True)
+    out = []
+    for f in todo:
+        if f.parent.resolve() != inbox.resolve() or not f.is_file():
+            continue  # only inbox files, never anything else
+        dest = inbox / "archive" / f.name
+        with dest.open("a", encoding="utf-8") as d:
+            d.write(f.read_text(encoding="utf-8"))
+        f.unlink()
+        out.append(dest.relative_to(vault).as_posix())
+    return out
 
 
 def load(root):
@@ -184,8 +213,18 @@ def main(argv=None):
     a = sub.add_parser("edge"); a.add_argument("dir"); a.add_argument("src"); a.add_argument("rel", choices=EDGE_TYPES)
     a.add_argument("dst")
     a = sub.add_parser("export"); a.add_argument("dir")
+    a = sub.add_parser("capture"); a.add_argument("text", nargs="+"); a.add_argument("--project")
+    a = sub.add_parser("archive"); a.add_argument("dir"); a.add_argument("files", nargs="*")
     args = p.parse_args(argv)
+    if args.cmd == "capture":  # the vault lives in strata's settings
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import strata
+        print(f"captured in {strata.capture(' '.join(args.text), args.project)}")
+        return 0
     root = Path(args.dir)
+    if args.cmd == "archive":
+        print("\n".join(archive(root, args.files)) or "nothing to archive")
+        return 0
     if args.cmd == "init":
         init(root, args.title)
         print(f"initialized {root.resolve().as_posix()}: raw/, wiki/, graph/, index.md, log.md, CLAUDE.md")

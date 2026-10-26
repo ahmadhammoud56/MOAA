@@ -1,5 +1,5 @@
 {
-  "description": "Strata memory: recall at session start, capture and consolidate at session end, context handoff near a full context window",
+  "description": "Strata memory: recall at session start, capture and consolidate at session end, context handoff near a full context window or when the canary goes missing",
   "hooks": {
     "SessionStart": [
       {
@@ -58,6 +58,18 @@
             "shell": "bash",
             "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 || continue; $p \"${CLAUDE_PLUGIN_ROOT}/strata.py\" hook pre-compact; rc=$?; case $rc in 3|49) ;; *) exit 0;; esac; done; exit 0",
             "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 || continue; $p \"${CLAUDE_PLUGIN_ROOT}/strata.py\" hook stop; rc=$?; case $rc in 3|49) ;; *) exit 0;; esac; done; exit 0",
+            "timeout": 10
           }
         ]
       }

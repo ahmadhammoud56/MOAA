@@ -2,9 +2,9 @@
 
 Written by the strata PreCompact hook because the conversation was compacted before Claude wrote a handoff. It holds only what a script can read from the transcript.
 
-- Session: e22018f2-cd05-4c99-8469-418254dd9e33
-- Working folder: ~\AppData\Local\Temp\claude\C--Users-Death-Star-code-claude-kit--claude-worktrees-context-handoff-0cddd6\4486389b-fd2b-4906-950f-98c799f93070\scratchpad\e2e-run2-compact
-- Transcript: ~\.claude\projects\C--Users-Death-Star-AppData-Local-Temp-claude-C--Users-Death-Star-code-claude-kit--claude-worktrees-context-handoff-0cddd6-4486389b-fd2b-4906-950f-98c799f93070-scratchpad-e2e-run2-compact\e22018f2-cd05-4c99-8469-418254dd9e33.jsonl
+- Session: 798d3f6b-cada-43cf-867c-7f7946c0d2fa
+- Working folder: ~\AppData\Local\Temp\moaa-e2e-strata-handoff-b7pbsksc\work-compact
+- Transcript: ~\.claude\projects\C--Users-Death-Star-AppData-Local-Temp-moaa-e2e-strata-handoff-b7pbsksc-work-compact\798d3f6b-cada-43cf-867c-7f7946c0d2fa.jsonl
 - Compaction: manual
 
 ## Last requests from the user (oldest first)
@@ -14,10 +14,12 @@ Written by the strata PreCompact hook because the conversation was compacted bef
 (none found)
 
 ## Files touched recently (newest first)
-- ~\AppData\Local\Temp\claude\C--Users-Death-Star-code-claude-kit--claude-worktrees-context-handoff-0cddd6\4486389b-fd2b-4906-950f-98c799f93070\scratchpad\e2e-run2-compact\notes.txt
+- ~\AppData\Local\Temp\moaa-e2e-strata-handoff-b7pbsksc\work-compact\notes.txt
 
 ## Last reply from Claude
 OK
+
+[//]: # (strata:ok)
 
 ## Next actions
 Read the requests and plan above, check the files, and confirm the next step with the user before large changes.

@@ -80,16 +80,17 @@ fresh validator checks the winner (real run, 233 s, compressed):
 | **Specialist Council** | 60 role agents (debugger, statistician, security reviewer, FEM specialist, …) with per-role model and effort presets ([MODELS.md](MODELS.md)). Split, ensemble or hybrid teams, one integrated and verified result. |
 | **Agent Arena** | Eight modes: judge, tournament, league, swarm, cascade, red team, evolution and synthesis. Every judged result goes to a local library; proven agents are forged into the council. |
 | **War Room** | Several real Claude Code sessions on one big job, with a task board, review gates on a different model, a merge queue and a live local app. [Zero-token demo](docs/GUIDE.md#try-it): `python plugins/war-room/warroom.py demo`. |
-| **Allies** | Hands bounded tasks to Codex, Gemini, Kimi, DeepSeek or a local OmniRoute gateway, each on its own account. Read-only by default; writes land on their own branch. |
+| **Allies** | Hands bounded tasks to Codex, Gemini, OpenCode (free zero-retention models, no sign-in), Kimi, DeepSeek or a local OmniRoute gateway, each on its own account. Read-only by default; writes land on their own branch. |
 | **Team** | People on separate Claude accounts work on one git repository together: a board on its own branch with task claims (never twice, even in a push race), path locks, dependencies, handoffs, messages and a decision log; each session is briefed on its tasks and new messages. No credential or usage sharing. |
-| **Strata** | Layered long-term memory in local SQLite (raw sessions, notes, project scenes, your profile), recalled at session start. **Project RAG** over each project's files, **virtual context** (evicted turns recalled after handoffs and compactions), **context handoff** near a full context window, a Karpathy-style **LLM Wiki** (`/strata:wiki`) and a **findings graph** with a grounding check (`/strata:graph`). |
-| **prompt-refiner** | Turns every prompt into a clear brief before Claude works on it, asks about ambiguous points with concrete options, and hands the brief to every subagent. |
+| **Strata** | Layered long-term memory in local SQLite (raw sessions, notes, project scenes, your profile), recalled at session start. **Project RAG** over each project's files, **virtual context** (evicted turns recalled after handoffs and compactions), **context handoff** near a full context window or when a silent **canary** shows Claude losing its instructions, a **second-brain vault** (quick capture, daily notes, weekly distill into linked pages, Obsidian-friendly), a Karpathy-style **LLM Wiki** (`/strata:wiki`) and a **findings graph** with a grounding check (`/strata:graph`). |
+| **prompt-refiner** | Turns every prompt into a clear brief before Claude works on it, asks about ambiguous points with concrete options (or lets a brainstorming skill ask, never both), and hands the brief to every subagent. |
+| **moaa-core** | The one-line install (council, arena, catalog), plus a guard that steers long inline `python -c` into a script file and `/moaa-core:project-docs`, which audits a project for AGENTS.md, ARCHITECTURE.md, PRD and the rest of the agent doc set. |
 | **moaa-catalog** | Skills on demand: big skill packs stay installed but disabled, a prompt hook names the one skill a task needs, and a daily check tells you when a MOAA update is out. |
 | **More skills** | `/specialist-council:long-task` (brief, progress file, evidence review, resume), `/agent-arena-mode:karpathy-loop` (keep only changes that move a number), `/agent-arena-mode:effort-trial`, and Anthropic's automation recommender. |
 
 ### Always on, no commands
 
-Six things run on their own once installed, and each has an off switch:
+Nine things run on their own once installed, and each has an off switch:
 
 - **Prompt to brief** (prompt-refiner): Claude rewrites each new request as a brief (goal, deliverables, constraints,
   acceptance checks), asks about anything material with 2-4 options, saves the brief to `.briefs/`, and gives
@@ -107,6 +108,15 @@ Six things run on their own once installed, and each has an off switch:
   search, refreshed in the background at session start). When a request clearly matches passages in the project,
   the best few are added with their `path:lines`; chit-chat and unrelated requests get nothing. Off:
   `py plugins/strata/rag.py off`.
+- **Context canary** (strata): Claude ends each reply with an invisible line (`[//]: # (strata:ok)`). Two long replies
+  in a row without it, once the context is 30% full, mean Claude is losing its instructions, so the handoff starts
+  early. Off: `py plugins/strata/strata.py canary off`.
+- **Second brain** (strata): `strata.py capture "idea"` drops a note into a vault (default `~/code/brain`, a local git
+  repo you create with `strata.py vault init`); every chat adds a line to that day's note; `/strata:wiki distill`
+  files the week's notes into linked pages you can open in Obsidian, and project RAG searches them too. Strata never
+  commits or pushes the vault. Off: `py plugins/strata/strata.py vault off`.
+- **Inline-Python guard** (moaa-core): a long or multi-line `python -c` gets a note to use a script file instead (it
+  never blocks). Off: `MOAA_GUARD=off` or `guard.py off`.
 - **The right skill** (moaa-catalog): a prompt that clearly needs a skill gets it named, from enabled or disabled packs.
 - **Update notices** (moaa-catalog): once a day at session start, a newer MOAA release is announced with the
   command to get it.
@@ -149,6 +159,8 @@ and use `--dry-run` to preview every command.
   options, the marketplace, tests and maintenance.
 - [Plugin list](docs/PLUGINS.md): all 100 plugins in the `moaa` marketplace.
 - [MODELS.md](MODELS.md): each agent's model and effort. [CHANGELOG.md](CHANGELOG.md): release notes.
+- [ARCHITECTURE.md](ARCHITECTURE.md): how the plugins, hooks and data fit together. [AGENTS.md](AGENTS.md): rules for
+  AI agents (Claude Code, Codex, Gemini, OpenCode) working on this repository.
 
 ## Author and licence
 

@@ -1,0 +1,2 @@
+$ graph.py capture Todo: book the vane rheometer for Thursday's calibration run.
+captured in ~\AppData\Local\Temp\moaa-e2e-strata-vault-3grou204\data\brain\inbox\2026-10-26.md

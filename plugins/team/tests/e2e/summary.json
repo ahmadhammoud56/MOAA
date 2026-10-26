@@ -10,10 +10,10 @@
   "passed": true,
   "race_owner": "alice",
   "answers": {
-    "bob": "Claimed t6ade3fac9613 (Write the solver docs). Branch: `team/t6ade3fac9613-write-the-solver-docs`. Locked path: `docs`.\n\nSent alice: \"I am on the docs (t6ade3fac9613, Write the solver docs). Mesh profiling waits.\" Message id m6ade3fd39365.",
-    "alice": "One free task is open for you: \"Profile the mesh step\" (t6ade3fadef3e), with nothing assigned yet. Bob messaged that he's on the solver docs and that mesh profiling should wait, so hold off on claiming it until he says it's clear.",
-    "race_alice": "MINE\n\nt6ade3fadef3e, \"Profile the mesh step\", is claimed. Branch: `team/t6ade3fadef3e-profile-the-mesh-step`, paths: `src/mesh`.\n\nBob's unread message said mesh profiling waits while he does the solver docs. The claim went through, so nobody else holds the task. Check with Bob before you start if his wait still applies.",
-    "race_bob": "TAKEN \u2014 claimed by alice."
+    "bob": "Claimed t6adf350cc107 (Write the solver docs). Branch: `team/t6adf350cc107-write-the-solver-docs`.\n\nSent alice: \"I am on the docs (t6adf350cc107 Write the solver docs).\" Message id m6adf353a61dd.",
+    "alice": "Bob messaged that he's on the solver docs task (t6adf350cc107, Write the solver docs). One task is free for you: t6adf350cbf9c, Profile the mesh step; claim it with `team.py claim` before starting.\n\n[//]: # (strata:ok)",
+    "race_alice": "MINE. Claimed t6adf350cbf9c, \"Profile the mesh step\", paths `src/mesh`, branch `team/t6adf350cbf9c-profile-the-mesh-step`.\n\n[//]: # (strata:ok)",
+    "race_bob": "TAKEN \u2014 t6adf350cbf9c is claimed by alice."
   },
-  "date": "2026-10-25 20:45"
+  "date": "2026-10-26 14:12"
 }

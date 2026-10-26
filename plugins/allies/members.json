@@ -1,5 +1,5 @@
 {
-  "_doc": "Each member is an agent CLI run headless. read: argv for read-only work; write: argv for work in an allies worktree. {prompt} is replaced by the prompt (or the prompt is sent on stdin when stdin is true), {out} by the file the final answer is written to, {model} by --model. env values starting with $ are read from the environment and the member is unavailable when one is missing. Claude-format members run Claude Code with --bare, so it never reads your Claude login. pass_env is a regex of credential-like variable names this member may see; every other credential (Claude, cloud, other providers) is removed from its environment. {data} in env values and file paths is the allies data folder; files are JSON files written there when missing (Gemini gets its own home whose settings select API-key sign-in, so your ~/.gemini is never used or changed). probe is a URL doctor checks to tell a network block (a firewall or institution policy) from a sign-in problem.",
+  "_doc": "Each member is an agent CLI run headless. read: argv for read-only work; write: argv for work in an allies worktree. {prompt} is replaced by the prompt (or the prompt is sent on stdin when stdin is true), {out} by the file the final answer is written to, {model} by --model. env values starting with $ are read from the environment and the member is unavailable when one is missing. Claude-format members run Claude Code with --bare, so it never reads your Claude login. pass_env is a regex of credential-like variable names this member may see; every other credential (Claude, cloud, other providers) is removed from its environment. {data} in env values and file paths is the allies data folder; files are JSON files written there when missing (Gemini gets its own home whose settings select API-key sign-in, so your ~/.gemini is never used or changed). probe is a URL doctor checks to tell a network block (a firewall or institution policy) from a sign-in problem. An env value that is an object is passed as JSON (OpenCode's inline config, which outranks any opencode.json in the project). models, when present, is the only set --model may name unless MOAA_ALLIES_MODELS lists another.",
   "members": {
     "codex": {
       "label": "OpenAI Codex CLI",
@@ -170,6 +170,61 @@
         "bulk"
       ],
       "probe": "https://api.deepseek.com"
+    },
+    "opencode": {
+      "label": "OpenCode CLI v1 (free zero-retention Zen models)",
+      "bin": "opencode",
+      "install": "npm install -g opencode-ai@1",
+      "login": "none for the free Zen models; for another provider run `opencode auth login` yourself",
+      "stdin": true,
+      "read": [
+        "run",
+        "--pure",
+        "--agent",
+        "plan"
+      ],
+      "write": [
+        "run",
+        "--pure",
+        "--agent",
+        "build",
+        "--auto"
+      ],
+      "model": [
+        "-m",
+        "{model}"
+      ],
+      "default_model": "opencode/glm-5.3-flash-free",
+      "models": [
+        "opencode/glm-5.3-flash-free",
+        "opencode/deepseek-v4.1-flash-free"
+      ],
+      "good_for": [
+        "code",
+        "review",
+        "bulk"
+      ],
+      "pass_env": "^OPENCODE_",
+      "env": {
+        "OPENCODE_DISABLE_CLAUDE_CODE": "1",
+        "OPENCODE_CONFIG_CONTENT": {
+          "autoupdate": false,
+          "permission": {
+            "external_directory": "deny",
+            "doom_loop": "deny"
+          },
+          "agent": {
+            "plan": {
+              "permission": {
+                "edit": "deny",
+                "bash": "deny",
+                "task": "deny"
+              }
+            }
+          }
+        }
+      },
+      "probe": "https://opencode.ai"
     },
     "omniroute": {
       "label": "Claude Code through a local OmniRoute gateway (free-tier fallback)",

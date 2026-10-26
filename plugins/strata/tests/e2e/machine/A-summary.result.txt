@@ -1,19 +1,23 @@
-exit 0, session 67cca7c4-dab5-4161-831d-a3d83b737dec, 37s
+exit 0, session 04a35950-9e53-4d9d-8c8e-16dea449a28e, 36s
 
 ## Session Summary
 
 **Request:** Set up Stripe subscription webhooks for billing.
 
-**Outcome:** Marked done. The log has no detail on what was built.
+**Status:** Claude replied "Done." The log has no details, so the work is unverified.
 
-**Not recorded (verify before building on this):**
-- Which files, endpoints, or handlers were added or changed
-- Which Stripe events are handled (for example `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`, `customer.subscription.deleted`)
-- Whether the signing secret is verified with `stripe.webhooks.constructEvent` and the raw request body
-- Whether webhook secrets and API keys live in env vars, and whether they are kept out of the repo
-- Whether the endpoint was tested with the Stripe CLI (`stripe listen --forward-to`) or only written
+**Unknown from the log:**
+- Which files were added or changed.
+- Which webhook events are handled (for example `invoice.paid`, `customer.subscription.updated`).
+- Whether signature verification is in place, and where the signing secret is read from.
+- Whether the endpoint was tested, with the Stripe CLI or otherwise.
+- Whether the Stripe account is in test or live mode.
 
-**Next steps:**
-1. Check the repo for the webhook route and its handler.
-2. Confirm signature verification and idempotent handling of repeated events.
-3. Test with the Stripe CLI, or with fixture events, before relying on it.
+**Next session:**
+1. Check the repo diff for Stripe webhook code and confirm what was built.
+2. Confirm the handler verifies the `Stripe-Signature` header against the raw request body.
+3. Confirm the signing secret comes from an env var, not source.
+4. Test with `stripe listen --forward-to` and `stripe trigger`.
+5. Confirm event handling is idempotent, since Stripe retries deliveries.
+
+[//]: # (strata:ok)

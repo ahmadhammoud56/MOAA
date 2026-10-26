@@ -4,7 +4,7 @@
 
 1. trigger  STRATA_HANDOFF_THRESHOLD=1 forces the handoff prompt after the first tool call; Claude must write
             HANDOFF.md, CONTEXT.md and `latest`.
-2. resume   a second session in the same folder (default threshold) must get the handoff at SessionStart and say so.
+2. resume   a second session in the same folder (default threshold) must get the handoff with its first prompt (since 0.15.1) and say so.
 3. off      STRATA_HANDOFF=off with the forcing threshold: no new handoff folder and no injection, though the handoff
             was made unconsumed again.
 4. compact  `/compact` on a session that wrote no handoff: PreCompact writes the automatic snapshot.
@@ -54,7 +54,8 @@ def scrub_evidence():
 def run(name, workdir, prompt, env_extra, extra=()):
     env = {**os.environ, **env_extra}
     argv = [shutil.which("claude"), "-p", prompt, "--plugin-dir", str(PLUGIN), "--model", "sonnet",
-            "--permission-mode", "bypassPermissions", "--output-format", "stream-json", "--verbose", *extra]
+            "--permission-mode", "bypassPermissions", "--output-format", "stream-json", "--verbose", "--include-hook-events",
+            *extra]
     t0 = time.time()
     out = subprocess.run(argv, cwd=workdir, env=env, capture_output=True, text=True, encoding="utf-8",
                          errors="replace", timeout=900)
@@ -109,7 +110,7 @@ def main(workdir):
     checks["trigger: user told to open a new chat"] = "new chat" in r1["result"].lower()
 
     r2 = run("2-resume", work, "Hi. What should we do next?", env)
-    checks["resume: handoff injected at SessionStart"] = "an earlier chat in this project saved its state" in r2["stdout"]
+    checks["resume: handoff injected with the first prompt"] = "an earlier chat in this project saved its state" in r2["stdout"]
     checks["resume: Claude confirms it resumed"] = "handoff" in r2["result"].lower()
     checks["resume: marked consumed"] = (d / ".consumed").is_file()
     checks["resume: different session ids"] = r1["session"] != r2["session"]

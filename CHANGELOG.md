@@ -4,6 +4,61 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-10-26
+
+### Added
+- **Strata 0.6.0, context canary (always on).** SessionStart asks Claude to end each reply with
+  `[//]: # (strata:ok)`, a Markdown comment that renders as nothing in the terminal, the desktop app, GitHub and
+  Obsidian. A new Stop hook counts misses: a reply of 200+ characters without the line is a miss, short and tool-only
+  replies do not count. Two misses in a row with the context at least 30% full start the handoff early ("Reason:
+  canary missed"), once per chat; with the handoff off or in compact mode it only shows a notice. Switch:
+  `strata.py canary on|off|misses N|floor N`, `STRATA_CANARY=off`. Idea from the "canary in CLAUDE.md" tip (start
+  every reply with your name), made silent and measured. Live test (`plugins/strata/tests/e2e/canary/`): a hit was
+  recorded on a normal reply, and a forced miss made Claude write a handoff with the canary reason.
+- **Strata 0.6.0, second-brain vault.** One Markdown vault for all projects (default `~/code/brain`, a local git
+  repository strata never commits or pushes). `strata.py vault init [PATH]` creates `inbox/`, `daily/` and `wiki/`;
+  `strata.py capture "TEXT"` (or `graph.py capture`) appends to `inbox/<date>.md` with time and project; SessionEnd
+  adds one line per chat to `daily/<date>.md` without a model call. `/strata:wiki distill` files the inbox and recent
+  daily notes into linked pages, archives the captures it used (`graph.py archive`), logs the pass and lints.
+  `[[Page]]` now resolves by file name anywhere under `wiki/`, as in Obsidian. Project RAG also indexes and searches
+  the vault, even from the home folder. Switch: `strata.py vault off`, `STRATA_VAULT=off|PATH`. Live test
+  (`plugins/strata/tests/e2e/vault/`): captures, a daily line, a distill pass into three linked pages with clean lint,
+  and a tools-denied answer taken from the vault by RAG. The strata suite grows from 45 to 60 tests.
+- **allies 0.3.0, OpenCode member.** `opencode` runs OpenCode v1 (`npm install -g opencode-ai@1`) on the free
+  zero-retention Zen models only (`opencode/glm-5.3-flash-free` by default, or `opencode/deepseek-v4.1-flash-free`),
+  with no sign-in. Another model needs `opencode auth login` (by you) and `MOAA_ALLIES_MODELS=provider/model`. Its
+  permissions are passed inline (`OPENCODE_CONFIG_CONTENT`), which outranks a project's `opencode.json`: read runs use
+  the `plan` agent with edit, shell and subagents denied and never `--auto`; no run may leave the working folder;
+  `~/.claude` skills and CLAUDE.md are not loaded. Live test (`plugins/allies/tests/e2e/opencode/`): a read run found
+  a planted bug without changing the file, a write run committed the fix on its own branch, and a hostile
+  `opencode.json` could not unlock tools.
+- **moaa-core 0.2.0, inline-Python guard.** A PreToolUse hook on Bash and PowerShell adds a note, never a block, when
+  `python -c`, `py -c` or `python3 -c` code is multi-line or longer than 150 characters, telling Claude to write a
+  `.py` file instead (the most frequent tool error in the weekly self-improvement digests). Off: `MOAA_GUARD=off` or
+  `guard.py off`.
+- **moaa-core 0.2.0, `/moaa-core:project-docs`.** Reports a project's agent doc set (AGENTS.md, CLAUDE.md, README,
+  ARCHITECTURE, CODE_STYLE, TESTING, SECURITY, and PRD and DESIGN_SYSTEM for app or UI projects) as present, missing or
+  stale, and drafts the gaps from the code. AGENTS.md is the single cross-agent source, imported by CLAUDE.md.
+- **`AGENTS.md`, `ARCHITECTURE.md` and `CLAUDE.md` for this repository.** Codex, Gemini, OpenCode and Claude Code now
+  read the same rules; ARCHITECTURE.md maps the plugins, hook flow and data locations.
+- **`scripts/e2e.py`:** runs the live end-to-end suites (9 suites; `--list` shows each one's cost) in fresh
+  throwaway folders before a release.
+
+### Changed
+- **prompt-refiner 0.1.2:** when a questioning skill (superpowers brainstorming, grilling, an interview) handles the
+  prompt, the refiner lets it ask and only saves the brief, so you are not asked twice.
+- **moaa-catalog 0.4.4:** the `moaa-help` skill lists OpenCode, the project-docs skill, the canary and the vault.
+- CI and `--doctor` run the moaa-core suite; `guard.py on|off|status` and `strata.py canary` run without a permission
+  prompt.
+
+### Fixed
+- **allies:** members now get `PWD` set to the run's folder; OpenCode took its workspace from `PWD` and read the
+  caller's directory instead. Windows npm shims that point at a native `.exe` are run directly, never through cmd.exe.
+- **Live e2e evidence:** the team suite now also redacts 8.3 short home paths; the strata handoff suite checks that the
+  handoff arrives with the first prompt (its delivery point since 0.15.1) and records hook events. All 9 suites pass.
+- **scan.py:** skips `.briefs/` (prompt-refiner's git-ignored briefs), which failed `--public` with home paths in a
+  clone that had used the refiner.
+
 ## [0.18.0] - 2026-10-25
 
 ### Added

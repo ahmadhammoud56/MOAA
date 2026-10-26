@@ -49,6 +49,15 @@ class Refiner(unittest.TestCase):
                      "/proj/.briefs/", "verbatim", "never pass the raw prompt"):
             self.assertIn(part, ctx)
 
+    def test_questioning_skill_does_the_asking(self):
+        for p in (AMBIGUOUS, DETAILED):
+            ctx = self.hook(p)
+            self.assertIn("brainstorming", ctx)
+            self.assertIn("do not ask the user twice", ctx)
+            self.assertNotIn("  ", ctx)
+        refiner.save_config(self.home, mode="silent")  # silent mode never asks, so there is nothing to defer
+        self.assertNotIn("brainstorming", self.hook(AMBIGUOUS))
+
     def test_skips(self):
         for p in ("/specialist-council:council do x", "<task-notification>done</task-notification>",
                   "[SYSTEM NOTIFICATION] x y z", "yes", "ok go", "option 2", "  ", ""):

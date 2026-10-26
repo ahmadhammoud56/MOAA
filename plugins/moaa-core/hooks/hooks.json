@@ -1,0 +1,18 @@
+{
+  "description": "moaa-core guard: a note (never a block) when Bash or PowerShell runs long or multi-line inline python -c code",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "for p in py python3 python; do command -v $p >/dev/null 2>&1 || continue; $p \"${CLAUDE_PLUGIN_ROOT}/guard.py\" hook pre-tool; rc=$?; case $rc in 3|49) ;; *) exit 0;; esac; done; exit 0",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

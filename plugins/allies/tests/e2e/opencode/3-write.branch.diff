@@ -1,0 +1,8 @@
+diff --git a/calc.py b/calc.py
+index a75531f..cbc9a4f 100644
+--- a/calc.py
++++ b/calc.py
+@@ -1,2 +1,2 @@
+ def mean(xs):
+-    return sum(xs) / len(xs) + 1
++    return sum(xs) / len(xs)

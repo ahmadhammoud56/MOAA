@@ -1,0 +1,1 @@
+Done: removed the stray `+ 1` in `calc.py:2` so `mean()` returns the arithmetic mean. No test files exist in the repo, so I verified manually: `mean([1,2,3]) == 2.0`, `mean([2,4,6]) == 4.0`, `mean([5]) == 5`. Only that one line changed; nothing committed.

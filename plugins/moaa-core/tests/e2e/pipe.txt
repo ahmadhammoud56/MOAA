@@ -1,0 +1,9 @@
+## multi-line
+stdin: {"hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": "py -c \"import math\nprint(math.factorial(20))\""}}
+exit: 0
+stdout: '{"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": "moaa-core guard: this command runs inline Python (`python -c`) that is multi-line or longer than 150 characters. On Windows, Bash and PowerShell quoting often breaks such code. The call was not blocked. If it failed, and from now on, write the code to a .py file in your scratchpad directory (or a temp folder) and run that file instead; use `py` if `python` exits 49. Off switch: MOAA_GUARD=off or `guard.py off`."}}\r\n'
+
+## short
+stdin: {"hook_event_name": "PreToolUse", "tool_name": "Bash", "tool_input": {"command": "py -c \"print(1+1)\""}}
+exit: 0
+stdout: ''

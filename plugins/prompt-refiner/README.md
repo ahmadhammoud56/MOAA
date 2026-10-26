@@ -5,7 +5,9 @@ Always on, no slash command. Before Claude works on a prompt, it:
 1. rewrites the prompt into a brief: Goal, Deliverables, Inputs, Constraints, Acceptance checks, Assumptions, Open
    points;
 2. asks about material open points with one AskUserQuestion call, 2-4 concrete options per point (recommended
-   first), and proceeds at once when nothing material is open;
+   first), and proceeds at once when nothing material is open; when a questioning skill (for example
+   `superpowers:brainstorming`, grilling, an interview) runs for the prompt, that skill does the asking and the
+   refiner only saves the brief from its answers, so you are not asked twice;
 3. saves the settled brief to `.briefs/<timestamp>-<slug>.md` (git-ignored) in the project and shows a short version;
 4. works from the brief, and passes the brief (or its path), not the raw prompt, to every subagent, council or War
    Room member, ally, side session or workflow.

@@ -32,7 +32,8 @@ class Sandbox(unittest.TestCase):
         self.proj.mkdir()
         env = {k: v for k, v in os.environ.items() if not k.startswith(("STRATA_HANDOFF", "CLAUDE_CODE_AUTO_COMPACT",
                                                                           "CLAUDE_CODE_DISABLE_1M"))}
-        env.update(MOAA_STRATA_DIR=str(Path(self.dir) / "data"), CLAUDE_CONFIG_DIR=str(Path(self.dir) / "home"))
+        env.update(MOAA_STRATA_DIR=str(Path(self.dir) / "data"), CLAUDE_CONFIG_DIR=str(Path(self.dir) / "home"),
+                   STRATA_CANARY="off", STRATA_VAULT="off")  # each has its own tests (test_canary, test_vault)
         env.pop(memory.CHILD, None)
         patch = mock.patch.dict(os.environ, env, clear=True)
         patch.start()
