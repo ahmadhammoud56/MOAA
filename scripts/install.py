@@ -1028,16 +1028,18 @@ def install_omniroute(r, spec, record):
 
 def install_ruflo(r, record):
     """npm install of the ruflo CLI when a ruflo plugin is enabled. Without it, ruflo-core's hooks run
-    `npx ruflo@latest` on every tool call, which on Windows opens a console window each time. moaa-catalog's session
-    hook keeps it current (once a day, in the background)."""
+    `npx ruflo@latest` on every tool call, which on Windows opens a console window each time. moaa-catalog's hooks
+    keep it current (every 3 hours, in the background)."""
     if not shutil.which("npm"):
         log("ruflo CLI: npm not found; skipped (ruflo hooks fall back to npx)")
         return
     npm = ["npm"] if not WINDOWS else ["cmd", "/c", "npm"]
     if r.run(npm + ["ls", "-g", "ruflo", "--depth=0"]).returncode == 0:
         return  # already there; moaa-catalog updates it
+    sys.path.insert(0, str(KIT / "plugins" / "moaa-catalog"))
+    from catalog import RUFLO_SCRIPTS  # the reviewed list of ruflo dependencies whose install scripts may run
     log("ruflo CLI: npm install -g ruflo (used by ruflo-core's hooks instead of npx)")
-    result = r.run(npm + ["install", "-g", "ruflo"])
+    result = r.run(npm + ["install", "-g", f"--allow-scripts={RUFLO_SCRIPTS}", "ruflo"])
     if result.returncode:
         log("  ruflo CLI install failed: " + (result.stderr or result.stdout).strip()[-300:])
     elif "ruflo" not in record["tools"]:

@@ -374,7 +374,7 @@ class UpdateTests(unittest.TestCase):
         with mock.patch("shutil.which", return_value="npm"):
             r, record = FakeRunner(have=False), {"tools": []}
             install.install_ruflo(r, record)
-            self.assertTrue(any("install" in c and "ruflo" in c for c in r.calls))
+            self.assertTrue(any("install" in c and "ruflo" in c and "better-sqlite3" in " ".join(c) for c in r.calls))
             self.assertEqual(record["tools"], ["ruflo"])
             r, record = FakeRunner(have=True), {"tools": []}
             install.install_ruflo(r, record)  # already there: moaa-catalog keeps it current

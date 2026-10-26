@@ -4,6 +4,22 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.19.3] - 2026-10-26
+
+### Changed
+- **moaa-catalog 0.4.6, the ruflo CLI is checked every 3 hours instead of once a day.** The check runs from
+  SessionStart and from the prompt hook (a file-age check, so prompts stay fast), so long sessions get updates too.
+  While `ruflo` is missing from PATH it retries every 10 minutes, so ruflo's hooks spend as little time as possible
+  on the npx fallback that opens windows. A lock file keeps two sessions from updating at once.
+
+### Fixed
+- **ruflo's native modules are built on every install.** npm 11 warns that ruflo's dependencies' install scripts
+  (better-sqlite3, argon2, hnswlib-node, onnxruntime-node, sharp, agentdb and others) will be blocked in a coming
+  release; without them better-sqlite3 has no binary and ruflo's SQLite memory fails ("Could not locate the bindings
+  file", seen in a test install). The updater and the installer now pass a fixed, reviewed `--allow-scripts` list
+  (`RUFLO_SCRIPTS` in `catalog.py`); a dependency npm still skips is logged, never allowed automatically. Measured on
+  this machine: every native module loads after an install with the list, and it ran faster (57 s against 105 s).
+
 ## [0.19.2] - 2026-10-26
 
 ### Fixed

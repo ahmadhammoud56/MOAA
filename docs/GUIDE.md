@@ -362,9 +362,13 @@ Both wrappers pass these flags through to `scripts/install.py`:
 | `--doctor` | Run every pre-commit check: all test suites, `MODELS.md`, the catalog, the public-release scan and `claude plugin validate`. For maintainers. |
 
 When a ruflo plugin is enabled, the installer also installs the `ruflo` CLI from npm (unless it is already there), and
-moaa-catalog's daily session-start check keeps it current in a background process with no window
-(`MOAA_RUFLO_UPDATE=off` stops that). ruflo's hooks use the CLI; without it they run `npx ruflo@latest` on every tool
-call, which on Windows briefly opens a console window each time.
+moaa-catalog keeps it current: every 3 hours, checked at session start and on prompts, and within 10 minutes when the
+CLI is missing, it installs or updates ruflo in a background process with no window (`MOAA_RUFLO_UPDATE=off` stops
+that). An update is staged and swapped in, so the CLI is never missing, and every install allows the install scripts
+of a fixed list of ruflo's dependencies, so its native modules (better-sqlite3, argon2, hnswlib-node,
+onnxruntime-node, sharp) are built even when npm starts blocking install scripts by default. ruflo's hooks use the
+CLI; without it they run `npx ruflo@latest` on every tool call, which on Windows briefly opens a console window each
+time.
 
 Restart Claude Code afterwards. The installer respects `CLAUDE_CONFIG_DIR`, so you can trial it in a throwaway config directory:
 

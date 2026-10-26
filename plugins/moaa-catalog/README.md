@@ -20,12 +20,17 @@ and this plugin makes their skills reachable anyway:
   times in 30 days gets an "enable it" suggestion; enabling stays a visible `claude plugin enable` command that loads
   from the next session.
 
-- **Updates.** Once a day, SessionStart checks GitHub for a newer MOAA release and says so in one line. While a ruflo
-  plugin is enabled, it also starts `catalog.py ruflo-update` in a background process with no window: it installs
-  the global `ruflo` CLI, or updates it when npm has a newer version, and logs to `~/.claude/moaa-catalog/ruflo.log`.
-  ruflo-core's hooks use that CLI; without it they run `npx ruflo@latest` on every tool call, which on Windows opens
-  a console window each time. `MOAA_RUFLO_UPDATE=off` stops the ruflo step; `MOAA_NO_UPDATE_CHECK=1` or
-  `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` stops both.
+- **Updates.** Once a day, SessionStart checks GitHub for a newer MOAA release and says so in one line.
+- **ruflo CLI.** While a ruflo plugin is enabled, SessionStart and the prompt hook start `catalog.py ruflo-update` in
+  a background process with no window every 3 hours (every 10 minutes while `ruflo` is missing from PATH; a file-age
+  check, so prompts stay fast). It installs the global `ruflo` CLI, or updates it when npm has a newer version, and
+  logs to `~/.claude/moaa-catalog/ruflo.log`. An update is installed into a staging prefix and swapped in with two
+  folder renames, so the CLI never goes missing; a lock keeps two updates from running at once. Every install passes
+  a fixed `--allow-scripts` list of ruflo's dependencies (`RUFLO_SCRIPTS`), so native modules such as better-sqlite3
+  are built even once npm blocks install scripts by default; a dependency npm still skips is logged, never allowed
+  automatically. ruflo-core's hooks use that CLI; without it they run `npx ruflo@latest` on every tool call, which on
+  Windows opens a console window each time. `MOAA_RUFLO_UPDATE=off` stops it; `MOAA_NO_UPDATE_CHECK=1` or
+  `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` stops both checks.
 
 In MOAA's `all-on` mode (every plugin enabled, listing cut to names plus short descriptions) the index and the hook
 also cover enabled skills, pointing to the Skill tool for them.
