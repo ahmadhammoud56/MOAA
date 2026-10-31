@@ -8,8 +8,14 @@ Always on, no slash command. Before Claude works on a prompt, it:
    first), and proceeds at once when nothing material is open; when a questioning skill (for example
    `superpowers:brainstorming`, grilling, an interview) runs for the prompt, that skill does the asking and the
    refiner only saves the brief from its answers, so you are not asked twice;
-3. saves the settled brief to `.briefs/<timestamp>-<slug>.md` (git-ignored) in the project and shows a short version;
-4. works from the brief, and passes the brief (or its path), not the raw prompt, to every subagent, council or War
+3. saves the settled brief to `.briefs/<timestamp>-<slug>.md` (git-ignored) in the project and shows a short version.
+   The hook itself writes that file first as a stub holding your request, so every refined prompt leaves a record even
+   when Claude skips the brief, and the chat shows `prompt-refiner: brief -> .briefs/<file>` so you can see it ran.
+   Claude's reply starts with one line, `Brief: <goal> -> <deliverable>`;
+4. adds a Constitution heading when the project has a rules file (`CONSTITUTION.md`,
+   `.specify/memory/constitution.md` as in github/spec-kit, `AGENTS.md` or `CLAUDE.md`, first match): the rules the
+   work must respect;
+5. works from the brief, and passes the brief (or its path), not the raw prompt, to every subagent, council or War
    Room member, ally, side session or workflow.
 
 ## How it works
@@ -42,9 +48,11 @@ py refiner.py off
 py refiner.py on
 py refiner.py mode silent
 py refiner.py mode ask
+py refiner.py notice off
 ```
 
 - `mode silent`: write the brief, never ask; open points become assumptions.
+- `notice off`: hide the one-line `brief ->` notice (the stub is still written).
 - `raw:` at the start of a prompt skips the refiner for that prompt.
 - `PROMPT_REFINER=off` in the environment skips it for that process (scripted `claude -p` runs, CI).
 - State lives in `~/.claude/prompt-refiner/config.json` (`CLAUDE_CONFIG_DIR` respected).

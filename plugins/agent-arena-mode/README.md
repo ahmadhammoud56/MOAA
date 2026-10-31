@@ -59,6 +59,10 @@ The installed copy lives in Claude Code's plugin cache. Scripts are run through
 | `--seed N`, `--communication TYPE` | 42, `auto` |
 | `--resume RUN`, `--reuse IDS`, `--database PATH`, `--context-key KEY`, `--no-library` | see [orchestration](references/orchestration.md) |
 
+`/agent-arena-mode:karpathy-loop --metric "CMD" --target T` edits, measures and keeps or reverts against a fixed
+number. Stop rules: done when the target holds in two runs in a row; after `--patience` discards in a row (default 5)
+it asks for a different approach, and a second stall stops it. `--stop-rule off` keeps only the budget.
+
 “100 agents” means 100 initial participants, not 100 simultaneous workers or 100
 calls. Judges, critics, revisions, descendants, and validators consume calls too;
 the run announces its call allowance before dispatch. A tournament of N entrants

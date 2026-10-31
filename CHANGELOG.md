@@ -4,6 +4,31 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-10-31
+
+From the source review in `docs/research/2026-10-31-sources-review.md`.
+
+### Added
+- **specialist-council 1.8.0, spawn rule.** Before spawning workers the council names the condition that makes a
+  subagent worth its cost (context bloat, real parallelism, or tool and instruction conflicts, after Anthropic's
+  guidance on folding subagents into the main loop); if none applies it works in the main loop. Workers return a short
+  Result / Evidence / Open questions block. Off: `council.py spawn-rule --set off` or `MOAA_COUNCIL_SPAWN_RULE=off`.
+- **long-task `reconstruction` preset:** an authorisation step first, a behaviour checklist in `checks.md`, REA
+  `verify_reconstruction` checks, and done when every must-have passes in two runs in a row.
+- **agent-arena-mode 0.7.1, karpathy-loop stop rules:** `--target T` ends the loop when the target holds in two runs
+  in a row; `--patience N` discards in a row print `STALL`, and a second stall stops. `--stop-rule off` disables both.
+- **moaa-catalog 0.5.0, skill-usage counter:** a PostToolUse hook on the Skill tool counts skill calls (names only);
+  `catalog.py usage` lists counts and enabled skills never used. Off: `catalog.py usage off` or `MOAA_SKILL_USAGE=off`.
+
+### Changed
+- **prompt-refiner 0.2.0, visible and reliable.** The hook now writes a stub brief holding the request to
+  `.briefs/` itself, so every refined prompt leaves a record even when Claude skips the brief, and shows
+  `prompt-refiner: brief -> .briefs/<file>` in the chat (`refiner.py notice off` hides it). Claude's reply starts
+  with a `Brief: <goal> -> <deliverable>` line. Briefs get a Constitution heading listing the project's rules
+  (`CONSTITUTION.md`, spec-kit's `.specify/memory/constitution.md`, `AGENTS.md` or `CLAUDE.md`).
+- **The rea MCP server is pinned to `rea-agents@6.8.0`** (was 6.4.0), and the vendored `reverse-engineer-anything`
+  skill is synced to morluto/rea `d54a466` (skill v59).
+
 ## [0.19.3] - 2026-10-26
 
 ### Changed

@@ -155,6 +155,25 @@ class CouncilTests(unittest.TestCase):
         self.assertEqual(out.returncode, 0, out.stderr)
 
 
+class SpawnRuleTests(unittest.TestCase):
+    def test_on_by_default_and_switches_off(self):
+        with tempfile.TemporaryDirectory() as home:
+            self.assertEqual(council.spawn_rule(home), "on")
+            self.assertEqual(council.spawn_rule(home, "off"), "off")
+            self.assertEqual(council.spawn_rule(home), "off")
+            council.spawn_rule(home, "on")
+            os.environ["MOAA_COUNCIL_SPAWN_RULE"] = "off"
+            try:
+                self.assertEqual(council.spawn_rule(home), "off")
+            finally:
+                del os.environ["MOAA_COUNCIL_SPAWN_RULE"]
+
+    def test_skill_names_the_rule_and_compact_return(self):
+        text = (ROOT / "skills" / "specialist-council" / "SKILL.md").read_text(encoding="utf-8")
+        for phrase in ("Spawn rule", "context bloat", "real parallelism", "council.py\" spawn-rule", "Open questions:"):
+            self.assertIn(phrase, text)
+
+
 class DiffTests(unittest.TestCase):
     def test_diff_reports_roles_teams_and_tier_mix(self):
         old = council.load_profile()

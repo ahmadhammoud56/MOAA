@@ -119,7 +119,7 @@ class Refiner(unittest.TestCase):
     def test_bad_config_falls_back_to_defaults(self):
         refiner.config_path(self.home).parent.mkdir(parents=True)
         refiner.config_path(self.home).write_text("{not json", encoding="utf-8")
-        self.assertEqual(refiner.load_config(self.home), {"enabled": True, "mode": "ask"})
+        self.assertEqual(refiner.load_config(self.home), {"enabled": True, "mode": "ask", "notice": True})
 
     def test_brief_path(self):
         p = refiner.brief_path("/proj", "Fix the login bug!! on the Settings page now", datetime(2026, 10, 25, 9, 5, 1))
@@ -137,6 +137,22 @@ class Refiner(unittest.TestCase):
         self.assertIn("on", out)
         self.assertIn("mode silent", self.run_cli("mode", "silent").stdout.decode())
         self.assertEqual(self.run_cli("bogus").returncode, 2)
+
+    def test_stub_brief_constitution_and_notice(self):
+        proj = Path(tempfile.mkdtemp())
+        (proj / "AGENTS.md").write_text("rules")
+        payload = json.dumps({"prompt": AMBIGUOUS, "cwd": proj.as_posix()}).encode()
+        out = json.loads(self.run_cli("hook", "prompt", stdin=payload).stdout)
+        self.assertIn("Constitution", out["hookSpecificOutput"]["additionalContext"])
+        self.assertIn("AGENTS.md", out["hookSpecificOutput"]["additionalContext"])
+        self.assertIn("prompt-refiner: brief -> .briefs/", out["systemMessage"])
+        stubs = list((proj / ".briefs").glob("*.md"))
+        self.assertEqual(len(stubs), 1)
+        self.assertIn(AMBIGUOUS, stubs[0].read_text(encoding="utf-8"))
+        self.assertEqual((proj / ".briefs" / ".gitignore").read_text(), "*\n")
+        self.run_cli("notice", "off")
+        out = json.loads(self.run_cli("hook", "prompt", stdin=payload).stdout)
+        self.assertNotIn("systemMessage", out)
 
     def test_hook_cli_output_bad_input_and_timing(self):
         payload = json.dumps({"prompt": AMBIGUOUS, "cwd": "/proj"}).encode()

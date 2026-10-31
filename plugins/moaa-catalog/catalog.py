@@ -6,6 +6,9 @@
   python catalog.py packs               disabled plugins and their skill counts
   python catalog.py hook prompt         UserPromptSubmit hook: suggest up to 3 strong matches for the prompt on stdin
   python catalog.py hook session        SessionStart hook: once a day, say if a newer MOAA release exists; warms the index
+  python catalog.py usage [--days N]    skill use counts from the PostToolUse hook, and enabled skills never used
+  python catalog.py usage off|on        stop or resume counting (MOAA_SKILL_USAGE=off stops it for a process)
+  python catalog.py hook skill          PostToolUse hook on the Skill tool: count one use of the named skill
   python catalog.py index               rebuild the index now if it is stale
   python catalog.py ruflo-update        install or update the global ruflo CLI (the hooks run this every 3 hours, in
                                         the background, while a ruflo plugin is enabled; MOAA_RUFLO_UPDATE=off stops it)
@@ -215,6 +218,38 @@ def promote_hint(home, pid):
         return (f"{pid} was used {n} times in {PROMOTE_DAYS} days: suggest `claude plugin enable {pid}` to the user "
                 "(loads from the next session).")
     return ""
+
+
+def usage_on(home):
+    return os.environ.get("MOAA_SKILL_USAGE", "").lower() != "off" and not (home / "moaa-catalog" / "usage-off").exists()
+
+
+def count_skill(home, payload):
+    """PostToolUse on the Skill tool: append the skill name to skill-usage.jsonl (names only, never arguments)."""
+    name = str((payload.get("tool_input") or {}).get("skill") or "").strip().lstrip("/")
+    if payload.get("tool_name") != "Skill" or not name or not usage_on(home):
+        return
+    log = home / "moaa-catalog" / "skill-usage.jsonl"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("a", encoding="utf-8") as f:
+        f.write(json.dumps({"ts": time.time(), "skill": name}) + "\n")
+
+
+def skill_usage(home, days=30):
+    """(counts by skill name, enabled skills with no use) over the last `days` days."""
+    cut, counts = time.time() - days * 86400, {}
+    log = home / "moaa-catalog" / "skill-usage.jsonl"
+    for line in log.read_text(encoding="utf-8").splitlines() if log.is_file() else []:
+        try:
+            e = json.loads(line)
+        except ValueError:
+            continue
+        if e.get("ts", 0) >= cut and e.get("skill"):
+            counts[e["skill"]] = counts.get(e["skill"], 0) + 1
+    used = {k.split(":")[-1] for k in counts}
+    unused = sorted(f"{s['pid'].split('@')[0]}:{s['name']}" for s in load_index(home)["skills"]
+                    if s.get("on") and s["name"] not in used)
+    return counts, unused
 
 
 def use(home, path):
@@ -469,6 +504,28 @@ def main(argv):
         return 0
     if argv[:1] == ["use"] and len(argv) == 2:
         return use(home, argv[1])
+    if argv[:1] == ["usage"]:
+        if argv[1:] in (["off"], ["on"]):
+            flag = home / "moaa-catalog" / "usage-off"
+            flag.parent.mkdir(parents=True, exist_ok=True)
+            flag.touch() if argv[1] == "off" else flag.unlink(missing_ok=True)
+            print(f"skill usage counting {argv[1]}")
+            return 0
+        days = float(argv[2]) if argv[1:2] == ["--days"] and len(argv) > 2 else 30
+        counts, unused = skill_usage(home, days)
+        print(f"skill uses in the last {days:g} days (counting {'on' if usage_on(home) else 'off'}):")
+        for name, n in sorted(counts.items(), key=lambda kv: -kv[1]):
+            print(f"{n:5d}  {name}")
+        print(f"{len(unused)} enabled skills with no use in that time" + (":" if unused else ""))
+        for name in unused:
+            print(f"       {name}")
+        return 0
+    if argv == ["hook", "skill"]:
+        try:
+            count_skill(home, json.loads(sys.stdin.read() or "{}"))
+        except Exception:  # a hook must never block the session
+            pass
+        return 0
     if argv == ["index"]:
         n = len(load_index(home)["skills"])
         (home / "moaa-catalog" / "index.building").unlink(missing_ok=True)

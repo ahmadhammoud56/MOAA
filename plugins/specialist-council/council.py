@@ -95,6 +95,22 @@ def forged_home(home=None):
     return Path(home or claude_home()) / "specialist-council" / "forged"
 
 
+def spawn_rule(home=None, value=None):
+    """The spawn rule switch: off when MOAA_COUNCIL_SPAWN_RULE=off or `spawn-rule --set off` was run; --set saves it."""
+    path = Path(home or claude_home()) / "specialist-council" / "config.json"
+    try:
+        cfg = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        cfg = {}
+    if value:
+        cfg["spawn_rule"] = value
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+    if os.environ.get("MOAA_COUNCIL_SPAWN_RULE", "").lower() == "off":
+        return "off"
+    return cfg.get("spawn_rule", "on")
+
+
 def forged_member(role_id, forged_dir=None):
     """Registry entry for a forged role given as `slug`, `forged-<slug>` or `council-forged-<slug>`, else None."""
     registry = Path(forged_dir or forged_home()) / "registry.json"
@@ -392,7 +408,7 @@ def main(argv=None):
             pass
         return 0
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("command", choices=("check", "apply", "resolve", "render", "diff", "migrate", "cost"))
+    p.add_argument("command", choices=("check", "apply", "resolve", "render", "diff", "migrate", "cost", "spawn-rule"))
     p.add_argument("--session", help="cost: a session id (default: the latest one in the ledger)")
     p.add_argument("--days", type=float, help="cost: every session of the last N days")
     p.add_argument("--agents", default=str(ROOT / "agents"))
@@ -403,6 +419,7 @@ def main(argv=None):
     p.add_argument("--home", default=str(claude_home()))
     p.add_argument("--against", default="HEAD", help="diff: git ref or profile file to compare with")
     p.add_argument("--json", action="store_true", help="diff: print JSON")
+    p.add_argument("--set", choices=("on", "off"), help="spawn-rule: switch the spawn rule on or off")
     a = p.parse_args(argv)
     try:
         profile = load_profile(a.profile)
@@ -423,6 +440,8 @@ def main(argv=None):
         elif a.command == "diff":
             d = diff(base_profile(a.against), profile)
             result = d if a.json else diff_text(d)
+        elif a.command == "spawn-rule":
+            result = f"spawn rule: {spawn_rule(a.home, a.set)}"
         elif a.command == "cost":
             result = cost(a.home, a.session, a.days)
         else:

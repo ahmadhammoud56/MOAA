@@ -15,7 +15,10 @@ The loop runs unattended because a number, not a reader, judges each attempt. Ev
    validation score, failing-test count, bundle size). The metric script, its data and the tests it uses are fixed:
    never edit them during the loop. If none exists, write it with the user before starting, and commit it.
 2. **Set up.** In a git repository with a clean working tree (commit or stash the user's work first; ask if unsure),
-   run `L init <dir> --metric "<cmd>" --direction min|max --max-iters N [--max-minutes M]`. It measures the baseline.
+   run `L init <dir> --metric "<cmd>" --direction min|max --max-iters N [--max-minutes M] [--target T]
+   [--patience P]`. It measures the baseline. Stop rules (on by default, `--stop-rule off`): with `--target`, the
+   loop is done when the target holds in two runs in a row (the kept run plus one re-measure); after P discards in a
+   row (default 5) `record` prints `STALL` (change approach), and a second stall stops the loop.
    Fill in `program.md` with the user: the goal, which files are editable, the rules and the stop condition. That file
    is the human's artifact; you follow it and do not edit it.
 3. **Loop.** For each attempt:
@@ -25,6 +28,7 @@ The loop runs unattended because a number, not a reader, judges each attempt. Ev
      - `DISCARD` (exit 3): revert only this attempt's edits (`git checkout -- <files you edited>`; delete files you
        created), then try something else.
      - `STOP` (exit 4): stop.
+     - A `STALL` line: reread `results.tsv` and try a different kind of change, not a variant of the last ones.
    - Do not repeat an idea already in `results.tsv` without a reason; read it every few attempts.
 4. **Finish.** Run `L status <dir>`. Report the baseline, the best value, attempts and kept changes, and the commits
    that made the difference. Leave `results.tsv` as the evidence.

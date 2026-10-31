@@ -4,10 +4,13 @@ the brief (not the raw prompt) to every subagent.
 
   python refiner.py on | off            turn the refiner on or off for every session
   python refiner.py mode ask|silent     ask: ask about material ambiguity (default); silent: write the brief, never ask
+  python refiner.py notice on|off      show or hide the one-line "brief saved" notice in the chat
   python refiner.py status              show the state
   python refiner.py hook prompt         UserPromptSubmit hook: prompt JSON on stdin, additionalContext on stdout
 
-A hook cannot rewrite the user's text, so the refiner injects instructions as context. It stays silent for slash
+A hook cannot rewrite the user's text, so the refiner injects instructions as context. It also writes a stub brief
+(the request itself) to <project>/.briefs/, so every refined prompt leaves a record even if Claude skips the brief,
+and shows a one-line notice in the chat (`notice off` hides it). It stays silent for slash
 commands, harness notices, short replies and answers to a question Claude just asked. Long, structured prompts get a
 one-line restatement instead of a full brief. Start a prompt with `raw:` to skip it once; PROMPT_REFINER=off skips it
 for a whole process. State: ~/.claude/prompt-refiner/config.json (CLAUDE_CONFIG_DIR respected). Standard library only.
@@ -42,7 +45,8 @@ def load_config(home):
     except (OSError, ValueError):
         data = {}
     mode = data.get("mode") if data.get("mode") in MODES else "ask"
-    return {"enabled": data.get("enabled", True) is not False, "mode": mode}
+    return {"enabled": data.get("enabled", True) is not False, "mode": mode,
+            "notice": data.get("notice", True) is not False}
 
 
 def save_config(home, **changes):
@@ -126,6 +130,33 @@ def brief_path(cwd, prompt, now=None):
     return (Path(cwd or ".") / BRIEFS / f"{stamp}-{slug(prompt)}.md").as_posix()
 
 
+# Project-wide rules a brief must respect (github/spec-kit calls them the constitution), first match wins.
+CONSTITUTIONS = ("CONSTITUTION.md", ".specify/memory/constitution.md", "AGENTS.md", "CLAUDE.md")
+
+
+def constitution(cwd):
+    """The project's rules file, relative to cwd, or None."""
+    for name in CONSTITUTIONS:
+        if cwd and (Path(cwd) / name).is_file():
+            return name
+    return None
+
+
+def write_stub(path, prompt, now=None):
+    """Save the request as a stub brief so every refined prompt leaves a record; Claude fills in the rest."""
+    p = Path(path)
+    if not p.parent.parent.is_dir():  # no such project folder
+        return False
+    p.parent.mkdir(exist_ok=True)
+    ignore = p.parent / ".gitignore"
+    if not ignore.exists():
+        ignore.write_text("*\n", encoding="utf-8")
+    stamp = (now or datetime.now()).strftime("%Y-%m-%d %H:%M")
+    p.write_text(f"# Brief (stub, {stamp})\n\n## Request\n\n{prompt.strip()}\n\n"
+                 "<!-- Claude replaces this stub with the full brief. -->\n", encoding="utf-8")
+    return True
+
+
 ASK = ("If a material point is ambiguous or missing (scope, target files or data, output format, a choice between "
        "approaches, anything costly to redo), ask before doing any work: one AskUserQuestion call with one question "
        "per open point and 2-4 concrete options each, your recommended option first. Do not ask about what the code, "
@@ -141,26 +172,33 @@ DEFER = ("If a questioning skill (brainstorming, grilling, an interview) is invo
          "the asking and only save the brief from its answers; do not ask the user twice. ")
 
 
-def context(prompt, cwd, mode, now=None):
+def context(prompt, cwd, mode, now=None, path=None):
     """The instruction injected for one prompt."""
-    path = brief_path(cwd, prompt, now)
+    path = path or brief_path(cwd, prompt, now)
+    rules = constitution(cwd)
+    law = (f"Add a Constitution heading: the rules in {rules} that this work must respect, and keep to them. "
+           if rules else "")
+    show = ("Start your reply with one visible line `Brief: <goal> -> <deliverable>` so the user sees the refiner "
+            "worked. ")
     handoff = ("Whenever you delegate any part of this work (Agent/Task subagents, council or War Room members, "
                "allies, side sessions or workflows), pass the brief verbatim, or its path, as the task; never pass "
                "the raw prompt alone.")
     if len(words(prompt)) >= DETAILED_WORDS or is_structured(prompt):
         return ("prompt-refiner: this prompt is already detailed. Before working, confirm your understanding in one "
-                "line (goal and deliverable) and name any assumption you are making. "
+                "line, `Brief: <goal> -> <deliverable>`, at the start of your reply, and name any assumption you are "
+                f"making. Then replace the stub at {path} with that line, the assumptions and the acceptance checks. "
+                + law
                 + (ASK_LIGHT + DEFER if mode == "ask" else "") + "Then proceed. " + handoff)
     return ("prompt-refiner: before acting on this prompt, rewrite it into a brief with these headings: Goal, "
             "Deliverables, Inputs (files, data, context it relies on), Constraints, Acceptance checks (how to tell "
             "it is done), Assumptions, Open points. Fill it from the prompt, the conversation and a quick look at "
-            "the project; do not invent requirements the user did not imply. "
+            "the project; do not invent requirements the user did not imply. " + law + show
             + (ASK + " " + DEFER.rstrip() if mode == "ask" else SILENT)
-            + f" Once settled, update the brief with the answers and save it to {path} (if that folder is new, also "
-            f"write {BRIEFS}/.gitignore containing `*`, so briefs stay out of git), show "
-            "the user a short version of it, and work from the brief, not the raw prompt. " + handoff
+            + f" Once settled, replace the stub brief at {path} (it holds the request) with the full brief and the "
+            "answers, show the user a short version of it, and work from the brief, not the raw prompt. " + handoff
             + " If this message only continues the current task (a follow-up, a small correction) and is clear, "
-            "skip the brief and just do it. Skip the brief for pure questions that need no work beyond the answer.")
+            "skip the full brief (keep the one `Brief:` line) and just do it. For a pure question that needs no work "
+            "beyond the answer, skip the brief and delete the stub.")
 
 
 def hook_prompt(home, payload):
@@ -179,14 +217,20 @@ def hook_prompt(home, payload):
         return None
     if n <= ANSWER_WORDS and last_assistant_asked(payload.get("transcript_path")):
         return None
-    return context(prompt, payload.get("cwd"), cfg["mode"])
+    path = brief_path(payload.get("cwd"), prompt)
+    try:
+        if payload.get("cwd"):
+            write_stub(path, prompt)
+    except OSError:
+        pass
+    return context(prompt, payload.get("cwd"), cfg["mode"], path=path)
 
 
 def status(home):
     cfg = load_config(home)
     state = "on" if cfg["enabled"] else "off"
     extra = " (but PROMPT_REFINER=off in this environment)" if env_off() else ""
-    return f"prompt-refiner: {state}{extra}, mode {cfg['mode']}; config {config_path(home).as_posix()}"
+    return f"prompt-refiner: {state}{extra}, mode {cfg['mode']}, notice {'on' if cfg['notice'] else 'off'}; config {config_path(home).as_posix()}"
 
 
 def main(argv):
@@ -197,10 +241,16 @@ def main(argv):
         except Exception:  # a hook must never block the user's prompt
             ctx = None
         if ctx:
-            print(json.dumps({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": ctx}}))
+            out = {"hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": ctx}}
+            stub = re.search(r"\S+/" + BRIEFS + r"/[^ ]+?\.md", ctx)
+            if stub and Path(stub.group()).is_file() and load_config(home)["notice"]:
+                out["systemMessage"] = f"prompt-refiner: brief -> {BRIEFS}/{Path(stub.group()).name}"
+            print(json.dumps(out))
         return 0
     if argv in (["on"], ["off"]):
         save_config(home, enabled=argv[0] == "on")
+    elif len(argv) == 2 and argv[0] == "notice" and argv[1] in ("on", "off"):
+        save_config(home, notice=argv[1] == "on")
     elif len(argv) == 2 and argv[0] == "mode" and argv[1] in MODES:
         save_config(home, mode=argv[1])
     elif argv != ["status"]:

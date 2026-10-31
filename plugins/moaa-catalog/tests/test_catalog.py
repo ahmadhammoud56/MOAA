@@ -31,6 +31,18 @@ class Catalog(unittest.TestCase):
             "off@m": [{"installPath": str(off)}], "on@m": [{"installPath": str(on)}]}}))
         (self.home / "settings.json").write_text(json.dumps({"enabledPlugins": {"off@m": False, "on@m": True}}))
 
+    def test_skill_usage_counts_uses_and_lists_unused_enabled_skills(self):
+        catalog.count_skill(self.home, {"tool_name": "Skill", "tool_input": {"skill": "on:stripe-listed"}})
+        catalog.count_skill(self.home, {"tool_name": "Read", "tool_input": {"skill": "x"}})  # other tools: ignored
+        counts, unused = catalog.skill_usage(self.home)
+        self.assertEqual(counts, {"on:stripe-listed": 1})
+        self.assertEqual(unused, [])
+        (self.home / "moaa-catalog" / "usage-off").touch()
+        catalog.count_skill(self.home, {"tool_name": "Skill", "tool_input": {"skill": "on:stripe-listed"}})
+        self.assertEqual(catalog.skill_usage(self.home)[0], {"on:stripe-listed": 1})  # switched off: not counted
+        (self.home / "moaa-catalog" / "skill-usage.jsonl").unlink()
+        self.assertEqual(catalog.skill_usage(self.home)[1], ["on:stripe-listed"])
+
     def test_search_covers_only_disabled_plugins_and_ranks_name_hits(self):
         found = catalog.search(self.home, "stripe webhooks")
         self.assertEqual([r[2]["name"] for r in found], ["stripe-integration"])

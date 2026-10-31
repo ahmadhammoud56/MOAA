@@ -20,6 +20,10 @@ and this plugin makes their skills reachable anyway:
   times in 30 days gets an "enable it" suggestion; enabling stays a visible `claude plugin enable` command that loads
   from the next session.
 
+- **Skill usage.** A PostToolUse hook on the Skill tool counts each skill call (the name only) in
+  `~/.claude/moaa-catalog/skill-usage.jsonl`. `python catalog.py usage [--days N]` lists the counts and the enabled
+  skills with no use in that time, real numbers for choosing the `lean` or `all-on` mode. `catalog.py usage off`
+  (or `MOAA_SKILL_USAGE=off`) stops counting; `usage on` resumes.
 - **Updates.** Once a day, SessionStart checks GitHub for a newer MOAA release and says so in one line.
 - **ruflo CLI.** While a ruflo plugin is enabled, SessionStart and the prompt hook start `catalog.py ruflo-update` in
   a background process with no window every 3 hours (every 10 minutes while `ruflo` is missing from PATH; a file-age

@@ -26,6 +26,28 @@ class KarpathyLoop(unittest.TestCase):
         self.assertEqual([r.split("\t")[3] for r in rows[1:]], ["KEEP", "DISCARD", "DISCARD"])
         self.assertIn('"best": 8.5', (d / "loop.json").read_text())
 
+    def _loop(self, *extra):
+        d = Path(tempfile.mkdtemp())
+        score = d / "score.txt"
+        score.write_text("10")
+        metric = f'"{sys.executable}" -c "print(open(r\'{score}\').read())"'
+        loop.main(["init", str(d), "--metric", metric, "--max-iters", "20", *extra])
+        return d, score
+
+    def test_target_met_twice_stops(self):
+        d, score = self._loop("--target", "5")
+        score.write_text("4")
+        self.assertEqual(loop.main(["record", str(d), "big win"]), loop.KEEP)
+        self.assertEqual(loop.main(["record", str(d), "more"]), loop.STOP)
+
+    def test_two_stalls_stop_and_switch_off(self):
+        d, score = self._loop("--patience", "2")
+        codes = [loop.main(["record", str(d), f"try {i}"]) for i in range(5)]  # score stays 10: all discards
+        self.assertEqual(codes, [loop.DISCARD] * 4 + [loop.STOP])
+        d, score = self._loop("--patience", "2", "--stop-rule", "off")
+        codes = [loop.main(["record", str(d), f"try {i}"]) for i in range(5)]
+        self.assertEqual(codes, [loop.DISCARD] * 5)
+
     def test_max_direction(self):
         self.assertTrue(loop.better(0.9, 0.8, "max"))
         self.assertFalse(loop.better(0.9, 0.8, "min"))

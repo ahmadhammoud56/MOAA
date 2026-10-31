@@ -31,10 +31,11 @@ Stop: {stop}.
 """
 
 
-def init(d, metric, direction, max_iters, max_minutes, timeout):
+def init(d, metric, direction, max_iters, max_minutes, timeout, target=None, patience=5, stop_rule="on"):
     d.mkdir(parents=True, exist_ok=True)
     cfg = {"metric": metric, "direction": direction, "max_iters": max_iters, "max_minutes": max_minutes,
-           "timeout": timeout, "started": time.time(), "best": None, "iters": 0}
+           "timeout": timeout, "started": time.time(), "best": None, "iters": 0,
+           "target": target, "patience": patience, "stop_rule": stop_rule, "misses": 0, "stalls": 0}
     (d / "loop.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
     stop = " or ".join(s for s in (f"{max_iters} attempts" if max_iters else "",
                                    f"{max_minutes} minutes" if max_minutes else "") if s) or "when the user says so"
@@ -66,8 +67,37 @@ def out_of_budget(cfg):
                 (cfg["max_minutes"] and time.time() - cfg["started"] >= cfg["max_minutes"] * 60))
 
 
+def reached(value, cfg):
+    t = cfg.get("target")
+    return t is not None and value is not None and (value <= t if cfg["direction"] == "min" else value >= t)
+
+
+def stop_rules(cfg, value, code):
+    """Stop rules (off with --stop-rule off): done when the target holds in two runs in a row (the kept run and one
+    re-measure, so a flaky pass does not end the loop); after `patience` discards in a row, a stall: the first one
+    asks for a different approach, the second one stops."""
+    if cfg.get("stop_rule", "on") == "off":
+        return ""
+    if code == KEEP and reached(value, cfg):
+        again, _ = measure(cfg)
+        if reached(again, cfg):
+            cfg["done"] = True
+            return f"\nSTOP after this: target {cfg['target']} met in two runs in a row ({value}, {again})"
+    cfg["misses"] = 0 if code == KEEP else cfg.get("misses", 0) + 1
+    if cfg["misses"] >= cfg.get("patience", 5):
+        cfg["misses"] = 0
+        cfg["stalls"] = cfg.get("stalls", 0) + 1
+        if cfg["stalls"] >= 2:
+            cfg["done"] = True
+            return "\nSTOP after this: progress stalled twice"
+        return f"\nSTALL: {cfg['patience']} discards in a row; change approach (read results.tsv) first"
+    return ""
+
+
 def record(d, description):
     cfg = json.loads((d / "loop.json").read_text(encoding="utf-8"))
+    if cfg.get("done"):
+        return STOP, f"STOP: stop rule met; best {cfg['best']}", cfg
     if out_of_budget(cfg):
         return STOP, f"STOP: budget used ({cfg['iters']} attempts); best {cfg['best']}", cfg
     value, err = measure(cfg)
@@ -80,10 +110,12 @@ def record(d, description):
     with (d / "results.tsv").open("a", encoding="utf-8") as f:
         f.write(f"{cfg['iters']}\t{time.strftime('%Y-%m-%d %H:%M:%S')}\t{'' if value is None else value}\t"
                 f"{decision}\t{(description + (' | ' + err if err else '')).replace(chr(9), ' ')}\n")
+    note = stop_rules(cfg, value, code)
     (d / "loop.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
     msg = (f"{decision}: {value if value is not None else err} (best {cfg['best']}, attempt {cfg['iters']})" +
            ("; commit this change" if code == KEEP else "; revert this attempt's edits before the next one"))
-    if out_of_budget(cfg):
+    msg += note
+    if out_of_budget(cfg) and not cfg.get("done"):
         msg += "\nSTOP after this: budget used"
     return code, msg, cfg
 
@@ -95,12 +127,16 @@ def main(argv=None):
     a.add_argument("--direction", choices=("min", "max"), default="min")
     a.add_argument("--max-iters", type=int, default=20); a.add_argument("--max-minutes", type=float, default=0)
     a.add_argument("--timeout", type=int, default=600)
+    a.add_argument("--target", type=float, help="done when the metric reaches this in two runs in a row")
+    a.add_argument("--patience", type=int, default=5, help="discards in a row that count as a stall; 2 stalls stop")
+    a.add_argument("--stop-rule", choices=("on", "off"), default="on")
     a = sub.add_parser("record"); a.add_argument("dir"); a.add_argument("description")
     a = sub.add_parser("status"); a.add_argument("dir")
     args = p.parse_args(argv)
     d = Path(args.dir)
     if args.cmd == "init":
-        cfg = init(d, args.metric, args.direction, args.max_iters, args.max_minutes, args.timeout)
+        cfg = init(d, args.metric, args.direction, args.max_iters, args.max_minutes, args.timeout, args.target,
+                   args.patience, args.stop_rule)
         value, err = measure(cfg)  # the baseline every attempt has to beat
         if value is not None:
             cfg["best"] = value

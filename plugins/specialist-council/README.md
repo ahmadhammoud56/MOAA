@@ -23,6 +23,17 @@ new council members.
 Or ask for "a council" or "a specialist team" in plain words. The agents are named
 `specialist-council:council-<role>`.
 
+**Spawn rule.** Before spawning workers the council names which condition makes a subagent worth its cost: context
+bloat, real parallelism, or tool and instruction conflicts (after Anthropic's guidance on when to fold subagents into
+the main loop). If none applies, it does the work in the main loop with the role card as a brief. Workers return a
+short Result / Evidence / Open questions block. `python council.py spawn-rule --set off` (or
+`MOAA_COUNCIL_SPAWN_RULE=off`) turns the rule off; `spawn-rule` alone prints its state.
+
+**Long tasks.** `/specialist-council:long-task` keeps a brief, progress and evidence files so work survives resets.
+Its `reconstruction` preset, for rebuilding software from observed behaviour, starts with a recorded authorisation
+step, keeps a behaviour checklist, verifies with REA's `verify_reconstruction` when available, and is done when every
+must-have passes in two runs in a row.
+
 ## Roles and models
 
 Every role has a preset model and effort in `profile.json`, chosen by specialty

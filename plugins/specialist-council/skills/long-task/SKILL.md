@@ -20,6 +20,22 @@ Write `brief.md` with these fields, filled from the request and the project. Ask
 - **Constraints:** what must not change, what needs the user's go-ahead (pushes, sends, deletes, spending).
 - **Budget:** turn or time limit, if the user gave one.
 
+### Reconstruction preset
+
+Use it when the request rebuilds existing software, a file format or a protocol from observed behaviour (say
+"reconstruction", or the request names software to rebuild or clone). It adds to the brief:
+
+- **Authorisation** (first, before any analysis): what may be rebuilt and on what grounds: the user's own code,
+  an open licence, interoperability under the applicable law, or written permission. Record the grounds. If they
+  are missing or the target's licence forbids it, stop and ask; do not work around a licence or a technical
+  protection.
+- **Behaviour checklist** in `checks.md`: one row per observable behaviour of the original (input, expected output,
+  how it was observed), each marked must-have or nice-to-have. Build clean-room from this list, not by copying code.
+- **Verification:** when the `rea` MCP server is present, check each row with its `verify_reconstruction` and
+  `evaluate_reconstruction_coverage` tools; otherwise with tests that replay the recorded inputs.
+- **Done rule:** every must-have row passes in two runs in a row. Stop and report when two passes in a row make no
+  progress (a stall); do not loop on the same failing rows.
+
 ## 2. Progress file (update after every step)
 
 `progress.md` holds: task (one line), outputs so far with paths, checks done with their results, decisions and why,

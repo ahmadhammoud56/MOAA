@@ -74,7 +74,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "dbd4588f9e1033efb41dad4bef2f7947c8993d44"
+        "sha": "ca45fc496a3436251f191354091d557da31c15b5"
       },
       "description": "Recommends relevant Claude Academy courses, tutorials, and use cases when users ask how to use Claude",
       "strict": false,
@@ -1164,7 +1164,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "dbd4588f9e1033efb41dad4bef2f7947c8993d44"
+        "sha": "ca45fc496a3436251f191354091d557da31c15b5"
       },
       "description": "Appends two or three short follow-up questions after a substantive answer to help users check key facts, probe the reasoning, and notice missing context",
       "strict": false,
@@ -1182,7 +1182,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "dbd4588f9e1033efb41dad4bef2f7947c8993d44"
+        "sha": "ca45fc496a3436251f191354091d557da31c15b5"
       },
       "description": "Collection of document processing suite including Excel, Word, PowerPoint, and PDF capabilities",
       "strict": false,
@@ -1243,7 +1243,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "dbd4588f9e1033efb41dad4bef2f7947c8993d44"
+        "sha": "ca45fc496a3436251f191354091d557da31c15b5"
       },
       "description": "Collection of example skills demonstrating various capabilities including skill creation, MCP building, visual design, algorithmic art, internal communications, web testing, artifact building, Slack GIFs, and theme styling",
       "strict": false,
@@ -1272,7 +1272,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "dbd4588f9e1033efb41dad4bef2f7947c8993d44"
+        "sha": "ca45fc496a3436251f191354091d557da31c15b5"
       },
       "description": "Claude API and SDK documentation skill for building LLM-powered applications. Upstream plugin `claude-api` from anthropic-agent-skills; listed as `llm-api-reference` because `claude-api` is a reserved name.",
       "strict": false,

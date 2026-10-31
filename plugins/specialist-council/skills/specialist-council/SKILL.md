@@ -22,6 +22,13 @@ Use native registered subagents named `council-<role-id>`. Read [Claude runtime]
    at 100%) at a fifth of the cost and time. Unless the user explicitly asked for several workers, answer such tasks
    yourself or with one worker and say so in one line. Convene a team for ambiguous, high-stakes, long or
    multi-part work, where independent methods can actually disagree.
+   Spawn rule (on by default; `python "${CLAUDE_PLUGIN_ROOT}/council.py" spawn-rule` prints its state as one
+   standalone command, `--set off` or `MOAA_COUNCIL_SPAWN_RULE=off` turns it off): before spawning, name in one line
+   which keep-condition applies. A subagent earns its cost only for (a) context bloat: the work would flood the main
+   context with material the final answer does not need; (b) real parallelism: independent parts that run at the
+   same time; or (c) conflicts: a role needs tools or instructions that clash with the main loop's. Independent
+   ensemble candidates count as (c). If none applies, work in the main loop yourself, using the role card as a
+   brief, and say so. Unless the user explicitly asked for workers, this overrides the defaults below.
 2. Inspect the advertised Claude Code agent tools, current live agents, available slots, models, and effort levels. Read [runtime.md](references/runtime.md) for actual dispatch and capability limits. Never simulate several personas in one response and describe them as real subagents.
 3. Choose the requested mode, or select a default:
 
@@ -80,8 +87,10 @@ Acceptance criteria and evaluation rubric:
 Owned files or read-only scope; dependencies:
 Authorized actions and task-specific boundaries:
 Budget and stop condition:
-Return: result/artifact paths, supporting evidence, checks performed and outcomes,
-assumptions, remaining defects or uncertainty, and integration notes if relevant.
+Return, in this order and nothing else (keep it short; put long material in files and give paths):
+  Result: the answer or artifact paths.
+  Evidence: checks performed and their outcomes.
+  Open questions: assumptions, remaining defects or uncertainty, integration notes.
 Do not delegate further. Do not edit another worker's files.
 ```
 

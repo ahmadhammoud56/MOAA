@@ -58,7 +58,7 @@ class MergeTests(unittest.TestCase):
         import json, tempfile
         home = Path(tempfile.mkdtemp()) / ".claude"
         home.mkdir()
-        pin = {"command": "cmd", "args": ["/c", "npx", "-y", "rea-agents@6.4.0", "mcp"]}
+        pin = {"command": "cmd", "args": ["/c", "npx", "-y", "rea-agents@6.8.0", "mcp"]}
         def cfg(args):
             (home.parent / ".claude.json").write_text(json.dumps({"mcpServers": {"rea": {"command": "cmd", "args": args}}}))
         cfg(["/c", "npx", "-y", "rea-agents@6.3.0", "mcp"])
@@ -312,7 +312,7 @@ class PruneTests(unittest.TestCase):
 class SafetyTests(unittest.TestCase):
     def test_mcp_rows_classify_health_and_hint_slow_npx_servers(self):
         out = ("Checking MCP server health...\n\n"
-               "rea: cmd /c npx -y rea-agents@6.4.0 mcp - ✗ Failed to connect\n"
+               "rea: cmd /c npx -y rea-agents@6.8.0 mcp - ✗ Failed to connect\n"
                "ansys: C:/x/python.exe -m ansys_mcp_server.server - ✔ Connected\n"
                "claude.ai Slack: https://mcp.slack.com/mcp - ! Needs authentication\n")
         rows = {r[1]: r for r in install.mcp_rows(out)}
