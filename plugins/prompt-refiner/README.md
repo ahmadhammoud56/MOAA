@@ -52,7 +52,7 @@ py refiner.py notice off
 ```
 
 - `mode silent`: write the brief, never ask; open points become assumptions.
-- `notice off`: hide the one-line `brief ->` notice (the stub is still written).
+- `notice off` (or `PROMPT_REFINER_NOTICE=off`): hide the one-line `brief ->` notice (the stub is still written).
 - `raw:` at the start of a prompt skips the refiner for that prompt.
 - `PROMPT_REFINER=off` in the environment skips it for that process (scripted `claude -p` runs, CI).
 - State lives in `~/.claude/prompt-refiner/config.json` (`CLAUDE_CONFIG_DIR` respected).

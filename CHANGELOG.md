@@ -14,6 +14,12 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
   than 40 runs unless `--max-runs` is raised with the user's yes.
 - **strata 0.8.0, claim validity dates.** `graph.py node ... --valid-from/--valid-to YYYY-MM-DD`; `graph.py check`
   lists claims past their `valid_to` as expired and leaves them out of the grounding score.
+- **strata engine chain:** a quota or login error pauses Haiku for an hour (`engine.json`); sessions the `local` pass
+  extracted are retried with Haiku once the pause is over, and its notes replace the rule-based ones; an opt-in free
+  OpenCode step (`config fallback opencode,local` or `STRATA_FALLBACK`) runs through allies before `local`.
+- **strata vault at session start:** the first session in any project creates the vault, not only the first chat end.
+- **Env-var off switches:** `MOAA_LOOP_STOP_RULE=off` (karpathy-loop stop rules), `PROMPT_REFINER_NOTICE=off`
+  (refiner notice), `STRATA_FALLBACK=none` (keep failed extractions pending).
 - **strata recall benchmark:** `bench/recall_bench.py` scores `strata.py search` recall@k on LongMemEval-format data,
   retrieval only (no model cost); the dataset is not shipped.
 

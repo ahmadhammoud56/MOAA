@@ -243,7 +243,8 @@ def main(argv):
         if ctx:
             out = {"hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": ctx}}
             stub = re.search(r"\S+/" + BRIEFS + r"/[^ ]+?\.md", ctx)
-            if stub and Path(stub.group()).is_file() and load_config(home)["notice"]:
+            quiet = os.environ.get("PROMPT_REFINER_NOTICE", "").strip().lower() in ("off", "0", "false", "no")
+            if stub and Path(stub.group()).is_file() and load_config(home)["notice"] and not quiet:
                 out["systemMessage"] = f"prompt-refiner: brief -> {BRIEFS}/{Path(stub.group()).name}"
             print(json.dumps(out))
         return 0

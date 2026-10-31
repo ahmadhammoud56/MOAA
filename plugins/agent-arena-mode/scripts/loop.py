@@ -13,6 +13,7 @@ instructions) and results.tsv (every attempt).
 """
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -76,7 +77,7 @@ def stop_rules(cfg, value, code):
     """Stop rules (off with --stop-rule off): done when the target holds in two runs in a row (the kept run and one
     re-measure, so a flaky pass does not end the loop); after `patience` discards in a row, a stall: the first one
     asks for a different approach, the second one stops."""
-    if cfg.get("stop_rule", "on") == "off":
+    if cfg.get("stop_rule", "on") == "off" or os.environ.get("MOAA_LOOP_STOP_RULE", "").lower() == "off":
         return ""
     if code == KEEP and reached(value, cfg):
         again, _ = measure(cfg)

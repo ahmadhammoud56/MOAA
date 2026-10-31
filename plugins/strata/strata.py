@@ -137,6 +137,8 @@ def connect():
     db.executescript(SCHEMA)
     if "consolidated_chars" not in {r[1] for r in db.execute("PRAGMA table_info(sessions)")}:
         db.execute("ALTER TABLE sessions ADD COLUMN consolidated_chars INTEGER")  # schema of 0.1.0 before review
+    if "engine" not in {r[1] for r in db.execute("PRAGMA table_info(sessions)")}:
+        db.execute("ALTER TABLE sessions ADD COLUMN engine TEXT")  # which engine extracted it; `local` gets a retry
     return db
 
 
@@ -524,31 +526,102 @@ def local_extract(db, session):
     return {"atoms": atoms[:12]}
 
 
-def consolidate(db, session, engine, dry_run=False):
+QUOTA = re.compile(r"allowance|quota|usage limit|rate limit|429|overloaded|authenticate|oauth|login|credit", re.I)
+BACKOFF_S = 3600  # after a quota or login error, model engines are skipped this long
+
+
+def backoff(set_reason=None):
+    """Seconds left in the engine back-off, or 0; with set_reason, start one."""
+    path = data_dir() / "engine.json"
+    if set_reason:
+        path.write_text(json.dumps({"until": time.time() + BACKOFF_S, "reason": set_reason[-300:]}), encoding="utf-8")
+    try:
+        return max(0.0, json.loads(path.read_text(encoding="utf-8"))["until"] - time.time())
+    except (OSError, ValueError, KeyError, TypeError):
+        return 0.0
+
+
+def fallbacks(cfg):
+    """Engines tried after the main one, in order: STRATA_FALLBACK or `config fallback` (comma list: opencode, local,
+    none). `local` always comes last unless the list is `none`."""
+    raw = os.environ.get("STRATA_FALLBACK") or cfg.get("fallback", "local")
+    chain = [x.strip() for x in raw.split(",") if x.strip()]
+    if chain in ([], ["none"]) or raw.strip().lower() in OFF:
+        return []
+    return [x for x in chain if x not in ("none", "local")] + ["local"]
+
+
+def allies_script():
+    """allies.py next to strata: the repo layout (plugins/allies) or the plugin cache (allies/<version>)."""
+    for base in (HERE.parent / "allies", HERE.parent.parent / "allies"):
+        hits = sorted(base.glob("allies.py")) or sorted(base.glob("*/allies.py"), key=lambda p: p.parent.name)
+        if hits:
+            return hits[-1]
+    return None
+
+
+def run_ally(member, prompt):
+    """A free ally model (OpenCode's zero-retention Zen models) through allies, read-only, in strata's data folder."""
+    script = allies_script()
+    if not script:
+        raise SystemExit("memory: the allies plugin is not installed")
+    task = data_dir() / "extract-task.md"
+    task.write_text(prompt, encoding="utf-8")
+    out = subprocess.run([sys.executable, str(script), "ask", member, "--task-file", str(task), "--cwd", str(data_dir()),
+                          "--timeout", "600"], capture_output=True, text=True, encoding="utf-8", errors="replace",
+                         timeout=700, env=child_env(), cwd=str(data_dir()))
+    try:
+        meta = json.loads(out.stdout)[0]
+        if meta.get("ok"):
+            return Path(meta["answer"]).read_text(encoding="utf-8", errors="replace")
+        raise SystemExit(f"memory: {member} failed: {meta.get('failure') or meta.get('error')}")
+    except (ValueError, IndexError, KeyError, OSError):
+        raise SystemExit(f"memory: {member} failed: {(out.stderr or out.stdout).strip()[-300:]}")
+
+
+def extract(engine, db, session, prompt):
+    if engine == "local":
+        return local_extract(db, session)
+    if engine in ("opencode", "gemini", "codex"):
+        return parse_reply(run_ally(engine, prompt))
+    return parse_reply(run_engine(engine, prompt))
+
+
+def consolidate(db, session, engine, dry_run=False, retry=False):
+    """Extract one session. The engine chain never stalls: a failed engine hands over to the next fallback, and a
+    quota or login error pauses model engines for an hour. A session `local` extracted is retried with a model later
+    (`retry`): its rule-based notes are replaced by the model's."""
     cfg = config()
     prompt = build_prompt(db, session, cfg)
     if dry_run or engine == "none":
         return {"session": session, "prompt_chars": len(prompt), "skipped": True}
-    row = db.execute("SELECT project, chars, COALESCE(consolidated_chars, 0) FROM sessions WHERE id=?",
+    row = db.execute("SELECT project, chars, COALESCE(consolidated_chars, 0), engine FROM sessions WHERE id=?",
                      (session,)).fetchone()
     project = row[0]
-    if row[2] and row[2] >= (row[1] or 0):  # another run got here first (two sessions ended at once)
+    if not retry and row[2] and row[2] >= (row[1] or 0):  # another run got here first (two sessions ended at once)
         return {"session": session, "skipped": True, "reason": "already consolidated"}
-    used, error = engine, ""
-    try:
-        data = local_extract(db, session) if engine == "local" else parse_reply(run_engine(engine, prompt))
-    except SystemExit as e:  # the engine is down: used-up allowance, expired login, missing CLI, timeout
-        error, used = str(e)[-300:], cfg.get("fallback", "local")
-        if used != "local":
-            raise
-        data = local_extract(db, session)
-    except subprocess.TimeoutExpired:
-        error, used = f"{engine} timed out", cfg.get("fallback", "local")
-        if used != "local":
-            raise
-        data = local_extract(db, session)
-    out = {"session": session, "engine": used, **({"engine_error": error} if error else {}),
+    chain = ([engine] if engine == "local" or not backoff() else []) + [e for e in fallbacks(cfg) if e != engine]
+    if retry:
+        chain = [e for e in chain if e != "local"]
+    errors, data, used = [], None, None
+    for e in chain:
+        try:
+            data, used = extract(e, db, session, prompt), e
+            break
+        except (SystemExit, subprocess.TimeoutExpired, OSError) as exc:
+            msg = str(exc)[-300:] or f"{e} failed"
+            errors.append(msg)
+            if QUOTA.search(msg) and e == "claude-haiku":
+                backoff(msg)
+    if data is None:
+        raise SystemExit("memory: every engine failed: " + " | ".join(errors) if errors else "memory: no engine to run")
+    if retry or row[3] == "local":
+        with db:  # the model's notes replace the rule-based ones
+            db.execute("DELETE FROM atoms WHERE session=? AND superseded_by IS NULL", (session,))
+    out = {"session": session, "engine": used, **({"engine_error": " | ".join(errors)} if errors else {}),
            **apply(db, session, project, data)}
+    with db:
+        db.execute("UPDATE sessions SET engine=? WHERE id=?", (used, session))
     try:  # the vault's project page shows what was just learned
         project_page(db, project)
     except Exception:
@@ -1320,6 +1393,12 @@ def hook(event, stdin=None):
     cfg, db = config(), connect()
     project = project_of(data.get("cwd"))
     if event == "session-start":
+        try:  # the vault exists from the first session in any project, not only after a chat ends
+            v = vault_dir(cfg)
+            if v is not None and not v.is_dir():
+                vault_init(v)
+        except OSError:
+            pass
         text = context(db, project, cfg["context_chars"])
         if data.get("session_id") and data.get("model"):  # the model id names the context window better
             st = load_state(data["session_id"])
@@ -1546,9 +1625,11 @@ def main(argv=None):
             PENDING + " ORDER BY ended DESC LIMIT ?", (config()["min_chars"], a.limit or -1))] if a.pending else []
         if not (a.session or a.pending):
             p.error("give --session ID or --pending")
-        for sid in ids:
+        retries = [] if a.session or a.dry_run or backoff() else [r[0] for r in db.execute(
+            "SELECT id FROM sessions WHERE engine='local' ORDER BY ended DESC LIMIT 2")]
+        for sid in ids + [x for x in retries if x not in ids]:
             try:
-                print(json.dumps(consolidate(db, sid, engine, a.dry_run)))
+                print(json.dumps(consolidate(db, sid, engine, a.dry_run, retry=sid in retries and sid not in ids)))
             except (SystemExit, OSError, subprocess.SubprocessError) as e:  # one bad session must not stop the rest
                 print(json.dumps({"session": sid, "error": str(e)[-300:]}))
     elif a.cmd == "config":

@@ -20,10 +20,16 @@ not its code: no proxy, no services, no extra API key, and standard-library Pyth
   denied, saves no session and runs in strata's own data folder, so it cannot act or feed back into memory. Expect
   about 10-20k Haiku tokens per session. The same run also takes up to 3 older pending sessions, so a backlog drains.
 - **No single-provider lock:** if Haiku fails (a used-up plan allowance, an expired login, a timeout, a missing CLI),
-  the `fallback` engine runs instead: `local`, a rule-based pass with no model call and no network, stores the
-  session's request as an event and the user's own sentences that state a preference, constraint or decision.
-  `strata.py config fallback none` leaves such sessions pending for a later retry; `config engine local` never calls a
-  model. Sessions with less than `min_chars` of new text are not counted as pending.
+  the fallback chain runs instead. A quota or login error also pauses Haiku for an hour (`engine.json` in the data
+  folder), so a used-up plan is not called again for every session.
+  - `local` (always last): a rule-based pass with no model call and no network; it stores the session's request as
+    an event and the user's own sentences that state a preference, constraint or decision. Once the pause is over,
+    each extraction run retries up to 2 such sessions with Haiku, which replaces the rule-based notes.
+  - `opencode` (opt-in): a free, zero-retention OpenCode Zen model through the allies plugin, before `local`. It sends
+    the redacted conversation to that provider, so it is off until you choose it: `strata.py config fallback
+    opencode,local` (or `STRATA_FALLBACK=opencode,local`).
+  - `config fallback none` (or `STRATA_FALLBACK=none`) keeps failed sessions pending for a later retry; `config engine
+    local` never calls a model. Sessions with less than `min_chars` of new text are not counted as pending.
 - **Recall:** the `memory` skill searches upper layers first and falls back to raw conversations.
 
 A project is its git repository root, so all worktrees of one repo share memory.
@@ -91,7 +97,7 @@ per reply.
 
 ## Second-brain vault
 
-On by default, in every project: the first chat that ends creates it. One Obsidian vault of Markdown for all
+On by default, in every project: the first session that starts creates it. One Obsidian vault of Markdown for all
 projects, default `~/code/brain` (`STRATA_VAULT=PATH` moves it, `STRATA_VAULT=off` or `strata.py vault off` stops
 it). Open the folder in Obsidian (Open folder as vault) and start at `Home.md`. Layout, after the Claude + Obsidian
 second-brain setups (raw sources, compiled wiki, outputs):

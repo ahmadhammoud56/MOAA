@@ -189,6 +189,35 @@ class Hooks(Sandbox):
         with mock.patch.object(memory, "run_engine", down), self.assertRaises(SystemExit):
             memory.consolidate(self.db, "s2", "claude-haiku")  # fallback off: stays pending for a retry
 
+    def test_chain_backoff_ally_and_retry_with_a_model(self):
+        t = transcript(Path(self.dir) / "t.jsonl", [("user", "I prefer tabs over spaces in every file."),
+                                                    ("assistant", "Noted.")])
+        memory.ingest(self.db, "s1", self.proj, t)
+        calls = []
+
+        def quota(engine, prompt):
+            calls.append(engine)
+            raise SystemExit("memory: claude-haiku failed: Provider reported the inference allowance exhausted")
+        ally = mock.Mock(return_value=json.dumps({"atoms": [{"kind": "preference", "text": "Tabs, not spaces"}]}))
+        with mock.patch.object(memory, "run_engine", quota), mock.patch.object(memory, "run_ally", ally), \
+                mock.patch.dict(os.environ, {"STRATA_FALLBACK": "opencode,local"}):
+            out = memory.consolidate(self.db, "s1", "claude-haiku")
+            self.assertEqual(out["engine"], "opencode")  # a free ally after Claude's quota error
+            self.assertGreater(memory.backoff(), 0)
+            memory.ingest(self.db, "s2", self.proj, t)
+            memory.consolidate(self.db, "s2", "claude-haiku")
+        self.assertEqual(calls, ["claude-haiku"])  # in back-off, Claude is not called again
+        memory.ingest(self.db, "s3", self.proj, t)
+        with mock.patch.object(memory, "run_engine", quota):
+            self.assertEqual(memory.consolidate(self.db, "s3", "claude-haiku")["engine"], "local")
+        (Path(self.dir) / "engine.json").unlink()  # back-off over: a model retries the local session
+        good = lambda engine, prompt: json.dumps({"atoms": [{"kind": "preference", "text": "Use tabs"}]})  # noqa
+        with mock.patch.object(memory, "run_engine", good):
+            out = memory.consolidate(self.db, "s3", "claude-haiku", retry=True)
+        self.assertEqual(out["engine"], "claude-haiku")
+        texts = [r[0] for r in self.db.execute("SELECT text FROM atoms WHERE session='s3'")]
+        self.assertEqual(texts, ["Use tabs"])  # the rule-based notes were replaced
+
     def test_cli_config_and_stats(self):
         self.assertEqual(memory.main(["config", "auto", "off", "min_chars", "10"]), 0)
         self.assertEqual((memory.config()["auto"], memory.config()["min_chars"]), (False, 10))

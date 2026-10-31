@@ -206,14 +206,20 @@ misses in a row with the context at least 30% full start the handoff early ("Rea
 with the handoff off or in compact mode you only get a notice. Exact-format output (JSON, commit messages, file
 contents) leaves the line out. `strata.py canary off|misses N|floor N`, or `STRATA_CANARY=off`.
 
-**Second-brain vault.** One Markdown vault for all projects, in the style of Tiago Forte's capture, organize,
-distill and express, with Claude doing the filing. `strata.py vault init` creates it (default `~/code/brain`, a local
-git repository; strata never commits or pushes it) with `inbox/`, `daily/` and `wiki/`. `strata.py capture "TEXT"`
-(or `graph.py capture`) appends a note with the time and project to `inbox/<date>.md`; every chat adds one line to
-`daily/<date>.md` when it ends, with no model call. `/strata:wiki distill` files the inbox and recent daily notes
-into linked wiki pages, archives what it used, logs the pass and lints the links. `[[Page]]` resolves by file name
-anywhere under `wiki/`, as Obsidian does, so you can open the folder in Obsidian as it is. Project RAG also searches
-the vault. `strata.py vault off`, or `STRATA_VAULT=off` (or `STRATA_VAULT=PATH` for another folder).
+**Second-brain vault (Obsidian).** One vault for all projects, kept current from every project with no setup: the
+first session in any project creates it (default `~/code/brain`, a local git repository; strata never pushes it).
+Open the folder in Obsidian and start at `Home.md`. Each chat's end rewrites `projects/<name>.md` (what strata knows
+about the project, recent commits and sessions; your notes below the `strata:auto` block are kept), adds a line
+linked to the project in `daily/<date>.md`, and refreshes `Home.md`. Sources go in `raw/` (a hook keeps them
+unchanged), `/strata:wiki distill` and `ingest` compile them with the inbox and daily notes into linked `wiki/` pages,
+and `/strata:wiki ask` answers from those pages only, with a citation per claim, into `output/`. `strata.py capture
+"TEXT"` adds a quick note to `inbox/<date>.md`. `strata.py vault refresh` rewrites every page; `vault off` or
+`STRATA_VAULT=off` stops it (`STRATA_VAULT=PATH` moves it).
+
+**No provider lock.** claude-mem stopped when its per-tool-call Haiku observer used up the plan allowance. strata
+extracts once per session, pauses Haiku for an hour after a quota or login error, and falls back to a rule-based
+`local` pass (no model, no network) so memory never stalls; local sessions are retried with Haiku later. A free
+OpenCode model can sit in between if you opt in (`strata.py config fallback opencode,local`).
 
 ```
 py plugins/strata/strata.py vault init                   # ~/code/brain
@@ -332,6 +338,9 @@ Either way:
 - **`--status` and `--doctor`** report how many skills and agents every session lists, and warn above 300.
 - **Council workers** carry an explicit core tool list instead of every MCP tool, and the council and War Room briefs
   keep the shared part first and identical so parallel workers of one type reuse the cache.
+- **Subagents and harnesses are measured too:** `/agent-arena-mode:fold-trial` runs your frozen tasks as one agent
+  loop and as a council; `/agent-arena-mode:harness-league` runs them through Claude Code and the ready allies. Both
+  judge blind, print the token estimate first and cap a plan at 40 runs.
 - **Effort is measured, not guessed:** `/agent-arena-mode:effort-trial` runs council roles at two efforts on tasks
   with checkable findings, judges them blind and suggests a preset only when the dearer effort earns it.
 - **`--report`** shows what every request costs you and what the catalog saved.

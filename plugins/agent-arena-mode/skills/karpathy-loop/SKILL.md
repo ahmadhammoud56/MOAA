@@ -16,7 +16,7 @@ The loop runs unattended because a number, not a reader, judges each attempt. Ev
    never edit them during the loop. If none exists, write it with the user before starting, and commit it.
 2. **Set up.** In a git repository with a clean working tree (commit or stash the user's work first; ask if unsure),
    run `L init <dir> --metric "<cmd>" --direction min|max --max-iters N [--max-minutes M] [--target T]
-   [--patience P]`. It measures the baseline. Stop rules (on by default, `--stop-rule off`): with `--target`, the
+   [--patience P]`. It measures the baseline. Stop rules (on by default, `--stop-rule off` or `MOAA_LOOP_STOP_RULE=off`): with `--target`, the
    loop is done when the target holds in two runs in a row (the kept run plus one re-measure); after P discards in a
    row (default 5) `record` prints `STALL` (change approach), and a second stall stops the loop.
    Fill in `program.md` with the user: the goal, which files are editable, the rules and the stop condition. That file

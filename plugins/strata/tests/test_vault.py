@@ -137,6 +137,17 @@ class Vault(Sandbox):
         with mock.patch.dict(os.environ, {"STRATA_VAULT_GUARD": "off"}):
             self.assertEqual(ask("Edit", src), "")
 
+    def test_wiki_skill_answers_from_pages_with_citations(self):
+        text = (Path(strata.__file__).parent / "skills" / "wiki" / "SKILL.md").read_text(encoding="utf-8")
+        ask = text.split("## Ask:", 1)[1].split("\n## ", 1)[0]
+        for rule in ("Use nothing else", "([[Page]])", "Not in the wiki", "G check DIR", "output/"):
+            self.assertIn(rule, ask)
+
+    def test_session_start_creates_the_vault(self):
+        self.assertFalse(self.vault.exists())
+        strata.hook("session-start", json.dumps({"session_id": "x", "cwd": str(self.dir)}))
+        self.assertTrue((self.vault / "Home.md").exists() or (self.vault / "CLAUDE.md").exists())
+
     def test_archive_moves_only_inbox_files(self):
         strata.vault_init(self.vault)
         (self.vault / "inbox" / "2026-10-25.md").write_text("- a\n", encoding="utf-8")
