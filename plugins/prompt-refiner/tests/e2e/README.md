@@ -41,3 +41,11 @@ a harness notice. Run `C-user` sends that shape and gets the refiner's and the c
 sends the desktop app's hidden summary prompt, and run `B-child` sends a prompt with strata's helper environment
 (`PROMPT_REFINER=off`). Neither gets any context. The analysis is in
 `plugins/strata/tests/e2e/machine/FINDINGS.md`.
+
+## 0.2.0 re-run (2026-11-01, Claude Code 2.1.302, Windows)
+
+`ambiguous` again with 0.2.0. The hook wrote the stub `.briefs/20261101-000135-make-the-script-better.md` (the request
+under `## Request`) and `.briefs/.gitignore` before Claude acted. Claude's first text line was
+`Brief: improve "the script" -> better version of the script.`, then it rewrote `greet.py`. It did not expand the
+stub into the full brief, so the stub alone is the record for that prompt; that is the reason the hook writes it.
+`ambiguous.jsonl` and `ambiguous.files.txt` now hold this run (paths redacted).
