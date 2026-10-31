@@ -59,6 +59,7 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import tempfile
 import time
 
 HERE = Path(__file__).resolve().parent
@@ -1249,7 +1250,7 @@ def write_auto(path, title, body, front=""):
 def real_project(project):
     """A folder that still exists and is not a throwaway one (temp folders, agent worktrees, the home folder)."""
     root = Path(root_of(project))
-    tmp = [Path(p).resolve() for p in (os.environ.get("TEMP"), os.environ.get("TMP"), "/tmp") if p]
+    tmp = [Path(p).resolve() for p in (tempfile.gettempdir(), os.environ.get("TEMP"), os.environ.get("TMP"), "/tmp") if p]
     parts = {x.lower() for x in root.parts}
     return (root.is_dir() and root.resolve() != Path.home().resolve() and "worktrees" not in parts
             and not any(t in root.resolve().parents or t == root.resolve() for t in tmp))
