@@ -59,6 +59,12 @@ The installed copy lives in Claude Code's plugin cache. Scripts are run through
 | `--seed N`, `--communication TYPE` | 42, `auto` |
 | `--resume RUN`, `--reuse IDS`, `--database PATH`, `--context-key KEY`, `--no-library` | see [orchestration](references/orchestration.md) |
 
+`/agent-arena-mode:fold-trial -- TASKS` runs the same frozen tasks as one agent loop and as a council, judged blind,
+and reports score, pass rate, tokens and the tasks that flip: whether subagents pay off on your work.
+`/agent-arena-mode:harness-league -- TASKS` does the same across harnesses (Claude Code and the ready allies: Codex,
+Gemini, OpenCode). Both use `scripts/trial.py`, print the expected tokens first and refuse more than 40 runs unless
+you raise `--max-runs`.
+
 `/agent-arena-mode:karpathy-loop --metric "CMD" --target T` edits, measures and keeps or reverts against a fixed
 number. Stop rules: done when the target holds in two runs in a row; after `--patience` discards in a row (default 5)
 it asks for a different approach, and a second stall stops it. `--stop-rule off` keeps only the budget.

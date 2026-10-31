@@ -86,7 +86,7 @@ fresh validator checks the winner (real run, 233 s, compressed):
 | **prompt-refiner** | Turns every prompt into a clear brief before Claude works on it, asks about ambiguous points with concrete options (or lets a brainstorming skill ask, never both), and hands the brief to every subagent. |
 | **moaa-core** | The one-line install (council, arena, catalog), plus a guard that steers long inline `python -c` into a script file and `/moaa-core:project-docs`, which audits a project for AGENTS.md, ARCHITECTURE.md, PRD and the rest of the agent doc set. |
 | **moaa-catalog** | Skills on demand: big skill packs stay installed but disabled, a prompt hook names the one skill a task needs, and a daily check tells you when a MOAA update is out. |
-| **More skills** | `/specialist-council:long-task` (brief, progress file, evidence review, resume), `/agent-arena-mode:karpathy-loop` (keep only changes that move a number), `/agent-arena-mode:effort-trial`, and Anthropic's automation recommender. |
+| **More skills** | `/specialist-council:long-task` (brief, progress file, evidence review, resume), `/agent-arena-mode:karpathy-loop` (keep only changes that move a number), `/agent-arena-mode:effort-trial`, `/agent-arena-mode:fold-trial` (one loop vs a council), `/agent-arena-mode:harness-league` (Claude Code vs the allies), and Anthropic's automation recommender. |
 
 ### Always on, no commands
 

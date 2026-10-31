@@ -56,6 +56,18 @@ class Findings(unittest.TestCase):
         self.assertEqual(graph.main(["check", str(root)]), 1)
         self.assertIn("graph LR", graph.export(root).read_text())
 
+    def test_expired_claims_leave_the_score(self):
+        root = Path(tempfile.mkdtemp())
+        graph.main(["node", str(root), "s1", "source", "release notes", "--ref", "CHANGELOG.md"])
+        graph.main(["node", str(root), "c1", "claim", "rea is pinned at 6.4.0", "--valid-to", "2026-10-30"])
+        graph.main(["node", str(root), "c2", "claim", "rea is pinned at 6.8.0", "--valid-from", "2026-10-31"])
+        graph.main(["edge", str(root), "c2", "supports", "s1"])
+        r = graph.check(root, today="2026-10-31")
+        self.assertEqual((r["claims"], r["grounded"], r["expired"]), (1, 1, ["c1"]))
+        self.assertEqual(graph.check(root, today="2026-10-29")["claims"], 2)  # still valid then
+        with self.assertRaises(SystemExit):
+            graph.main(["node", str(root), "c3", "claim", "x", "--valid-to", "31/10/2026"])
+
     def test_latest_node_line_wins(self):
         root = Path(tempfile.mkdtemp())
         graph.main(["node", str(root), "c1", "claim", "old"])

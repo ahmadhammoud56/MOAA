@@ -28,7 +28,8 @@ in it. Keep the answer short and point to the one tool that fits the user's task
 | Knowing when a chat has drifted | strata's canary (always on): an invisible line ends each reply; two long replies without it above 30% context start the handoff early. `strata.py canary off`. |
 | A knowledge base that compounds | `/strata:wiki`: Karpathy-style LLM Wiki; Claude compiles sources into linked pages (ingest, query, lint of the link graph). |
 | Findings with their sources | `/strata:graph`: typed claim-source graph shared by parallel agents, with a grounding check (score, specific failures). |
-| Improve something against a number | `/agent-arena-mode:karpathy-loop`: edit, measure with a fixed script, keep or discard, repeat. |
+| Improve something against a number | `/agent-arena-mode:karpathy-loop`: edit, measure with a fixed script, keep or discard, repeat; `--target` stops after two passing runs in a row, two stalls stop it. |
+| Are subagents or other harnesses worth it here? | `/agent-arena-mode:fold-trial` (one loop vs a council) and `/agent-arena-mode:harness-league` (Claude Code vs Codex, Gemini, OpenCode) on your own frozen tasks, judged blind, cost shown first. |
 
 Installer commands (run in the MOAA repo; `--dry-run` previews any of them):
 

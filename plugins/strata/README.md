@@ -188,6 +188,13 @@ python rag.py index [--full]                  refresh now (--full re-reads every
 python rag.py on|off                          python rag.py drop
 ```
 
+## Recall benchmark
+
+`python bench/recall_bench.py --data longmemeval_s.json [--limit N]` measures how often `strata.py search` puts an
+evidence session in its top 5 and 10 results, per question type, in the LongMemEval format (the method mempalace
+reports). Retrieval only, so it costs no tokens. The dataset is not shipped; download LongMemEval (MIT) and pass the
+file. A rerank step is worth adding only if this shows a clear gap.
+
 ## Commands
 
 ```

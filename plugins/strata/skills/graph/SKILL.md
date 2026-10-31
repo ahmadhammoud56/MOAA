@@ -16,6 +16,8 @@ the wiring and the evidence between them.
 ## Record
 - Source: `G node DIR s-<slug> source "<title>" --ref <path or URL>` (a ref is required for grounding).
 - Claim: `G node DIR c-<slug> claim "<one checkable statement>"`, then `G edge DIR c-<slug> supports s-<slug>`.
+  A fact that holds only for a time gets `--valid-from YYYY-MM-DD` and, once replaced, `--valid-to YYYY-MM-DD`
+  (write the node again); `G check` lists claims past their `valid_to` as expired and leaves them out of the score.
 - Other types: `entity`, `decision`, `task`. Other edges: `cites`, `contradicts` (never overwrite a disagreeing claim;
   link it), `depends_on`, `derived_from`, `about`.
 - Writing a node again with the same id replaces it (latest line wins). Each command appends one line, so parallel

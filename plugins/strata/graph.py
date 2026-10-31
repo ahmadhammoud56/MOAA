@@ -157,9 +157,17 @@ def append(root, name, record):
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def check(root):
-    """Grounding evaluator: {claims, grounded, score, failures, contradictions}. Failures are specific."""
+def expired(node, today=None):
+    """True when a node's valid_to date (YYYY-MM-DD) is before today: a fact that no longer holds."""
+    end = node.get("valid_to") or ""
+    return bool(end) and end < (today or time.strftime("%Y-%m-%d"))
+
+
+def check(root, today=None):
+    """Grounding evaluator: {claims, grounded, score, failures, contradictions, expired}. Failures are specific.
+    Claims past their valid_to date are listed as expired and left out of the score."""
     nodes, edges = load(root)
+    old = sorted(n["id"] for n in nodes.values() if n["type"] == "claim" and expired(n, today))
     failures, contradictions = [], []
     for e in edges:
         for end in ("src", "dst"):
@@ -167,7 +175,7 @@ def check(root):
                 failures.append(f"edge {e['src']} -{e['rel']}-> {e['dst']}: no node {e[end]}")
         if e["rel"] == "contradicts":
             contradictions.append(f"{e['src']} contradicts {e['dst']}")
-    claims = [n for n in nodes.values() if n["type"] == "claim"]
+    claims = [n for n in nodes.values() if n["type"] == "claim" and n["id"] not in old]
     grounded = 0
     for c in claims:
         support = [nodes.get(e["dst"]) for e in edges if e["src"] == c["id"] and e["rel"] in ("supports", "cites")]
@@ -181,7 +189,7 @@ def check(root):
             grounded += 1
     return {"claims": len(claims), "grounded": grounded,
             "score": round(grounded / len(claims), 3) if claims else 1.0,
-            "failures": failures, "contradictions": contradictions}
+            "failures": failures, "contradictions": contradictions, "expired": old}
 
 
 def export(root):
@@ -210,6 +218,8 @@ def main(argv=None):
         a = sub.add_parser(name); a.add_argument("dir"); a.add_argument("--json", action="store_true")
     a = sub.add_parser("node"); a.add_argument("dir"); a.add_argument("id"); a.add_argument("type", choices=NODE_TYPES)
     a.add_argument("text"); a.add_argument("--ref", default="")
+    a.add_argument("--valid-from", default="", help="YYYY-MM-DD the claim starts to hold")
+    a.add_argument("--valid-to", default="", help="YYYY-MM-DD after which it no longer holds (left out of check)")
     a = sub.add_parser("edge"); a.add_argument("dir"); a.add_argument("src"); a.add_argument("rel", choices=EDGE_TYPES)
     a.add_argument("dst")
     a = sub.add_parser("export"); a.add_argument("dir")
@@ -231,7 +241,11 @@ def main(argv=None):
     elif args.cmd == "log":
         log(root, " ".join(args.text))
     elif args.cmd == "node":
-        append(root, "nodes.jsonl", {"id": args.id, "type": args.type, "text": args.text, "ref": args.ref,
+        for d in (args.valid_from, args.valid_to):
+            if d and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", d):
+                p.error(f"dates are YYYY-MM-DD, not {d!r}")
+        extra = {k: v for k, v in (("valid_from", args.valid_from), ("valid_to", args.valid_to)) if v}
+        append(root, "nodes.jsonl", {"id": args.id, "type": args.type, "text": args.text, "ref": args.ref, **extra,
                                      "by": os.environ.get("WARROOM_AGENT", ""), "ts": time.time()})
     elif args.cmd == "edge":
         append(root, "edges.jsonl", {"src": args.src, "rel": args.rel, "dst": args.dst, "ts": time.time()})
@@ -260,6 +274,8 @@ def main(argv=None):
                 print("FAIL " + f)
             for c in r["contradictions"]:
                 print("CONTRADICTION " + c)
+            if r["expired"]:
+                print("expired (past valid_to, left out): " + ", ".join(r["expired"]))
         return 1 if r["failures"] else 0
     return 0
 

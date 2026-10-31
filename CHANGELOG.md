@@ -4,6 +4,19 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-10-31
+
+### Added
+- **agent-arena-mode 0.8.0, fold trial and harness league.** `/agent-arena-mode:fold-trial` runs the same frozen
+  tasks as one agent loop and as a council; `/agent-arena-mode:harness-league` runs them through Claude Code and the
+  ready allies (Codex, Gemini, OpenCode). Both judge blind and report mean score, pass rate, tokens, time and the
+  tasks whose outcome flips, from a shared `scripts/trial.py` that prints the expected tokens first and refuses more
+  than 40 runs unless `--max-runs` is raised with the user's yes.
+- **strata 0.8.0, claim validity dates.** `graph.py node ... --valid-from/--valid-to YYYY-MM-DD`; `graph.py check`
+  lists claims past their `valid_to` as expired and leaves them out of the grounding score.
+- **strata recall benchmark:** `bench/recall_bench.py` scores `strata.py search` recall@k on LongMemEval-format data,
+  retrieval only (no model cost); the dataset is not shipped.
+
 ## [0.21.0] - 2026-10-31
 
 ### Added
