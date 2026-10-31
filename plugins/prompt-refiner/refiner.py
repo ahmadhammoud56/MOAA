@@ -194,8 +194,9 @@ def context(prompt, cwd, mode, now=None, path=None):
             "it is done), Assumptions, Open points. Fill it from the prompt, the conversation and a quick look at "
             "the project; do not invent requirements the user did not imply. " + law + show
             + (ASK + " " + DEFER.rstrip() if mode == "ask" else SILENT)
-            + f" Once settled, replace the stub brief at {path} (it holds the request) with the full brief and the "
-            "answers, show the user a short version of it, and work from the brief, not the raw prompt. " + handoff
+            + f" Once settled, and before you edit any project file, overwrite the stub brief at {path} (it holds the "
+            "request) with the full brief and the answers (a Write call; this is required, not optional), show the "
+            "user a short version of it, and work from the brief, not the raw prompt. " + handoff
             + " If this message only continues the current task (a follow-up, a small correction) and is clear, "
             "skip the full brief (keep the one `Brief:` line) and just do it. For a pure question that needs no work "
             "beyond the answer, skip the brief and delete the stub.")

@@ -49,3 +49,10 @@ under `## Request`) and `.briefs/.gitignore` before Claude acted. Claude's first
 `Brief: improve "the script" -> better version of the script.`, then it rewrote `greet.py`. It did not expand the
 stub into the full brief, so the stub alone is the record for that prompt; that is the reason the hook writes it.
 `ambiguous.jsonl` and `ambiguous.files.txt` now hold this run (paths redacted).
+
+## 0.2.1 re-run (2026-11-01)
+
+The instruction now says to overwrite the stub with the full brief before editing any project file. Live `ambiguous`
+run: the stub was replaced by a full brief (Goal, Deliverables, Inputs, Constraints, Acceptance checks, Assumptions,
+Open points), the reply opened with a `Brief:` line, and only then was `greet.py` edited. `ambiguous.jsonl` and
+`ambiguous.files.txt` hold this run (paths redacted).

@@ -4,6 +4,12 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.22.1] - 2026-11-01
+
+### Fixed
+- **prompt-refiner 0.2.1:** Claude now overwrites the stub brief with the full brief before it edits any project
+  file; a live run wrote all seven headings, where 0.2.0 left the stub as it was.
+
 ## [0.22.0] - 2026-10-31
 
 ### Added
