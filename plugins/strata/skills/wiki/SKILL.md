@@ -1,7 +1,7 @@
 ---
 name: wiki
 description: Build and maintain a Karpathy-style LLM Wiki - compile papers, notes and project sources once into linked Markdown pages (index, log, schema) that Claude writes and keeps current, answer from the pages instead of re-reading raw sources, and lint the link graph; distill the second-brain vault's inbox and daily notes into wiki pages. Use when the user wants a knowledge base, a literature wiki, project notes that compound, a second brain, or invokes /strata:wiki.
-argument-hint: "init [DIR] | ingest SOURCE | query QUESTION | lint | distill"
+argument-hint: "init [DIR] | ingest SOURCE | query QUESTION | ask QUESTION | lint | distill | vault init"
 ---
 
 # Strata wiki: an LLM-maintained knowledge base
@@ -32,6 +32,21 @@ Read `index.md`, then only the pages it points to; answer with page names and `r
 memory when the wiki has a page on it. If the answer is useful beyond this question, file it as a new page, link it,
 index it and log the query.
 
+## Ask: answers from the wiki only
+For `ask QUESTION` (in a wiki folder or the vault's `wiki/`):
+1. Read `index.md`, then the pages it points to. Use nothing else: not raw sources, not memory, not the web.
+2. Answer with a citation after every claim, `([[Page]])`. A claim no page supports is left out or listed under
+   "Not in the wiki" (suggest a source to ingest).
+3. Record the answer's key claims with their page sources and run `G check DIR`; fix or drop any claim it reports
+   ungrounded. Give the grounding score in one line.
+4. Save a useful answer as `output/<date>-<slug>.md` (vault) or a new wiki page, linked from the index; log it.
+
+## Init the vault with an interview
+For `vault init` (the second-brain vault, default `~/code/brain`): run `M vault init`, then ask the user up to five
+short questions with AskUserQuestion: main areas (work, research, courses, side projects), how they want pages grouped
+(by project, by topic, PARA), what must never be stored, how often to distill, and the language for pages. Add the
+answers to `VAULT/CLAUDE.md` under "## The user's choices", keeping the rules already there.
+
 ## Lint: after every few ingests and before relying on the wiki
 - `G lint DIR`: broken links, orphan pages, pages missing from the index, raw sources no page cites, hub pages.
 - `G check DIR`: claims without a grounded source, and contradictions.
@@ -42,7 +57,7 @@ Report what changed in a few lines.
 The vault is one folder for all projects (default `~/code/brain`, a local git repo): `inbox/` holds quick captures
 (`G capture "TEXT"`), `daily/` one line per chat, `wiki/` the pages with their own `index.md` and `log.md`.
 1. `M vault status` (`M` = `python "${CLAUDE_PLUGIN_ROOT}/strata.py"`) gives the path, below `VAULT`. If it does not
-   exist, tell the user `M vault init` creates it, and stop.
+   exist, run `M vault init`. Then `M vault snapshot "before distill"` (a local commit, so the pass can be undone).
 2. Read every `VAULT/inbox/*.md` (not `inbox/archive/`) and the `VAULT/daily/*.md` notes of the last 7 days.
 3. File what will still matter into pages under `VAULT/wiki/`: one page per project, topic, decision or method
    (folders such as `projects/`, `areas/`, `resources/` are fine). Revise an existing page instead of adding a near
@@ -55,9 +70,17 @@ The vault is one folder for all projects (default `~/code/brain`, a local git re
    Daily notes stay where they are.
 6. `G log VAULT/wiki "distill: <n> captures, <n> daily notes -> <pages>"`, then `G lint VAULT/wiki` and fix what it
    reports (broken links, orphans, pages missing from the index).
-7. Report the pages created and updated in a few lines. Never commit or push the vault; the user does that.
+7. Report the pages created and updated in a few lines. Never push the vault; commit only through `M vault snapshot`.
+
+## Scheduled care (optional)
+Nightly: `/strata:wiki distill`. Weekly: `G lint VAULT/wiki` and `G check VAULT/wiki`, read-only, reporting what to fix.
+Set these up with the user's scheduler (`/schedule`, or a scheduled task in the desktop app) only when the user asks;
+the vault itself stays current without them, because every chat's end updates `daily/`, `projects/` and `Home.md`.
 
 ## Notes
 - Strata's automatic memory (profile, scenes, notes) stays separate: it remembers how you work; the wiki holds what you
-  know about a subject.
+  know about a subject. The vault's `projects/` pages show that memory per project, rewritten at each chat's end.
+- `raw/` stays as sources arrived: a hook blocks edits to files already there (`M vault guard off` to allow).
+- Obsidian formats (callouts, properties, Bases, Canvas): use the `obsidian-markdown`, `obsidian-bases` and
+  `json-canvas` skills when they are available.
 - Git the folder for history. Keep secrets and private data out of `raw/` unless the folder stays private.

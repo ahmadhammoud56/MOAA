@@ -22,6 +22,9 @@ class Sandbox(unittest.TestCase):
         env = mock.patch.dict(os.environ, {"MOAA_STRATA_DIR": str(self.dir / "data"), "STRATA_VAULT": str(self.vault),
                                            "STRATA_CANARY": "off"})
         env.start()
+        real = mock.patch.object(strata, "real_project", return_value=True)  # tests run in temp folders
+        real.start()
+        self.addCleanup(real.stop)
         self.addCleanup(env.stop)
         for k in (strata.CHILD, "STRATA_RAG"):
             os.environ.pop(k, None)
@@ -77,9 +80,9 @@ class Vault(Sandbox):
         end = lambda s: strata.hook("session-end", json.dumps({"session_id": s, "transcript_path": str(t),  # noqa
                                                                 "cwd": str(self.dir)}))
         with mock.patch.object(strata, "spawn"):
-            end("aaaaaaaa-1")  # no vault folder yet: nothing is written, nothing is created
             self.assertFalse(self.vault.exists())
-            strata.vault_init(self.vault)
+            end("aaaaaaaa-1")  # no vault folder yet: the first chat creates it
+            self.assertTrue((self.vault / "Home.md").exists())
             end("aaaaaaaa-1")
             end("aaaaaaaa-1")  # a resumed chat replaces its line
             end("bbbbbbbb-2")
@@ -98,6 +101,41 @@ class Vault(Sandbox):
             strata.hook("session-end", json.dumps({"session_id": "dddddddd", "transcript_path": str(t),
                                                    "cwd": str(self.dir)}))
         self.assertNotIn("dddddddd", (self.vault / "daily" / time.strftime("%Y-%m-%d.md")).read_text(encoding="utf-8"))
+
+    def test_project_page_and_home_keep_user_notes(self):
+        strata.vault_init(self.vault)
+        for name in ("raw", "projects", "output", "CLAUDE.md"):
+            self.assertTrue((self.vault / name).exists(), name)
+        db = strata.connect()
+        project = strata.project_of(str(self.dir))
+        db.execute("INSERT INTO sessions(id, project, ended) VALUES ('s1', ?, ?)", (project, time.time()))
+        db.execute("INSERT INTO l0(session, project, ts, role, text) VALUES ('s1', ?, 1, 'user', 'Build the parser')",
+                   (project,))
+        db.execute("INSERT INTO scenes(project, title, body, updated) VALUES (?, 'Parser', 'Hand-written lexer.', 1)",
+                   (project,))
+        db.commit()
+        page = strata.project_page(db, project)
+        text = page.read_text(encoding="utf-8")
+        for part in ("type: project", "### Parser", "Hand-written lexer.", "Build the parser", strata.AUTO_END):
+            self.assertIn(part, text)
+        page.write_text(text + "my own line\n", encoding="utf-8")
+        strata.project_page(db, project)
+        self.assertIn("my own line", page.read_text(encoding="utf-8"))  # kept below the auto block
+        self.assertIn(f"[[{page.stem}]]", (self.vault / "Home.md").read_text(encoding="utf-8"))
+
+    def test_raw_guard_blocks_changes_to_existing_sources_only(self):
+        strata.vault_init(self.vault)
+        src = self.vault / "raw" / "paper.md"
+        src.write_text("source", encoding="utf-8")
+        ask = lambda tool, path: strata.hook("raw-guard", json.dumps(  # noqa: E731
+            {"tool_name": tool, "tool_input": {"file_path": str(path)}, "cwd": str(self.dir)}))
+        self.assertIn('"deny"', ask("Edit", src))
+        self.assertIn('"deny"', ask("Write", src))
+        self.assertEqual(ask("Write", self.vault / "raw" / "new.md"), "")  # new sources may land
+        self.assertEqual(ask("Edit", self.vault / "wiki" / "index.md"), "")
+        self.assertEqual(ask("Read", src), "")
+        with mock.patch.dict(os.environ, {"STRATA_VAULT_GUARD": "off"}):
+            self.assertEqual(ask("Edit", src), "")
 
     def test_archive_moves_only_inbox_files(self):
         strata.vault_init(self.vault)

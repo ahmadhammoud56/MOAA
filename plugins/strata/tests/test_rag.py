@@ -126,6 +126,14 @@ class Hint(Sandbox):
     def run_hook(self, event, prompt=""):
         return rag.hook(event, json.dumps({"cwd": str(self.proj), "prompt": prompt, "session_id": "s1"}))
 
+    def test_heading_path_of_a_hit(self):
+        self.write("docs/deep.md", "# Setup\n\nintro\n\n## Windows\n\nuse py\n\n### Paths\n\nlong text here\n\n## Linux\n\n"
+                                   "use python3\n")
+        rag.index(self.db, self.proj)
+        self.assertEqual(rag.heading_path(self.db, self.key, "docs/deep.md", 11), "Setup > Windows > Paths")
+        self.assertEqual(rag.heading_path(self.db, self.key, "docs/deep.md", 15), "Setup > Linux")
+        self.assertEqual(rag.heading_path(self.db, self.key, "src/other.py", 1), "")
+
     def test_strong_match_adds_passages_with_path_and_lines(self):
         out = json.loads(self.run_hook("prompt", "How do we calibrate the rheometer for the Bingham yield stress?"))
         text = out["hookSpecificOutput"]["additionalContext"]

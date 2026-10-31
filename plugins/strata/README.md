@@ -17,8 +17,13 @@ not its code: no proxy, no services, no extra API key, and standard-library Pyth
   labelled as data that may be out of date.
 - **SessionEnd:** stores the session in L0. If at least 1,500 characters of new conversation came in, one
   background `claude -p --model haiku` call extracts notes, scenes and profile entries. That call has every tool
-  denied and saves no session, so it cannot act or feed back into memory. Expect about 10-20k Haiku tokens per
-  session.
+  denied, saves no session and runs in strata's own data folder, so it cannot act or feed back into memory. Expect
+  about 10-20k Haiku tokens per session. The same run also takes up to 3 older pending sessions, so a backlog drains.
+- **No single-provider lock:** if Haiku fails (a used-up plan allowance, an expired login, a timeout, a missing CLI),
+  the `fallback` engine runs instead: `local`, a rule-based pass with no model call and no network, stores the
+  session's request as an event and the user's own sentences that state a preference, constraint or decision.
+  `strata.py config fallback none` leaves such sessions pending for a later retry; `config engine local` never calls a
+  model. Sessions with less than `min_chars` of new text are not counted as pending.
 - **Recall:** the `memory` skill searches upper layers first and falls back to raw conversations.
 
 A project is its git repository root, so all worktrees of one repo share memory.
@@ -86,16 +91,35 @@ per reply.
 
 ## Second-brain vault
 
-On by default; it starts working once the folder exists. One folder of Markdown for all projects, default
-`~/code/brain` (`STRATA_VAULT=PATH` moves it, `STRATA_VAULT=off` or `strata.py vault off` stops it). It is a local git
-repository that strata never commits or pushes. Open it in Obsidian if you like.
+On by default, in every project: the first chat that ends creates it. One Obsidian vault of Markdown for all
+projects, default `~/code/brain` (`STRATA_VAULT=PATH` moves it, `STRATA_VAULT=off` or `strata.py vault off` stops
+it). Open the folder in Obsidian (Open folder as vault) and start at `Home.md`. Layout, after the Claude + Obsidian
+second-brain setups (raw sources, compiled wiki, outputs):
 
-- `strata.py vault init [PATH]`: creates `inbox/` (with `archive/`), `daily/`, `wiki/index.md`, `wiki/log.md`, a
-  README and `.gitignore`, and runs `git init`.
+```
+Home.md        map of contents, rewritten: projects, recent days, wiki index
+projects/      one page per project, rewritten when a chat ends there or memory is consolidated
+daily/         one line per chat, linked to its project page
+inbox/         quick captures; inbox/archive/ once distilled
+raw/           sources you add (articles, papers, transcripts); never edited afterwards
+wiki/          pages Claude compiles (/strata:wiki ingest, distill); index.md, log.md
+output/        answers and reports from the wiki (/strata:wiki ask)
+CLAUDE.md      the vault's rules for Claude (/strata:wiki vault init adds your choices by interview)
+```
+
+- **Project pages:** `projects/<name>.md` has properties (`type: project`, path, updated), what strata knows about the
+  project (its scenes and newest notes), its last commits and its recent sessions linked to their daily notes. Only
+  the part between the `strata:auto` markers is rewritten; your notes below it are kept. `strata.py vault refresh`
+  rewrites every project page and `Home.md` at once.
+- **raw/ guard:** a PreToolUse hook refuses Write and Edit on a file that already exists under a `raw/` folder that
+  sits next to a `wiki/` folder (the vault, or a `/strata:wiki` folder). New sources may still land there.
+  `strata.py vault guard off` or `STRATA_VAULT_GUARD=off` turns it off.
+- `strata.py vault snapshot [MSG]`: a local commit before a bulk change (distill runs it); strata never pushes.
+- `strata.py vault init [PATH]`: creates the layout above without waiting for a chat to end.
 - `graph.py capture "TEXT"` (or `strata.py capture`): appends `- HH:MM [project] TEXT` to `inbox/<date>.md`,
   secrets redacted. It creates the vault if needed.
-- **Daily notes:** SessionEnd adds one line per chat to `daily/<date>.md` from what L0 already holds: prompt count,
-  the first request and the last reply (no model call). Machine sessions are skipped; a resumed chat's line is replaced.
+- **Daily notes:** SessionEnd adds one line per chat to `daily/<date>.md` from what L0 already holds: time, a
+  `[[project]]` link, prompt count, the first request and the last reply (no model call). Machine sessions are skipped; a resumed chat's line is replaced.
 - `/strata:wiki distill`: Claude files the inbox and the last week's daily notes into pages under `wiki/`, indexes
   them, moves the processed captures to `inbox/archive/` (`graph.py archive`), logs the pass and runs `graph.py lint`.
   `[[Page]]` resolves by file name anywhere under `wiki/`, as in Obsidian.
@@ -141,6 +165,8 @@ embeddings model and no API key).
   bundles are skipped; at most 5,000 files per project (`config rag_max_files N`).
 - **Never read:** `.env*`, `*.pem`, `*.key`, `keys.env`, SSH keys, `*credential*` and `*secret*` files, and the
   `.ssh`, `.aws` and `.claude` folders. Secrets inside indexed text are redacted with the same patterns as memory.
+- **Heading path:** each passage from a Markdown file is shown with the headings above it (`docs/guide.md:40-58
+  (Setup > Windows)`), read from the index, so a hit says where in the document it sits.
 - **Refresh:** SessionStart starts a background `rag.py index` when the project's index is older than ten minutes;
   it reads only new and changed files (by modification time and size) and drops deleted ones. Indexing this
   repository (540 files) takes about 5 s the first time and 0.2 s after. A home folder or a drive root that is not a
@@ -165,20 +191,23 @@ python rag.py on|off                          python rag.py drop
 ## Commands
 
 ```
-python strata.py search "QUERY" [--all]       python strata.py show
+python strata.py search "QUERY" [--all] [--scene TITLE]       python strata.py show
 python strata.py remember "TEXT" [--kind preference] [--global]
 python strata.py scene "TITLE" "BODY"         python strata.py profile KEY "TEXT"
 python strata.py forget ID | --session ID | --scene ID | --profile KEY
-python strata.py consolidate --pending [--dry-run]
+python strata.py consolidate --pending [--limit N] [--engine claude-haiku|local] [--dry-run]
+python strata.py config fallback local|none   (engine used when Haiku fails)
 python strata.py config auto off              (no background extraction)
 python strata.py handoff on|off|status|threshold N|window N|mode handoff|compact|recall on|off
 python strata.py canary on|off|status|misses N|floor N
-python strata.py vault status|on|off|init [PATH]     python strata.py capture "TEXT"
+python strata.py vault status|on|off|init [PATH]|refresh|snapshot [MSG]|guard on|off
+python strata.py capture "TEXT"
 python strata.py stats
 ```
 
 Data lives in `~/.claude/strata/memory.sqlite3` and `rag.sqlite3` (or `$MOAA_STRATA_DIR`). Nothing leaves your machine
-except the Haiku extraction call to Anthropic, which is the same service your sessions already use.
+except the Haiku extraction call to Anthropic, which is the same service your sessions already use; the `local`
+fallback makes no network call.
 
 ## Safety
 

@@ -4,6 +4,31 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-10-31
+
+### Added
+- **strata 0.7.0, an Obsidian second brain kept current from every project.** The vault (default `~/code/brain`)
+  now creates itself when the first chat ends, in any project, so nothing has to be set up. Layout after the
+  Claude + Obsidian second-brain setups: `Home.md` (map of contents), `projects/` (one page per project with
+  properties, what strata knows, recent commits and sessions, rewritten at each chat's end and after consolidation;
+  your notes below the `strata:auto` block are kept), `daily/` (lines now link `[[project]]`), `inbox/`, `raw/`,
+  `wiki/`, `output/` and a `CLAUDE.md` of rules. `strata.py vault refresh` rewrites every page.
+- **raw/ guard:** a PreToolUse hook refuses Write and Edit on existing files under a `raw/` folder next to a `wiki/`
+  folder. Off: `strata.py vault guard off` or `STRATA_VAULT_GUARD=off`.
+- **`/strata:wiki ask`** answers from wiki pages only, cites a page per claim and reports the `graph.py check`
+  grounding; **`vault init` interview** writes the user's choices into the vault's `CLAUDE.md`;
+  **`strata.py vault snapshot`** makes a local commit before a distill (never pushes).
+- **No single-provider lock for memory (a claude-mem replacement).** claude-mem stopped when its per-tool-call Haiku
+  observer used up the plan allowance. strata extracts once per session, and when Haiku fails for any reason the
+  `fallback` engine (`local`: rule-based, no model, no network) stores the session instead; `config fallback none`
+  keeps it pending. Each SessionEnd run also drains up to 3 older pending sessions.
+- **Search:** RAG passages from Markdown show their heading path (`Setup > Windows`); `strata.py search --scene`.
+
+### Fixed
+- **strata's pending backlog.** Extraction ran in the project folder, where `claude -p` exited with an error when a
+  settings rule produced a warning; it now runs in strata's data folder and accepts a valid reply despite stderr
+  warnings. Sessions too small to extract are no longer counted as pending.
+
 ## [0.20.0] - 2026-10-31
 
 From the source review in `docs/research/2026-10-31-sources-review.md`.

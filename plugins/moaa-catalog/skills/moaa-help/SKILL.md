@@ -16,7 +16,7 @@ in it. Keep the answer short and point to the one tool that fits the user's task
 | A big job split across real parallel sessions | `/war-room:war-room`: council-role workers, task board, review gates, merge queue, local app. |
 | Another model family, or saving Claude usage | `/allies:allies`: Codex, Gemini, OpenCode (free zero-retention models, no sign-in) and others on bounded tasks; read-only by default, writes on their own branch. |
 | Docs that tell agents how a project works | `/moaa-core:project-docs`: checks for AGENTS.md (shared by Claude, Codex, Gemini, OpenCode), ARCHITECTURE, README, TESTING, SECURITY, and PRD / DESIGN_SYSTEM for apps, and drafts what is missing. |
-| Remember things across sessions | `strata`: recalls at session start and saves at session end automatically; `/strata:strata` to search. |
+| Remember things across sessions | `strata`: recalls at session start and saves at session end automatically (Haiku, with a no-model `local` fallback, so no provider limit stops it); `/strata:strata` to search, `--scene` to narrow. |
 | A skill that is not listed | `/moaa-catalog:moaa-catalog`: searches installed but disabled packs and loads one skill into this session. |
 | What to set up for this project | `claude-code-setup` (Anthropic's automation recommender): ask "recommend automations for this project". It reads the code and suggests 1-2 hooks, subagents, skills, plugins and MCP servers; prefer the MOAA tools above where they fit. |
 | Clearer requests, automatically | `prompt-refiner` (always on): every prompt becomes a brief; ambiguous points come back as questions with options. `refiner.py off` or a `raw:` prefix skips it. |
@@ -24,7 +24,7 @@ in it. Keep the answer short and point to the one tool that fits the user's task
 | Answers from this project's own files | strata's project RAG (always on): matching passages with `path:lines` are added to prompts that clearly need them; `rag.py search "QUERY"` to search, `rag.py off` to stop. |
 | Several people on one project, each on their own account | `/team:team`: a board on its own git branch with task claims, path locks, handoffs, messages and a decision log. `team.py init`, then `team.py join NAME`. |
 | A long or multi-session task | `/specialist-council:long-task`: brief with acceptance checks, progress file, evidence review, resume prompt. |
-| A second brain across all projects | strata's vault: `strata.py vault init` (default `~/code/brain`), `strata.py capture "TEXT"` from any chat, a daily line per chat, `/strata:wiki distill` weekly into linked pages (Obsidian-friendly). `strata.py vault off`. |
+| A second brain across all projects | strata's Obsidian vault (default `~/code/brain`, created by the first chat that ends): `Home.md`, a page per project and a daily line per chat, rewritten automatically in every project; `strata.py capture "TEXT"` from any chat; `/strata:wiki distill` into linked pages, `/strata:wiki ask` answers from them with citations; `raw/` sources are protected. `strata.py vault refresh`, `vault off`. |
 | Knowing when a chat has drifted | strata's canary (always on): an invisible line ends each reply; two long replies without it above 30% context start the handoff early. `strata.py canary off`. |
 | A knowledge base that compounds | `/strata:wiki`: Karpathy-style LLM Wiki; Claude compiles sources into linked pages (ingest, query, lint of the link graph). |
 | Findings with their sources | `/strata:graph`: typed claim-source graph shared by parallel agents, with a grounding check (score, specific failures). |

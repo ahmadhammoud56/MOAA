@@ -120,7 +120,7 @@ class Hooks(Sandbox):
             memory.hook("session-end", json.dumps({"session_id": "a", "transcript_path": small, "cwd": self.dir}))
             spawn.assert_not_called()
             memory.hook("session-end", json.dumps({"session_id": "b", "transcript_path": big, "cwd": self.dir}))
-            self.assertEqual(spawn.call_args[0][0][-2:], ["--session", "b"])
+            self.assertEqual(spawn.call_args[0][0][-2:], ["--limit", "4"])
             memory.apply(self.db, "b", self.proj, {})  # consolidated; a resume that adds nothing new is not redone
             memory.hook("session-end", json.dumps({"session_id": "b", "transcript_path": big, "cwd": self.dir}))
             self.assertEqual(spawn.call_count, 1)
@@ -153,6 +153,41 @@ class Hooks(Sandbox):
         self.assertEqual((out["atoms"], out["superseded"]), (1, 1))
         self.assertIsNotNone(self.db.execute("SELECT consolidated FROM sessions WHERE id='s1'").fetchone()[0])
         self.assertTrue(memory.consolidate(self.db, "s1", "none")["skipped"])
+
+    def test_throwaway_folders_get_no_project_page(self):
+        self.assertFalse(memory.real_project(self.dir))  # a temp folder
+        self.assertFalse(memory.real_project(str(Path(self.dir) / "gone")))
+        self.assertFalse(memory.real_project(str(Path.home())))
+
+    def test_search_scene_filter(self):
+        memory.apply(self.db, "s0", self.proj, {"scenes": [{"title": "Parser rewrite", "body": "lexer in rust"},
+                                                          {"title": "Release", "body": "rust toolchain pinned"}],
+                                                "atoms": [{"kind": "fact", "text": "rust is used"}]})
+        rows = memory.search(self.db, "rust", self.proj, scene="parser")
+        self.assertEqual([(r["layer"], r["label"]) for r in rows], [("L2", "Parser rewrite")])
+        self.assertEqual(len(memory.search(self.db, "rust", self.proj)), 3)
+
+    def test_failed_engine_falls_back_to_local_extraction(self):
+        t = transcript(Path(self.dir) / "t.jsonl", [
+            ("user", "Port the parser. I prefer small commits with tests. We decided to go with Rust for the lexer."),
+            ("assistant", "Done.")])
+        memory.ingest(self.db, "s1", self.proj, t)
+
+        def down(engine, prompt):
+            raise SystemExit("memory: claude-haiku failed: Provider reported the inference allowance exhausted")
+        with mock.patch.object(memory, "run_engine", down):
+            out = memory.consolidate(self.db, "s1", "claude-haiku")
+        self.assertEqual(out["engine"], "local")
+        self.assertIn("allowance", out["engine_error"])
+        kinds = dict(self.db.execute("SELECT text, kind FROM atoms").fetchall())
+        self.assertEqual(kinds["I prefer small commits with tests."], "preference")
+        self.assertEqual(kinds["We decided to go with Rust for the lexer."], "fact")
+        self.assertIsNotNone(self.db.execute("SELECT consolidated FROM sessions WHERE id='s1'").fetchone()[0])
+        self.assertTrue(memory.consolidate(self.db, "s1", "claude-haiku")["skipped"])  # never twice
+        memory.main(["config", "fallback", "none"])
+        memory.ingest(self.db, "s2", self.proj, t)
+        with mock.patch.object(memory, "run_engine", down), self.assertRaises(SystemExit):
+            memory.consolidate(self.db, "s2", "claude-haiku")  # fallback off: stays pending for a retry
 
     def test_cli_config_and_stats(self):
         self.assertEqual(memory.main(["config", "auto", "off", "min_chars", "10"]), 0)

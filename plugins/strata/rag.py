@@ -235,6 +235,26 @@ def search(db, project, query, limit=8):
     return [dict(r) for r in rows], ts
 
 
+MD_HEAD = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
+
+
+def heading_path(db, project, path, line):
+    """The Markdown headings above a line of an indexed file, outermost first ("Setup > Windows"), from the index
+    (no file read). Empty for files without headings."""
+    stack, seen = [], 0
+    for c in db.execute("SELECT line, text FROM chunks WHERE project=? AND path=? AND line<=? ORDER BY line",
+                        (project, path, line)):
+        for i, text in enumerate(c["text"].splitlines(), c["line"]):
+            if i <= seen or i > line:
+                continue  # overlapping lines were read already; stop at the hit
+            seen = i
+            m = MD_HEAD.match(text)
+            if m:
+                level = len(m.group(1))
+                stack = [h for h in stack if h[0] < level] + [(level, m.group(2))]
+    return " > ".join(h for _, h in stack)
+
+
 def hint(db, project, prompt, budget, what="this project's files"):
     """The passages to add to a prompt, or "" when the request has fewer than three key words ("commit and push")
     or nothing in the project matches it strongly (see strata.strong_matches)."""
@@ -247,7 +267,8 @@ def hint(db, project, prompt, budget, what="this project's files"):
     parts, used = [], 0
     for r in strong:
         body = strata.excerpt(r["text"], ts, 900)
-        block = f"### {r['path']}:{r['line']}-{r['end_line']}\n```\n{body}\n```"
+        where = heading_path(db, project, r["path"], r["line"])
+        block = f"### {r['path']}:{r['line']}-{r['end_line']}" + (f" ({where})" if where else "") + f"\n```\n{body}\n```"
         if used + len(block) > budget and parts:
             break
         parts.append(block)
@@ -362,7 +383,8 @@ def main(argv=None):
         if not rows and db.execute("SELECT 1 FROM projects WHERE project=?", (project,)).fetchone() is None:
             print(f"(no index for {root}; run `rag.py index` first)")
         for r in rows:
-            print(f"--- {r['path']}:{r['line']}-{r['end_line']}\n{r['text'][:1200]}")
+            where = heading_path(db, project, r['path'], r['line'])
+            print(f"--- {r['path']}:{r['line']}-{r['end_line']}" + (f" ({where})" if where else "") + "\n" + r['text'][:1200])
     elif a.cmd == "status":
         row = db.execute("SELECT * FROM projects WHERE project=?", (project,)).fetchone()
         print(json.dumps({"enabled": enabled(), "database": str(strata.data_dir() / "rag.sqlite3"),
