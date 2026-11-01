@@ -1,0 +1,9 @@
+{
+  "_doc": "When MOAA's price assumptions were last audited. moaa-catalog's daily SessionStart check says so when the audit is older than max_age_days; refresh the audit (the cost review and Cache Keeper's PRICES table) and update this date. Off: MOAA_PRICE_CHECK=off.",
+  "audited": "2026-10-30",
+  "max_age_days": 90,
+  "used_by": [
+    "docs/research/2026-11-01-llm-infra-second-brain-review.md",
+    "plugins/cache-keeper/hooks/register.tsx (PRICES)"
+  ]
+}

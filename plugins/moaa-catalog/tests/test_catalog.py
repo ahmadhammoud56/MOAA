@@ -1,6 +1,7 @@
 """moaa-catalog tests with a fake Claude home: python -m unittest discover -s tests"""
 import json
 import os
+import time
 from pathlib import Path
 import sys
 import tempfile
@@ -42,6 +43,20 @@ class Catalog(unittest.TestCase):
         self.assertEqual(catalog.skill_usage(self.home)[0], {"on:stripe-listed": 1})  # switched off: not counted
         (self.home / "moaa-catalog" / "skill-usage.jsonl").unlink()
         self.assertEqual(catalog.skill_usage(self.home)[1], ["on:stripe-listed"])
+
+    def test_price_notice_after_the_audit_age(self):
+        kit = self.home / "kit"
+        (kit / "config").mkdir(parents=True)
+        (kit / "config" / "prices.json").write_text(json.dumps({"audited": "2026-10-30", "max_age_days": 90}))
+        (self.home / "plugins" / "known_marketplaces.json").write_text(json.dumps({"moaa": {"installLocation": str(kit)}}))
+        audited = time.mktime(time.strptime("2026-10-30", "%Y-%m-%d"))
+        self.assertIsNone(catalog.price_notice(self.home, now=audited + 30 * 86400))
+        self.assertIn("100 days ago", catalog.price_notice(self.home, now=audited + 100 * 86400))
+        os.environ["MOAA_PRICE_CHECK"] = "off"
+        try:
+            self.assertIsNone(catalog.price_notice(self.home, now=audited + 100 * 86400))
+        finally:
+            del os.environ["MOAA_PRICE_CHECK"]
 
     def test_search_covers_only_disabled_plugins_and_ranks_name_hits(self):
         found = catalog.search(self.home, "stripe webhooks")

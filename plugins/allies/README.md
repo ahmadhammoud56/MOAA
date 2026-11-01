@@ -41,6 +41,27 @@ python allies.py omniroute start|stop|status
 - Keys can also be kept in `~/.claude/allies/keys.env` (`DEEPSEEK_API_KEY=...`), which is read when the variable is
   not set.
 
+## Routing
+
+`python allies.py route private|routine|bulk|complex [--failed N] [--exclude M]` says who should do a task, decided
+on this machine (no text is sent to a classifier):
+
+| Label | Goes to |
+|---|---|
+| private | `ollama` (a local model) when it runs; otherwise Claude in this session, never a remote ally |
+| routine | the first ready of opencode, gemini, codex, ollama (a cheap or free model that passed your tests) |
+| bulk | opencode, ollama, gemini, codex; use provider batch APIs where you call one directly |
+| complex | Claude, in this session or the council |
+
+`--failed 1` escalates a routine or bulk task once to Claude; `--failed 2` stops (retry and spend cap). `--exclude`
+names a member that is down, so the next one of the same label is used first.
+
+## Ollama
+
+`ollama` runs a local model as a text-only member: nothing leaves the computer and it has no tools. It is ready only
+while `ollama serve` answers on 127.0.0.1:11434; the default model is `qwen3:8b` (`--model` for another). Use it for
+private or bulk text (summaries, tagging), not for agent work.
+
 ## OpenCode
 
 OpenCode runs any [models.dev](https://models.dev) provider; allies uses it for the free models of OpenCode Zen,

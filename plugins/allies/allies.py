@@ -271,6 +271,36 @@ def ready_members():
     return {r["member"] for r in doctor() if r["ready"]}
 
 
+# Routing labels (after the 2026-11-01 cost review): decided here, locally, never by sending text to a classifier.
+ROUTES = {
+    "private": ("ollama",),  # never leaves the machine; with no local model ready, Claude in this session does it
+    "routine": ("opencode", "gemini", "codex", "ollama"),  # a cheap or free model that passed your tests
+    "bulk": ("opencode", "ollama", "gemini", "codex"),  # many independent items; batch APIs where a provider has them
+    "complex": (),  # Claude in this session or the council
+}
+
+
+def route(label, failed=0, exclude=(), ready=None):
+    """{member, why} for a task label. One escalation: a routine or bulk task that failed validation once goes to
+    Claude (complex); a second failure stops, so retries and spend stay capped. `exclude` names members that are
+    down (outage): the next ready member of the same label is used before changing label."""
+    if label not in ROUTES:
+        raise SystemExit(f"allies: route label must be one of {', '.join(ROUTES)}")
+    if failed >= 2:
+        return {"member": None, "why": "stop: escalated once already; review the task by hand (retry and spend cap)"}
+    if failed == 1 and label in ("routine", "bulk"):
+        return {"member": "claude", "why": "escalation after one failed validation: run it in this session or the council"}
+    if label == "complex":
+        return {"member": "claude", "why": "complex work stays with Claude (this session or the council)"}
+    ready = ready_members() if ready is None else ready
+    for name in ROUTES[label]:
+        if name in ready and name not in exclude:
+            return {"member": name, "why": f"{label}: first ready member of {', '.join(ROUTES[label])}"}
+    if label == "private":
+        return {"member": "claude", "why": "private: no local model ready, so no ally; keep it in this session"}
+    return {"member": "claude", "why": f"{label}: no ally ready; Claude does it"}
+
+
 def pick(purpose, exclude=(), ready=None):
     """First ready member, in members.json order, that lists the purpose as good_for."""
     ready = ready_members() if ready is None else ready
@@ -492,6 +522,8 @@ def main(argv=None):
         if name == "run":
             s.add_argument("--write", action="store_true")
     s = sub.add_parser("pick"); s.add_argument("--for", dest="purpose", required=True); s.add_argument("--exclude", default="")
+    s = sub.add_parser("route"); s.add_argument("label", choices=tuple(ROUTES)); s.add_argument("--failed", type=int, default=0)
+    s.add_argument("--exclude", default="")
     s = sub.add_parser("runs"); s.add_argument("--limit", type=int, default=20)
     s = sub.add_parser("show"); s.add_argument("run_id")
     s = sub.add_parser("omniroute"); s.add_argument("action", choices=("start", "stop", "status"))
@@ -512,6 +544,10 @@ def main(argv=None):
             out = ask([m for m in a.member.split(",") if m], task, a.cwd, a.model, a.timeout)
         print(json.dumps(out, indent=2))
         return 0 if (out["ok"] if isinstance(out, dict) else any(x.get("ok") for x in out)) else 1
+    if a.cmd == "route":
+        out = route(a.label, a.failed, [x for x in a.exclude.split(",") if x])
+        print(json.dumps(out))
+        return 0 if out["member"] else 1
     if a.cmd == "pick":
         m = pick(a.purpose, [x for x in a.exclude.split(",") if x])
         print(m or "none ready")

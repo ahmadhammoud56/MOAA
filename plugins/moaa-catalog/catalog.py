@@ -9,6 +9,7 @@
   python catalog.py usage [--days N]    skill use counts from the PostToolUse hook, and enabled skills never used
   python catalog.py usage off|on        stop or resume counting (MOAA_SKILL_USAGE=off stops it for a process)
   python catalog.py hook skill          PostToolUse hook on the Skill tool: count one use of the named skill
+  python catalog.py prices              when MOAA's price assumptions were last audited (config/prices.json)
   python catalog.py index               rebuild the index now if it is stale
   python catalog.py ruflo-update        install or update the global ruflo CLI (the hooks run this every 3 hours, in
                                         the background, while a ruflo plugin is enabled; MOAA_RUFLO_UPDATE=off stops it)
@@ -319,6 +320,24 @@ def latest_release(repo, timeout=2):
         return json.loads(r.read().decode("utf-8")).get("tag_name", "").lstrip("v")
 
 
+def price_notice(home, now=None):
+    """A one-line notice when the installed MOAA's price audit (config/prices.json) is older than its max age."""
+    if os.environ.get("MOAA_PRICE_CHECK", "").lower() in ("off", "0", "false", "no"):
+        return None
+    entry = read_json(home / "plugins" / "known_marketplaces.json").get("moaa") or {}
+    data = read_json(Path(entry.get("installLocation", "")) / "config" / "prices.json") if entry else {}
+    try:
+        audited = time.mktime(time.strptime(data["audited"], "%Y-%m-%d"))
+    except (KeyError, TypeError, ValueError):
+        return None
+    age = int(((now or time.time()) - audited) // 86400)
+    if age <= int(data.get("max_age_days", 90)):
+        return None
+    return (f"MOAA's price assumptions were audited {age} days ago ({data['audited']}): Cache Keeper's cost estimates "
+            "and the cost review may be out of date. Re-check them, then update config/prices.json. "
+            "(MOAA_PRICE_CHECK=off hides this.)")
+
+
 def update_notice(home, fetch=latest_release, now=None):
     """A one-line notice when a newer MOAA release exists than the installed marketplace copy, else None. Checks
     GitHub at most once a day (cached), never blocks a session for more than a couple of seconds, stays silent offline
@@ -526,6 +545,9 @@ def main(argv):
         except Exception:  # a hook must never block the session
             pass
         return 0
+    if argv == ["prices"]:
+        print(price_notice(home, now=None) or "price assumptions are within their audit age (config/prices.json)")
+        return 0
     if argv == ["index"]:
         n = len(load_index(home)["skills"])
         (home / "moaa-catalog" / "index.building").unlink(missing_ok=True)
@@ -546,6 +568,14 @@ def main(argv):
             notice = update_notice(home)
         except Exception:  # a hook must never block the session
             notice = None
+        try:  # daily, with the update check: the update cache file says whether today's check already ran
+            prices = price_notice(home)
+            if prices and not (home / "moaa-catalog" / f"prices-{time.strftime('%Y%m%d')}").exists():
+                (home / "moaa-catalog").mkdir(parents=True, exist_ok=True)
+                (home / "moaa-catalog" / f"prices-{time.strftime('%Y%m%d')}").write_text("shown", encoding="utf-8")
+                notice = f"{notice} {prices}" if notice else prices
+        except Exception:
+            pass
         try:
             if ruflo_wanted(home):
                 ruflo_update_in_background(home)

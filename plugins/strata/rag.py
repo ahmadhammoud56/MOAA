@@ -16,6 +16,10 @@ are never read, and secrets inside indexed text are redacted with strata's patte
 
   python rag.py index [--project PATH] [--full] [--quiet]
   python rag.py search QUERY [--project PATH] [--limit N]
+  python rag.py verify ANSWER.md [--project PATH] [--strip]   each claim line citing `path:lines` must name a file
+                                              the index holds and quote it verbatim (4+ words) within those
+                                              lines; exit 1 otherwise; --strip drops failing lines, or prints
+                                              "Not found in the project's files." when none is left
   python rag.py status [--project PATH]       python rag.py on|off       python rag.py drop [--project PATH]
   python rag.py hook session-start|prompt     (reads the hook JSON on stdin)
 """
@@ -278,6 +282,38 @@ def hint(db, project, prompt, budget, what="this project's files"):
             "`rag.py search` finds more.\n\n" + "\n\n".join(parts))
 
 
+CITE = re.compile(r"`?([\w./\\-]+\.[\w]+):(\d+)(?:-(\d+))?`?")
+ABSTAIN = "Not found in the project's files."
+
+
+def verify(db, project, root, answer):
+    """[{line, cites, ok, why}] for each answer line citing path:lines. Only files in the project's index count (a
+    closed set, so an invented path fails), and each quote of 4+ words must appear in the cited line range."""
+    import graph  # same folder; its normalize and QUOTE are the wiki checker's
+    known = {r[0] for r in db.execute("SELECT path FROM files WHERE project=?", (project,))}
+    out = []
+    for line in answer.splitlines():
+        cites = [(p.replace("\\", "/"), int(a), int(b or a)) for p, a, b in CITE.findall(line)]
+        if not cites:
+            continue
+        quotes = [q for q in graph.QUOTE.findall(line) if len(q.split()) >= 4]
+        why = next((f"not an indexed file: {p}" for p, _, _ in cites if p not in known), "")
+        if not why and not quotes:
+            why = "no verbatim quote of 4+ words"
+        if not why:
+            spans = []
+            for p, a, b in cites:
+                try:
+                    lines = (Path(root) / p).read_text(encoding="utf-8", errors="replace").splitlines()
+                except OSError:
+                    lines = []
+                spans.append(graph.normalize("\n".join(lines[max(0, a - 1):b])))
+            bad = [q for q in quotes if not any(graph.normalize(q) in t for t in spans)]
+            why = f"quote not in those lines: {bad[0][:60]!r}" if bad else ""
+        out.append({"line": line, "cites": [f"{p}:{a}-{b}" for p, a, b in cites], "ok": not why, "why": why})
+    return out
+
+
 # ---------------------------------------------------------------- hooks
 def indexable(root):
     """Never index a home folder or a drive root by accident; a project folder or a git repository is fine."""
@@ -353,6 +389,7 @@ def main(argv=None):
     s.add_argument("--quiet", action="store_true")
     s = sub.add_parser("search"); s.add_argument("query"); s.add_argument("--project"); s.add_argument("--limit", type=int, default=8)
     s = sub.add_parser("status"); s.add_argument("--project")
+    s = sub.add_parser("verify"); s.add_argument("answer"); s.add_argument("--project"); s.add_argument("--strip", action="store_true")
     s = sub.add_parser("drop"); s.add_argument("--project")
     sub.add_parser("on"); sub.add_parser("off")
     s = sub.add_parser("hook"); s.add_argument("event", choices=("session-start", "prompt"))
@@ -385,6 +422,18 @@ def main(argv=None):
         for r in rows:
             where = heading_path(db, project, r['path'], r['line'])
             print(f"--- {r['path']}:{r['line']}-{r['end_line']}" + (f" ({where})" if where else "") + "\n" + r['text'][:1200])
+    elif a.cmd == "verify":
+        answer = Path(a.answer).read_text(encoding="utf-8", errors="replace")
+        res = verify(db, project, root, answer)
+        if a.strip:
+            failed = {x["line"] for x in res if not x["ok"]}
+            print(ABSTAIN if not any(x["ok"] for x in res) else
+                  "\n".join(ln for ln in answer.splitlines() if ln not in failed))
+        else:
+            for x in res:
+                print(("ok   " if x["ok"] else "FAIL ") + (x["why"] or ", ".join(x["cites"])) + " | " + x["line"][:100])
+            print(f"{sum(x['ok'] for x in res)}/{len(res)} claims verified")
+        return 0 if all(x["ok"] for x in res) else 1
     elif a.cmd == "status":
         row = db.execute("SELECT * FROM projects WHERE project=?", (project,)).fetchone()
         print(json.dumps({"enabled": enabled(), "database": str(strata.data_dir() / "rag.sqlite3"),

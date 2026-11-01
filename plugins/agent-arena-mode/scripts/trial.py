@@ -3,7 +3,8 @@
 
   python trial.py plan --arms solo,council --tasks tasks.json --out DIR [--repeats K] [--tokens-per-run T]
                        [--max-runs N] [--seed S]
-  python trial.py record --dir DIR --cell ID --score S [--passed] [--tokens T] [--seconds S]
+  python trial.py record --dir DIR --cell ID --score S [--passed] [--tokens T] [--seconds S] [--cache-read N]
+                         [--cache-write N] [--retries N] [--cost USD]
   python trial.py summary --dir DIR
 
 Two skills use it. fold-trial: one agent loop (`solo`) against a council (`council`), after Anthropic's guidance on
@@ -13,7 +14,8 @@ when subagents earn their cost. harness-league: the same model family through di
 tasks.json: [{"id", "brief", "rubric", "pass": "what counts as solved"}]. `plan` writes DIR/trials.json with every
 (arm, task, repeat) cell in shuffled order and a blind label, prints the expected token cost first, and refuses a plan
 above --max-runs (default 40). `summary` reports per arm the mean score, pass rate, tokens and seconds, and the tasks
-whose pass/fail differs between arms (the flips), which are the cases worth reading.
+whose pass/fail differs between arms (the flips), which are the cases worth reading. With --cost recorded it also
+gives cost per success (total cost / passed runs: a cheap arm that fails often can cost more) and p50/p95 seconds.
 """
 import argparse
 import json
@@ -36,6 +38,12 @@ def plan(arms, tasks, repeats=1, seed=None):
     return {"created": time.time(), "arms": arms, "tasks": tasks, "cells": cells, "results": {}}
 
 
+def pct(values, q):
+    """The q-quantile (0-1) by nearest rank; None for no values."""
+    v = sorted(values)
+    return v[min(len(v) - 1, max(0, int(round(q * len(v) + 0.5)) - 1))] if v else None
+
+
 def summarize(trial):
     """({arm: {n, score, pass_rate, tokens, seconds}}, [(task, {arm: pass rate})] for tasks the arms disagree on)."""
     res, cells = trial["results"], trial["cells"]
@@ -46,7 +54,13 @@ def summarize(trial):
             arms[arm] = {"n": len(rows), "score": statistics.mean(r["score"] for r in rows),
                          "pass_rate": statistics.mean(1.0 if r["passed"] else 0.0 for r in rows),
                          "tokens": statistics.mean(r["tokens"] for r in rows),
-                         "seconds": statistics.mean(r["seconds"] for r in rows)}
+                         "seconds": statistics.mean(r["seconds"] for r in rows),
+                         "p50_s": pct([r["seconds"] for r in rows], 0.5), "p95_s": pct([r["seconds"] for r in rows], 0.95),
+                         "retries": sum(r.get("retries", 0) for r in rows),
+                         "cache_read": sum(r.get("cache_read", 0) for r in rows),
+                         "cost": sum(r.get("cost", 0.0) for r in rows)}
+            passed = sum(1 for r in rows if r["passed"])
+            arms[arm]["cost_per_success"] = (arms[arm]["cost"] / passed) if passed and arms[arm]["cost"] else None
     flips = []
     for t in trial["tasks"]:
         rates = {}
@@ -71,6 +85,9 @@ def main(argv=None):
     b.add_argument("--dir", required=True); b.add_argument("--cell", required=True)
     b.add_argument("--score", type=float, required=True); b.add_argument("--passed", action="store_true")
     b.add_argument("--tokens", type=float, default=0); b.add_argument("--seconds", type=float, default=0)
+    b.add_argument("--cache-read", type=float, default=0); b.add_argument("--cache-write", type=float, default=0)
+    b.add_argument("--retries", type=int, default=0); b.add_argument("--cost", type=float, default=0.0,
+                                                                   help="USD this run cost (moaa-core cost.py)")
     c = sub.add_parser("summary")
     c.add_argument("--dir", required=True)
     args = p.parse_args(argv)
@@ -98,14 +115,17 @@ def main(argv=None):
         if args.cell not in {c["id"] for c in trial["cells"]}:
             raise SystemExit(f"trial: no cell {args.cell} in {path}")
         trial["results"][args.cell] = {"score": args.score, "passed": args.passed, "tokens": args.tokens,
-                                       "seconds": args.seconds, "recorded": time.time()}
+                                       "seconds": args.seconds, "cache_read": args.cache_read,
+                                       "cache_write": args.cache_write, "retries": args.retries, "cost": args.cost,
+                                       "recorded": time.time()}
         path.write_text(json.dumps(trial, indent=2), encoding="utf-8")
         print(f"recorded {args.cell}: {len(trial['results'])}/{len(trial['cells'])} cells done")
         return 0
     arms, flips = summarize(trial)
     for arm, s in arms.items():
+        cps = f"  ${s['cost_per_success']:.3f}/success" if s.get("cost_per_success") else ""
         print(f"{arm:<10} n={s['n']}  score {s['score']:.1f}  pass {s['pass_rate']:.0%}  tokens {s['tokens']:.0f}  "
-              f"{s['seconds']:.0f}s")
+              f"{s['seconds']:.0f}s (p50 {s['p50_s']:.0f}s, p95 {s['p95_s']:.0f}s)  retries {s['retries']}{cps}")
     for task, rates in flips:
         print(f"flip {task}: " + ", ".join(f"{a} {r:.0%}" for a, r in rates.items()))
     if not flips and len(arms) > 1:

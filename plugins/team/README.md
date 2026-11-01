@@ -65,6 +65,13 @@ python team.py sync | whoami | on | off           TEAM_BOARD=off silences the ho
 A task ID can be shortened to any unique prefix. Without a remote (`init` in a repository with none) the board is
 local, which suits several accounts on one machine.
 
+## Archive
+
+`python team.py archive [--out DIR]` writes `team-archive-<repo>-<stamp>/`: a git bundle of every branch, the
+uncommitted diff and untracked-file list, the board (`board.json`), the decision log (`DECISIONS.md`) and a README on
+restoring. It changes nothing in the repository. Use it to hand work to another account or to keep a cloud
+session's work; chat transcripts are left out because they can hold personal data.
+
 ## Limits
 
 - Everyone needs push access to the remote; the board adds a commit per change on its own branch.

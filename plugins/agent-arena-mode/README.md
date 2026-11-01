@@ -63,7 +63,9 @@ The installed copy lives in Claude Code's plugin cache. Scripts are run through
 and reports score, pass rate, tokens and the tasks that flip: whether subagents pay off on your work.
 `/agent-arena-mode:harness-league -- TASKS` does the same across harnesses (Claude Code and the ready allies: Codex,
 Gemini, OpenCode). Both use `scripts/trial.py`, print the expected tokens first and refuse more than 40 runs unless
-you raise `--max-runs`.
+you raise `--max-runs`. `trial.py record` also takes `--cost` (USD, from moaa-core's `cost.py`), `--retries`,
+`--cache-read` and `--cache-write`; the summary then shows cost per success (a cheap arm that fails often can cost
+more) and p50/p95 time.
 
 `/agent-arena-mode:karpathy-loop --metric "CMD" --target T` edits, measures and keeps or reverts against a fixed
 number. Stop rules: done when the target holds in two runs in a row; after `--patience` discards in a row (default 5)

@@ -120,6 +120,11 @@ CLAUDE.md      the vault's rules for Claude (/strata:wiki vault init adds your c
 - **raw/ guard:** a PreToolUse hook refuses Write and Edit on a file that already exists under a `raw/` folder that
   sits next to a `wiki/` folder (the vault, or a `/strata:wiki` folder). New sources may still land there.
   `strata.py vault guard off` or `STRATA_VAULT_GUARD=off` turns it off.
+- **raw/ hard lock:** the vault also sets files in `raw/` read-only (on `vault init`/`refresh` and at each chat's end),
+  because a shell command does not pass through the Write/Edit guard. The same switch turns both off; unlock a file
+  with `attrib -R` (Windows) or `chmod u+w`.
+- **Literature notes:** `templates/literature-note.md` and `inbox/literature/` hold papers a tool found
+  (`status: unverified`, `access: abstract-only`), kept out of `raw/` until read.
 - `strata.py vault snapshot [MSG]`: a local commit before a bulk change (distill runs it); strata never pushes.
 - `strata.py vault init [PATH]`: creates the layout above without waiting for a chat to end.
 - `graph.py capture "TEXT"` (or `strata.py capture`): appends `- HH:MM [project] TEXT` to `inbox/<date>.md`,
@@ -133,6 +138,19 @@ CLAUDE.md      the vault's rules for Claude (/strata:wiki vault init adds your c
   that is not a repository.
 - Measured live (`tests/e2e/vault/`): init, three captures, a daily line from a real chat, a distill run that wrote
   three linked pages with clean lint, and a Haiku chat with tools denied that answered from the vault passage.
+
+## Grounded answers
+
+After IBM's STAIR: an answer may cite only what exists, and must quote it word for word.
+
+- `graph.py verify DIR ANSWER.md [--strip]`: each claim line `- claim "quote of 4+ words" ([[Page]])` must cite a
+  wiki page that exists and quote it verbatim, after Markdown, links, case and spacing are normalized. Exit 1 on a
+  failing claim; `--strip` keeps the verified lines, or prints `Not in the wiki.` when none is left.
+  `/strata:wiki ask` runs it on every draft answer.
+- `rag.py verify ANSWER.md`: the same for answers from project files that cite `path:lines`; only files in the
+  project's index count, so an invented path fails, and the quote must sit inside the cited lines.
+- `graph.py eval DIR CASES.json`: answer rate, refusal rate and fabricated citations over a fixed set;
+  `tests/e2e/wiki-ask-eval/` ships three pages and ten questions (6 answerable, 4 not) with targets.
 
 ## Virtual context
 

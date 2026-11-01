@@ -4,6 +4,36 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-11-01
+
+From part D of `docs/research/2026-11-01-llm-infra-second-brain-review.md`.
+
+### Added
+- **strata 0.9.0, grounded answers.** `graph.py verify` checks that each claim of a wiki answer cites a page that
+  exists and quotes it verbatim (4+ words, Markdown and spacing normalized), and `--strip` keeps only verified lines or
+  answers `Not in the wiki.`; `/strata:wiki ask` runs it. `rag.py verify` does the same for `path:lines` citations of
+  project files, against the closed set of indexed files. `graph.py eval` scores answer rate, refusal rate and
+  fabricated citations; `tests/e2e/wiki-ask-eval/` ships three pages and ten questions. After IBM's STAIR.
+- **strata raw/ hard lock:** files in the vault's `raw/` are set read-only on init, refresh and each chat's end, so a
+  shell write cannot change a source either; off with the guard. **Literature notes:** a template and
+  `inbox/literature/` for papers a tool found. **Scheduled care:** the wiki skill says what a sleeping machine and a
+  permission prompt do to unattended runs.
+- **moaa-core 0.3.0, cost calculator:** `cost.py` with the review's billing equations (blended rate with disjoint
+  cache reads and writes, break-even, plan with API credit, bought machine, rented GPU at a duty cycle, cost per
+  success, cache re-warm) and a self-test on its worked numbers. **cache-keeper 0.2.0** shows how much more a cold
+  re-write costs than a warm read.
+- **allies 0.4.0:** `allies.py route private|routine|bulk|complex` (local decision; one escalation after a failed
+  validation, then stop; same-label fallback when a member is down) and an `ollama` member: a local, text-only model,
+  ready only while `ollama serve` runs.
+- **agent-arena-mode 0.9.0:** trials record cost, retries and cache tokens and report cost per success and p50/p95
+  time; harness-league lists what each run must record to be comparable.
+- **specialist-council 1.9.0:** a stage-output gate in the council and long-task skills: no review starts on a
+  missing or empty deliverable, and returned text is saved by the orchestrator.
+- **team 0.2.0:** `team.py archive` writes a git bundle of every branch, uncommitted changes, the board and the
+  decision log.
+- **moaa-catalog 0.6.0:** a daily notice when `config/prices.json` says the price audit is older than 90 days
+  (`catalog.py prices`; `MOAA_PRICE_CHECK=off`).
+
 ## [0.23.0] - 2026-11-01
 
 ### Added

@@ -35,11 +35,21 @@ index it and log the query.
 ## Ask: answers from the wiki only
 For `ask QUESTION` (in a wiki folder or the vault's `wiki/`):
 1. Read `index.md`, then the pages it points to. Use nothing else: not raw sources, not memory, not the web.
-2. Answer with a citation after every claim, `([[Page]])`. A claim no page supports is left out or listed under
-   "Not in the wiki" (suggest a source to ingest).
-3. Record the answer's key claims with their page sources and run `G check DIR`; fix or drop any claim it reports
-   ungrounded. Give the grounding score in one line.
-4. Save a useful answer as `output/<date>-<slug>.md` (vault) or a new wiki page, linked from the index; log it.
+2. Write the answer as claim lines, each with a verbatim quote of 4+ words from the page and its citation:
+   `- <claim> "exact words from the page" ([[Page]])`. Copy the quote; never paraphrase inside the quotes. A claim
+   no page supports is left out.
+3. Save the draft to a temporary file and run `G verify DIR <file>`. It checks every cited page exists and every
+   quote is in it (after Markdown, links and spacing are normalized). Drop or fix each failing line and run it again;
+   `G verify DIR <file> --strip` gives the kept lines. If no claim survives, the answer is exactly
+   `Not in the wiki.`, then one line on which source to ingest.
+4. Give the verified count in one line (`5/5 claims verified`). Optionally record key claims in the findings graph and
+   run `G check DIR`.
+5. Save a useful answer as `output/<date>-<slug>.md` (vault) or a new wiki page, linked from the index; log it.
+
+The same rule holds for answers from project files: cite `path:lines` with a verbatim quote and check with
+`python "${CLAUDE_PLUGIN_ROOT}/rag.py" verify <file>`. To measure how well asking works, run the fixed set in
+`tests/e2e/wiki-ask-eval/` (`G eval`): targets are 5 of 6 answerable questions answered, 4 of 4 unanswerable ones
+refused, and no fabricated citation.
 
 ## Init the vault with an interview
 For `vault init` (the second-brain vault, default `~/code/brain`): run `M vault init`, then ask the user up to five
@@ -76,6 +86,18 @@ The vault is one folder for all projects (default `~/code/brain`, a local git re
 Nightly: `/strata:wiki distill`. Weekly: `G lint VAULT/wiki` and `G check VAULT/wiki`, read-only, reporting what to fix.
 Set these up with the user's scheduler (`/schedule`, or a scheduled task in the desktop app) only when the user asks;
 the vault itself stays current without them, because every chat's end updates `daily/`, `projects/` and `Home.md`.
+Before scheduling, tell the user:
+- A local scheduled task does not run while the computer sleeps and is not caught up afterwards; keep the machine
+  awake at that hour or accept skipped nights. A cloud routine runs regardless but cannot reach a local vault.
+- An unattended run stops at the first permission prompt. Add allow rules for what the run needs (reading the vault,
+  writing `wiki/` and `output/`, running `graph.py`), and nothing broader.
+- `raw/` stays read-only: the guard blocks edits and the files are set read-only, so a run never changes a source.
+
+## Literature found by tools
+Papers that a search tool or skill finds (`paper-lookup`, web search) are leads, not sources. File each in
+`VAULT/inbox/literature/` from `VAULT/templates/literature-note.md` (`status: unverified`, `access: abstract-only`,
+the DOI and URL, and which tool found it). Move the paper into `raw/` only after the user has read it, and cite only
+`raw/` from wiki pages.
 
 ## Notes
 - Strata's automatic memory (profile, scenes, notes) stays separate: it remembers how you work; the wiki holds what you

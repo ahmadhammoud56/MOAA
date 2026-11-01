@@ -19,6 +19,9 @@ allow. A Team or Enterprise plan is the official way to pool usage under one bil
   python team.py send NAME|all TEXT                         python team.py inbox [--all]
   python team.py note TEXT                                  shared decision log
   python team.py board [--json]       python team.py sync       python team.py whoami      python team.py on|off
+  python team.py archive [--out DIR]   a portable record of the work: git bundle of every branch, uncommitted
+                                       changes, the board (tasks, members), the decision log and a README; for
+                                       handing a session to another account or keeping it after a cloud session
   python team.py hook session-start|prompt                  (reads the hook JSON on stdin)
 """
 import argparse
@@ -449,6 +452,37 @@ def cmd_note(cwd, text):
     return {"noted": n["id"]}
 
 
+def cmd_archive(cwd, out=None):
+    """Write <out>/team-archive-<stamp>/ and return its path. Reads only; never pushes or changes branches."""
+    top, common = repo_of(cwd)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    dest = Path(out or top.parent) / f"team-archive-{top.name}-{stamp}"
+    dest.mkdir(parents=True)
+    git(["bundle", "create", str(dest / "repo.bundle"), "--all"], top, timeout=600)
+    (dest / "uncommitted.diff").write_text(git(["diff", "HEAD"], top, timeout=120) + "\n", encoding="utf-8")
+    untracked = git(["ls-files", "--others", "--exclude-standard"], top, timeout=60)
+    (dest / "untracked.txt").write_text(untracked + "\n", encoding="utf-8")
+    board = {"members": [], "tasks": [], "notes": []}
+    try:
+        cfg, wt, _ = setup(cwd)
+        b = Board(wt)
+        board = {"members": b.members(), "tasks": b.tasks(), "notes": b.notes()}
+    except TeamError:
+        pass  # no board in this repository: the bundle and diff still make the archive
+    (dest / "board.json").write_text(json.dumps(board, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    log_lines = [f"- {when(n.get('ts', 0))} {n.get('by', '')}: {n.get('text', '')}" for n in board["notes"]]
+    (dest / "DECISIONS.md").write_text("# Decision log\n\n" + ("\n".join(log_lines) or "(none)") + "\n",
+                                       encoding="utf-8")
+    head = git(["rev-parse", "--abbrev-ref", "HEAD"], top, timeout=10)
+    (dest / "README.txt").write_text(
+        f"Archive of {top.name}, {time.strftime('%Y-%m-%d %H:%M')} (branch {head}).\n\n"
+        "Restore: git clone repo.bundle <folder>  (every branch is in the bundle; git branch -a lists them)\n"
+        "Uncommitted work: cd <folder> && git apply ../uncommitted.diff; untracked.txt lists new files not in it.\n"
+        "board.json holds tasks and members; DECISIONS.md the decision log. Copy chat transcripts in yourself if\n"
+        "you want them: they can hold personal data, so this command leaves them out.\n", encoding="utf-8")
+    return dest
+
+
 def when(ts):
     return time.strftime("%Y-%m-%d %H:%M", time.localtime(ts)) if ts else "-"
 
@@ -580,6 +614,7 @@ def main(argv=None):
     s = sub.add_parser("inbox"); s.add_argument("--all", action="store_true")
     s = sub.add_parser("note"); s.add_argument("text")
     s = sub.add_parser("board"); s.add_argument("--json", action="store_true")
+    s = sub.add_parser("archive"); s.add_argument("--out")
     s = sub.add_parser("sync"); s.add_argument("--quiet", action="store_true")
     sub.add_parser("whoami"); sub.add_parser("on"); sub.add_parser("off")
     s = sub.add_parser("hook"); s.add_argument("event", choices=("session-start", "prompt"))
@@ -616,6 +651,8 @@ def main(argv=None):
             if not msgs:
                 print("(no new messages)")
             return 0
+        elif a.cmd == "archive":
+            out = {"archive": str(cmd_archive(cwd, a.out))}
         elif a.cmd == "note":
             out = cmd_note(cwd, a.text)
         elif a.cmd in ("board", "sync", "whoami", "on", "off"):

@@ -24,6 +24,9 @@ and this plugin makes their skills reachable anyway:
   `~/.claude/moaa-catalog/skill-usage.jsonl`. `python catalog.py usage [--days N]` lists the counts and the enabled
   skills with no use in that time, real numbers for choosing the `lean` or `all-on` mode. `catalog.py usage off`
   (or `MOAA_SKILL_USAGE=off`) stops counting; `usage on` resumes.
+- **Price freshness.** With the daily update check, it reads `config/prices.json` of the installed MOAA and says once
+  a day when the price audit behind Cache Keeper and the cost review is older than its `max_age_days` (90).
+  `catalog.py prices` shows it; `MOAA_PRICE_CHECK=off` hides it.
 - **Updates.** Once a day, SessionStart checks GitHub for a newer MOAA release and says so in one line.
 - **ruflo CLI.** While a ruflo plugin is enabled, SessionStart and the prompt hook start `catalog.py ruflo-update` in
   a background process with no window every 3 hours (every 10 minutes while `ruflo` is missing from PATH; a file-age

@@ -55,6 +55,10 @@ runtime) in the brief's constraints and stop on them yourself. `/goal clear` rem
 
 ## 4. Work
 
+- **Stage-output gate:** a step that produces a file counts as done only when the file exists and is not empty;
+  if a subagent returned its result as text, save it yourself before the next step reads it. Record the path in
+  `progress.md`.
+
 - Do one step at a time against the next action in `progress.md`. Batch independent reads into one turn.
 - Commit or otherwise save durable work as you go; `/rewind` does not undo shell changes or subagent edits.
 - **Before retrying anything that timed out or failed partway** (a push, an upload, a cluster sync, an API write, a

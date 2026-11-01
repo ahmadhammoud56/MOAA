@@ -20,6 +20,14 @@ Findings graph (graph engineering: agents record claims with their sources inste
   python graph.py check DIR [--json]       grounding evaluator: every claim needs a supports/cites edge to a
                                            source with a ref; dangling edges, contradictions; exit 1 on failures
   python graph.py export DIR               wiki/graph.md with a Mermaid diagram of the findings graph
+Grounded answers (after IBM's STAIR: cite only what exists, quote it verbatim, else abstain):
+  python graph.py verify DIR ANSWER.md [--strip]   each claim line `... "quote of 4+ words" ([[Page]])` must cite a
+                                           page that exists and quote it verbatim (Markdown, links and spacing
+                                           normalized); exit 1 on a failing claim; --strip prints the answer
+                                           without failing claims, or "Not in the wiki." when none is left
+  python graph.py eval DIR CASES.json      score answers: answerable cases need a verified citation of an expected
+                                           page, unanswerable ones a refusal; prints refusal rate and fabricated
+                                           citations
 
 Several agents may append nodes and edges at once (one line each, append-only JSONL; the latest line per id wins).
 Standard library only.
@@ -60,6 +68,82 @@ the user curates sources and asks questions.
 - **Lint:** run `graph.py lint` and `graph.py check`; fix broken links, orphans, pages missing from the index,
   ungrounded claims and contradictions; note stale claims. Log the pass.
 """
+
+
+QUOTE = re.compile(r'["\u201c]([^"\u201d]{8,}?)["\u201d]')
+ABSTAIN = "Not in the wiki."
+REFUSAL = re.compile(r"not (found )?in (the wiki|your notes)|no (page|note) (covers|says)", re.I)
+
+
+def normalize(text):
+    """Text as a reader sees it: no Markdown emphasis, code ticks, heading marks or link brackets; links keep their
+    label; whitespace and typographic quotes collapsed; lower case."""
+    text = re.sub(r"\[\[([^\]|]+\|)?([^\]]+)\]\]", r"\2", text)  # [[Page|label]] -> label
+    text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text)  # [label](url) -> label
+    text = re.sub(r"[*_`>#]+", " ", text)
+    text = text.replace("\u2019", "'").replace("\u2018", "'").replace("\u201c", '"').replace("\u201d", '"')
+    return " ".join(text.split()).lower()
+
+
+def page_index(root):
+    """{lower-case page name or path: file} for the wiki pages, resolved as lint resolves links."""
+    wiki = root / "wiki" if (root / "wiki").is_dir() else root
+    pages = {page_name(p, wiki): p for p in sorted(wiki.rglob("*.md"))}
+    index = {k.lower(): p for k, p in pages.items()}
+    for k in sorted(pages, key=lambda k: (k.count("/"), k)):
+        index.setdefault(k.rsplit("/", 1)[-1].lower(), pages[k])
+    return index
+
+
+def verify(root, answer):
+    """[{line, pages, quotes, ok, why}] for each claim line of an answer: a line that cites a page with [[...]].
+    A claim passes when every cited page exists and every quote of 4+ words is found verbatim in one of them."""
+    index, cache, out = page_index(root), {}, []
+    for line in answer.splitlines():
+        cited = [t.strip() for t in WIKILINK.findall(line)]
+        if not cited:
+            continue
+        quotes = [q for q in QUOTE.findall(line) if len(q.split()) >= 4]
+        files = [index.get(c.lower()) for c in cited]
+        missing = [c for c, p in zip(cited, files) if p is None]
+        why = f"no page {missing[0]!r}" if missing else ""
+        if not why and not quotes:
+            why = "no verbatim quote of 4+ words"
+        if not why:
+            texts = [cache.setdefault(p, normalize(p.read_text(encoding="utf-8", errors="replace"))) for p in files]
+            bad = [q for q in quotes if not any(normalize(q) in t for t in texts)]
+            why = f"quote not found: {bad[0][:60]!r}" if bad else ""
+        out.append({"line": line, "pages": cited, "quotes": quotes, "ok": not why, "why": why})
+    return out
+
+
+def strip(answer, results):
+    """The answer without failing claim lines; the abstention when no claim survives."""
+    failed = {r["line"] for r in results if not r["ok"]}
+    kept = [ln for ln in answer.splitlines() if ln not in failed]
+    if not any(r["ok"] for r in results):
+        return ABSTAIN
+    return "\n".join(kept)
+
+
+def score(root, cases):
+    """Cases: [{question, answer, expected: [pages] or [] for unanswerable}] -> counts and rates."""
+    rows = {"answerable": 0, "answered_right": 0, "unanswerable": 0, "refused_right": 0, "fabricated": 0,
+            "claims": 0}
+    for c in cases:
+        res = verify(root, c["answer"])
+        rows["claims"] += len(res)
+        rows["fabricated"] += sum(1 for r in res if not r["ok"])
+        good = {p.lower() for r in res if r["ok"] for p in r["pages"]}
+        if c.get("expected"):
+            rows["answerable"] += 1
+            rows["answered_right"] += int(bool(good & {e.lower() for e in c["expected"]}))
+        else:
+            rows["unanswerable"] += 1
+            rows["refused_right"] += int(bool(REFUSAL.search(c["answer"])) and not good)
+    rows["refusal_rate"] = round(rows["refused_right"] / rows["unanswerable"], 3) if rows["unanswerable"] else None
+    rows["answer_rate"] = round(rows["answered_right"] / rows["answerable"], 3) if rows["answerable"] else None
+    return rows
 
 
 def page_name(p, wiki):
@@ -225,6 +309,8 @@ def main(argv=None):
     a = sub.add_parser("export"); a.add_argument("dir")
     a = sub.add_parser("capture"); a.add_argument("text", nargs="+"); a.add_argument("--project")
     a = sub.add_parser("archive"); a.add_argument("dir"); a.add_argument("files", nargs="*")
+    a = sub.add_parser("verify"); a.add_argument("dir"); a.add_argument("answer"); a.add_argument("--strip", action="store_true")
+    a = sub.add_parser("eval"); a.add_argument("dir"); a.add_argument("cases")
     args = p.parse_args(argv)
     if args.cmd == "capture":  # the vault lives in strata's settings
         sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -232,6 +318,19 @@ def main(argv=None):
         print(f"captured in {strata.capture(' '.join(args.text), args.project)}")
         return 0
     root = Path(args.dir)
+    if args.cmd == "verify":
+        answer = Path(args.answer).read_text(encoding="utf-8", errors="replace")
+        res = verify(root, answer)
+        if args.strip:
+            print(strip(answer, res))
+        else:
+            for r_ in res:
+                print(("ok   " if r_["ok"] else "FAIL ") + (r_["why"] or ", ".join(r_["pages"])) + " | " + r_["line"][:100])
+            print(f"{sum(r_['ok'] for r_ in res)}/{len(res)} claims verified")
+        return 0 if all(r_["ok"] for r_ in res) else 1
+    if args.cmd == "eval":
+        print(json.dumps(score(root, json.loads(Path(args.cases).read_text(encoding="utf-8"))), indent=2))
+        return 0
     if args.cmd == "archive":
         print("\n".join(archive(root, args.files)) or "nothing to archive")
         return 0

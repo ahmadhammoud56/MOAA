@@ -68,10 +68,11 @@ async function pinStatus($: any) {
   const warm = w.on ? `keeping warm (${w.pings} pings, $${w.usd.toFixed(2)})` : 'keep warm: /cache-keeper on'
   if (left > 0) return $.ui.status(`cache ${left < 60_000 ? 'cooling' : 'warm'} ${mmss(left)} left · ${k} · ${warm}`)
   const pct = (await $.session.usage()).context.percent ?? 0
-  const [write] = priceOf(cfg.price, c.model)
+  const [write, readP] = priceOf(cfg.price, c.model)
   $.ui.status(pct >= cfg.handoffPct
     ? `cache cold · context ${Math.round(pct)}%: a strata handoff (fresh chat) beats re-warming`
-    : `cache cold · next prompt re-writes ${k}, about $${((c.tokens * write) / 1e6).toFixed(2)}`)
+    : `cache cold · next prompt re-writes ${k}, about $${((c.tokens * write) / 1e6).toFixed(2)} ` +
+      `($${((c.tokens * (write - readP)) / 1e6).toFixed(2)} more than warm)`)
 }
 
 export const register: Register = on => {
@@ -162,7 +163,7 @@ export const register: Register = on => {
         <Text color={state === 'warm' ? 'green' : state === 'cooling' ? 'yellow' : 'red'}>● cache {state}</Text>
         <Text>{state === 'cold' ? 'expired' : `${mmss(left)} left of ${cfg.ttl / 60_000} min`}</Text>
         <Text dimColor>{Math.round(c.tokens / 1000)}k tokens · context {Math.round(pct)}%</Text>
-        <Text dimColor>re-warm ≈ ${((c.tokens * write) / 1e6).toFixed(2)} ({c.model})</Text>
+        <Text dimColor>re-warm ≈ ${((c.tokens * write) / 1e6).toFixed(2)}, ${((c.tokens * (write - priceOf(cfg.price, c.model)[1])) / 1e6).toFixed(2)} more than warm ({c.model})</Text>
         {state === 'cold' && pct >= cfg.handoffPct && <Text color="yellow">Cheaper: strata handoff to a fresh chat</Text>}
         <Text dimColor>{w.on ? `keeping warm · ${w.pings} pings · $${w.usd.toFixed(2)}` : 'keep-warm off'}</Text>
         <Button

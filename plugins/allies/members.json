@@ -266,6 +266,36 @@
         "bulk",
         "research"
       ]
+    },
+    "ollama": {
+      "label": "Ollama on this machine (local model, text only: nothing leaves the computer)",
+      "bin": "ollama",
+      "install": "install Ollama from ollama.com, then `ollama pull qwen3:8b`; allies uses it only while `ollama serve` runs",
+      "login": "none: a local model; start it with `ollama serve`",
+      "text_only": true,
+      "stdin": true,
+      "read": [
+        "run",
+        "--hidethinking"
+      ],
+      "write": [
+        "run",
+        "--hidethinking"
+      ],
+      "model": [
+        "{model}"
+      ],
+      "default_model": "qwen3:8b",
+      "good_for": [
+        "private",
+        "bulk",
+        "summarize"
+      ],
+      "pass_env": "^OLLAMA_",
+      "env": {
+        "OLLAMA_NOHISTORY": "1"
+      },
+      "needs_url": "http://127.0.0.1:11434"
     }
   }
 }

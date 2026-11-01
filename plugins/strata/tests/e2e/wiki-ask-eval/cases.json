@@ -1,0 +1,54 @@
+[
+  {
+    "question": "How much does a cache read cost compared with normal input?",
+    "expected": [
+      "Prompt caching"
+    ]
+  },
+  {
+    "question": "Where should stable instructions go in a prompt to keep the cache?",
+    "expected": [
+      "Prompt caching"
+    ]
+  },
+  {
+    "question": "Why does a 50% cache hit rate not halve the bill?",
+    "expected": [
+      "Prompt caching"
+    ]
+  },
+  {
+    "question": "Why does Gated DeltaNet memory not grow with context?",
+    "expected": [
+      "Gated DeltaNet"
+    ]
+  },
+  {
+    "question": "What layer ratio do hybrid models use with Gated DeltaNet?",
+    "expected": [
+      "Gated DeltaNet"
+    ]
+  },
+  {
+    "question": "What recall at one does STAIR reach on SearchTome?",
+    "expected": [
+      "STAIR retriever"
+    ]
+  },
+  {
+    "question": "What is the price of a one-hour cache write?",
+    "expected": []
+  },
+  {
+    "question": "Who invented Gated DeltaNet and in which year?",
+    "expected": []
+  },
+  {
+    "question": "How fast is STAIR at answering a query, in milliseconds?",
+    "expected": []
+  },
+  {
+    "question": "Which GPU was STAIR trained on?",
+    "expected": []
+  }
+]

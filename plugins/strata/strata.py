@@ -56,6 +56,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import sqlite3
 import subprocess
 import sys
@@ -1202,19 +1203,67 @@ def vault_dir(cfg=None):
     return Path(cfg["vault_path"]).expanduser() if cfg["vault"] else None
 
 
+LITERATURE_TEMPLATE = """---
+type: literature
+title: ""
+authors: []
+year:
+doi: ""
+url: ""
+status: unverified        # unverified -> read -> verified, set by you after checking the source
+access: abstract-only     # abstract-only | full-text
+found_by: ""              # the tool or search that found it
+tags: [literature]
+---
+# {{title}}
+
+## Claim in one line
+
+## What the abstract says
+
+## Why it matters here
+
+<!-- A paper a tool found is a lead, not a source: it stays in inbox/literature/ until you have read it. Put the
+     PDF or text in raw/ only after that, and cite raw/ from wiki pages. -->
+"""
+
+
+def raw_guard_on(cfg=None):
+    cfg = cfg or config()
+    return cfg.get("vault_guard", True) and os.environ.get("STRATA_VAULT_GUARD", "").lower() not in OFF
+
+
+def lock_raw(vault):
+    """Make the files in raw/ read-only, so a shell command (which the PreToolUse guard does not see) cannot change
+    them either. Runs on vault init/refresh and at each chat's end; off with the guard. Returns how many it locked."""
+    raw = Path(vault) / "raw"
+    if not raw.is_dir() or not raw_guard_on():
+        return 0
+    n = 0
+    for p in raw.rglob("*"):
+        try:
+            if p.is_file() and os.access(p, os.W_OK):
+                p.chmod(stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
+                n += 1
+        except OSError:
+            continue
+    return n
+
+
 def vault_init(path):
     """Create the vault layout; existing files are kept. `git init` only, never a commit."""
     path = Path(path).expanduser()
-    for d in ("inbox/archive", "daily", "wiki", "raw", "projects", "output"):
+    for d in ("inbox/archive", "inbox/literature", "templates", "daily", "wiki", "raw", "projects", "output"):
         (path / d).mkdir(parents=True, exist_ok=True)
     for name, text in (("README.md", VAULT_README), ("CLAUDE.md", VAULT_RULES),
                        (".gitignore", ".obsidian/workspace*\n.trash/\n.DS_Store\n"),
                        ("wiki/index.md", "# Index\n\nOne line per page, grouped by category.\n"),
-                       ("wiki/log.md", "# Log\n\n")):
+                       ("wiki/log.md", "# Log\n\n"), ("templates/literature-note.md", LITERATURE_TEMPLATE)):
         if not (path / name).exists():
             (path / name).write_text(text, encoding="utf-8")
     if not (path / ".git").exists() and shutil.which("git"):
         subprocess.run(["git", "init", "-q", str(path)], capture_output=True, timeout=30)
+    lock_raw(path)
     return path
 
 
@@ -1319,7 +1368,7 @@ def raw_guard(data):
     """PreToolUse: deny changes to an existing file under raw/ of the vault or of a wiki folder (raw/ next to wiki/).
     New files may land there; existing ones stay as they arrived."""
     cfg = config()
-    if not cfg.get("vault_guard", True) or os.environ.get("STRATA_VAULT_GUARD", "").lower() in OFF:
+    if not raw_guard_on(cfg):
         return ""
     if data.get("tool_name") not in ("Write", "Edit", "MultiEdit", "NotebookEdit"):
         return ""
@@ -1428,6 +1477,10 @@ def hook(event, stdin=None):
             return ""
         _, chars = ingest(db, session, project, transcript)
         daily_note(db, session, project)
+        try:
+            lock_raw(vault_dir(cfg) or "")
+        except Exception:
+            pass
         project_page(db, project)
         done =db.execute("SELECT COALESCE(consolidated_chars, 0) FROM sessions WHERE id=?", (session,)).fetchone()[0]
         if cfg["auto"] and cfg["engine"] != "none" and chars - done >= cfg["min_chars"]:  # a resume adds only its growth

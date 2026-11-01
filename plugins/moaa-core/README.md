@@ -41,6 +41,14 @@ single cross-agent source (Codex, Gemini, OpenCode read it) and `CLAUDE.md` impo
 off to installed skills where they fit (`agentic-awesome-skills:agents-md`, `ecc:plan-prd`,
 `agentic-awesome-skills:design-md`, `ecc:update-codemaps`).
 
+## Cost calculator
+
+`python cost.py ...`: the billing equations of the 2026-11-01 cost review. `blended` (input/output with cache reads
+and writes kept separate), `breakeven` (flat plan vs pay-as-you-go), `bundle` (a plan that includes API credit: the
+real monthly cash), `local` (a bought machine per million delivered tokens), `cloud` (a rented GPU at a duty cycle),
+`success` (cost per successful task) and `rewarm` (re-writing a cold prompt cache vs reading it warm). Prices are
+arguments, never built in. `python cost.py selftest` checks it against the review's worked numbers.
+
 ## Tests
 
 ```bash

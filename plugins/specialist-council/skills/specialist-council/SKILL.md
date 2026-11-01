@@ -100,6 +100,11 @@ In ensemble mode, use fresh context (fresh, non-forked custom-agent contexts whe
 
 Agents may share the filesystem. Assign exclusive output paths or isolated worktrees and a single owner for each canonical file; separate folders are coordination, not security isolation. Independent candidates must not inspect sibling drafts. Integrate only after relevant writers finish. Keep candidate artifacts read-only to the judge. Treat role restrictions as coordination instructions, not enforceable tool restrictions.
 
+**Stage-output gate.** Before a later stage (review, judging, integration) starts, confirm each earlier stage's
+output exists: the files it was to write are on disk and non-empty, or its returned text is saved by you to the
+stage's output path. Workers may be told to return findings as text rather than write files; then saving them is
+your job, not theirs. Never start reviewers on a missing or empty deliverable; re-run or repair that stage first.
+
 Launch independent workers before waiting. While they run, inspect shared inputs, establish baseline checks, or prepare the rubric without contaminating candidates. Use tool-returned IDs for follow-ups. Track completion, failures, ownership, and effective settings. Do not claim completion while required work or integration checks are unresolved.
 
 ## Adjudicate and integrate

@@ -49,6 +49,19 @@ class ArmTrial(unittest.TestCase):
         self.assertEqual(arms["codex"]["pass_rate"], 0.5)
         self.assertEqual([f[0] for f in flips], ["t2"])
 
+    def test_cost_per_success_and_percentiles(self):
+        self.run_cli("plan", "--arms", "cheap,dear", "--tasks", str(self.tasks), "--out", str(self.dir), "--seed", "3")
+        for c in json.loads((self.dir / "trials.json").read_text())["cells"]:
+            cheap = c["arm"] == "cheap"
+            passed = not cheap or c["task"] == "t1"  # cheap passes half
+            self.run_cli("record", "--dir", str(self.dir), "--cell", c["id"], "--score", "80",
+                         "--cost", "0.10" if cheap else "0.25", "--seconds", "10" if cheap else "30",
+                         "--retries", "1" if cheap else "0", *(["--passed"] if passed else []))
+        arms, _ = trial.summarize(json.loads((self.dir / "trials.json").read_text()))
+        self.assertAlmostEqual(arms["cheap"]["cost_per_success"], 0.20)  # 0.20 spent / 1 success
+        self.assertAlmostEqual(arms["dear"]["cost_per_success"], 0.25)
+        self.assertEqual((arms["dear"]["p50_s"], arms["cheap"]["retries"]), (30, 2))
+
 
 if __name__ == "__main__":
     unittest.main()

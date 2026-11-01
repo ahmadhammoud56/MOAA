@@ -207,10 +207,28 @@ class Lifecycle(unittest.TestCase):
         self.assertLess(__import__("time").time() - t0, 15)
 
 
+class Routing(unittest.TestCase):
+    def test_labels_escalate_once_and_private_stays_local(self):
+        ready = {"opencode", "gemini", "ollama"}
+        self.assertEqual(allies.route("private", ready=ready)["member"], "ollama")
+        self.assertEqual(allies.route("private", ready={"opencode"})["member"], "claude")  # never a remote ally
+        self.assertEqual(allies.route("routine", ready=ready)["member"], "opencode")
+        self.assertEqual(allies.route("routine", exclude=["opencode"], ready=ready)["member"], "gemini")  # outage
+        self.assertEqual(allies.route("routine", failed=1, ready=ready)["member"], "claude")  # one escalation
+        self.assertIsNone(allies.route("routine", failed=2, ready=ready)["member"])  # then stop
+        self.assertEqual(allies.route("complex", ready=ready)["member"], "claude")
+
+    def test_ollama_is_local_and_text_only(self):
+        spec = json.loads((Path(allies.__file__).parent / "members.json").read_text(encoding="utf-8"))["members"]["ollama"]
+        self.assertTrue(spec["needs_url"].startswith("http://127.0.0.1"))  # ready only while a local server runs
+        self.assertTrue(spec["text_only"])
+        self.assertIn("private", spec["good_for"])
+
+
 class ShippedMembers(unittest.TestCase):
     def test_members_file_is_well_formed_and_claude_members_never_use_the_users_login(self):
         members = json.loads((Path(allies.__file__).parent / "members.json").read_text(encoding="utf-8"))["members"]
-        self.assertEqual(set(members), {"codex", "gemini", "kimi", "deepseek", "opencode", "omniroute"})
+        self.assertEqual(set(members), {"codex", "gemini", "kimi", "deepseek", "opencode", "omniroute", "ollama"})
         for name, spec in members.items():
             with self.subTest(member=name):
                 for key in ("label", "bin", "install", "login", "read", "write", "good_for"):
@@ -219,7 +237,8 @@ class ShippedMembers(unittest.TestCase):
                     self.assertIn("--bare", spec["read"])  # --bare never reads the Claude OAuth login
                     self.assertIn("--bare", spec["write"])
                     self.assertEqual(spec["env"]["ANTHROPIC_API_KEY"][0], "$")
-                self.assertTrue(any(x in spec["read"] for x in ("read-only", "plan", "--plan", "--policy")))  # read-only
+                if not spec.get("text_only"):  # a text-only local model has no tools to restrict
+                    self.assertTrue(any(x in spec["read"] for x in ("read-only", "plan", "--plan", "--policy")))
         policy = (Path(allies.__file__).parent / "gemini-read-only.toml").read_text(encoding="utf-8")
         for tool in ("run_shell_command", "write_file", "replace"):  # denied, so headless Gemini never hangs on approval
             self.assertIn(f'toolName = "{tool}"', policy)

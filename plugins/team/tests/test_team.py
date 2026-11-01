@@ -159,5 +159,20 @@ class Team(unittest.TestCase):
         self.assertEqual(team.cmd_claim(solo)["claimed"], tid)
 
 
+    def test_archive_holds_bundle_board_decisions_and_uncommitted_work(self):
+        team.cmd_note(self.alice, "Use SQLite for the index")
+        (self.alice / "README.md").write_text("# project\nchanged\n", encoding="utf-8")
+        (self.alice / "new.txt").write_text("new", encoding="utf-8")
+        dest = team.cmd_archive(self.alice, self.root / "out")
+        names = {p.name for p in dest.iterdir()}
+        self.assertTrue({"repo.bundle", "uncommitted.diff", "untracked.txt", "board.json", "DECISIONS.md",
+                         "README.txt"} <= names)
+        self.assertIn("changed", (dest / "uncommitted.diff").read_text(encoding="utf-8"))
+        self.assertIn("new.txt", (dest / "untracked.txt").read_text(encoding="utf-8"))
+        self.assertIn("Use SQLite", (dest / "DECISIONS.md").read_text(encoding="utf-8"))
+        sh("clone", "-q", str(dest / "repo.bundle"), "restored", cwd=self.root)  # the bundle restores
+        self.assertTrue((self.root / "restored" / "README.md").is_file())
+
+
 if __name__ == "__main__":
     unittest.main()

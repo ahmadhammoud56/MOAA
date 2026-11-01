@@ -20,6 +20,10 @@ user's tasks before routing work.
    token line and get the user's yes before running (more than 40 runs needs `--max-runs` and an explicit yes).
 4. **Run each cell** with the byte-identical brief: `claude` through a `general-purpose` agent; an ally through
    `allies.py ask <member> --task-file <brief file>`. Note tokens where the harness reports them, and wall time.
+   Record for every run what makes results comparable (from the 2026-11-01 review's benchmark checklist): the exact
+   model and revision behind the harness, its quantization if local, prompt and output length, cold or warm cache
+   (`--cache-read`, `--cache-write`), concurrency, retries (`--retries`), wall time, and the run's cost in USD
+   (`--cost`, from `python "<moaa-core>/cost.py" blended ...`). Note the harness and engine versions in the report.
 5. **Judge blind** with `agent-arena-mode:agent-arena-judge`: answers under blind labels only, never the harness name.
    Then `T record --dir <dir> --cell ID --score S [--passed] --tokens N --seconds S`.
 6. **Report** `T summary --dir <dir>`: the table per harness and the flipped tasks with a reason each. Suggest routing
