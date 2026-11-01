@@ -1,0 +1,17 @@
+{
+  "name": "collision-guard",
+  "version": "0.1.0",
+  "description": "Stops two Claude chats from overwriting each other's files: shared, self-expiring file claims across sessions, with worktree and team-board suggestions",
+  "author": {
+    "name": "Ahmad Hammoud",
+    "url": "https://github.com/ahmadhammoud56"
+  },
+  "homepage": "https://github.com/ahmadhammoud56/MOAA",
+  "repository": "https://github.com/ahmadhammoud56/MOAA",
+  "license": "MIT",
+  "keywords": [
+    "mod",
+    "claude-code"
+  ],
+  "types": "./types/index.d.ts"
+}

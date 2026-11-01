@@ -1,0 +1,17 @@
+{
+  "name": "goal-meter",
+  "version": "0.1.0",
+  "description": "A progress bar for /goal: real acceptance checks from a long-task brief, karpathy-loop best against its target, or turns against the goal's turn limit",
+  "author": {
+    "name": "Ahmad Hammoud",
+    "url": "https://github.com/ahmadhammoud56"
+  },
+  "homepage": "https://github.com/ahmadhammoud56/MOAA",
+  "repository": "https://github.com/ahmadhammoud56/MOAA",
+  "license": "MIT",
+  "keywords": [
+    "mod",
+    "claude-code"
+  ],
+  "types": "./types/index.d.ts"
+}

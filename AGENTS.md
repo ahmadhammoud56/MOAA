@@ -19,6 +19,9 @@ pinned third-party plugins in `config/kit.json`, and an installer (`scripts/inst
 ## Rules
 
 - **Python standard library only.** No `pip install` for MOAA's own plugins or scripts. Python 3.10+.
+  Exception: the mods (`plugins/cache-keeper`, `goal-meter`, `collision-guard`, `strata-meter`) are TypeScript
+  hooks modules that Claude Code's own engine runs; they have no dependencies and are checked with
+  `claude plugin validate` and `claude plugin test`.
 - **Never commit secrets or personal paths.** `python scripts/scan.py --public` must pass. Keys belong in the user's
   home folder (for example `~/.claude/allies/keys.env`), never in the repository.
 - **Third-party code stays upstream.** Reference it in `config/kit.json`; vendor only with a licence or recorded

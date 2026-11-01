@@ -4,6 +4,22 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-11-01
+
+### Added
+- **Four Claude Code mods**, each its own plugin at version 0.1.0, installed with the core profile. Mods are
+  TypeScript hooks modules that Claude Code's engine runs (AGENTS.md records the exception to the Python-only rule);
+  CI and `--doctor` run `claude plugin test` on them.
+  - **strata-meter:** a Meters panel, styled like the desktop app's cards, with an SVG bar per row: context against
+    the strata handoff threshold, prompt cache, goal, canary, extraction queue, engine pause and vault.
+  - **cache-keeper:** shows when the prompt cache goes cold and what the next prompt costs, suggests a strata handoff
+    when the context is also full, and keeps a chat warm on request with `$.model.fork` (capped by idle time).
+  - **goal-meter:** a progress bar for `/goal` from a long-task brief's verified checks, karpathy-loop progress or
+    turns.
+  - **collision-guard:** shared, self-expiring file claims across chats; an edit of a file another live chat holds
+    is refused with a worktree or team-board suggestion; a panel lists the live chats and their files.
+  All four write a status line, which Remote Control shows; each has an `MOAA_*` off switch.
+
 ## [0.22.1] - 2026-11-01
 
 ### Fixed

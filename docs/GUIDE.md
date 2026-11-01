@@ -230,6 +230,25 @@ py plugins/strata/strata.py capture "Try FTS5 trigram for RAG on CJK text"
 Strata needs no worker process or background service; claude-mem is still available with `--with-claude-mem`. Details:
 [plugins/strata/README.md](../plugins/strata/README.md).
 
+## Mods: meters and guards inside Claude Code
+
+Four mods (TypeScript hooks modules that Claude Code runs itself) install with the core profile and load in every
+chat:
+
+- **Meters panel** (`strata-meter`): one panel in the desktop app with a row and a real bar per meter: context against
+  the strata handoff threshold, the prompt cache, the `/goal` progress, canary hits and misses, sessions waiting for
+  extraction, an engine pause, and the vault. `/strata-meter` reopens it.
+- **Cache Keeper**: when the prompt cache goes cold, the cost of the next prompt, or a strata handoff suggestion when
+  the context is also full; **Keep warm** per chat re-sends the cached prefix just before it lapses (capped by idle
+  time). `MOAA_CACHE_TTL_MIN=5` with an API key (60 on a subscription).
+- **Goal Meter**: a progress bar for `/goal` that counts verified checks of a long-task brief, karpathy-loop progress,
+  or turns against "Stop after N turns".
+- **Collision Guard**: refuses an edit of a file another live chat edited in the last 10 minutes and points to a
+  worktree or a team-board claim; `/collision-guard` lists the live chats and their files.
+
+Each writes a status line, so Remote Control shows them too. Off switches: `MOAA_STRATA_METER`, `MOAA_CACHE_KEEPER`,
+`MOAA_GOAL_METER`, `MOAA_COLLISION_GUARD` (`off`, or `warn` for the guard). Details: each plugin's README.
+
 ## Team: several people, several accounts, one project
 
 **Each person keeps their own Claude account; the team board splits the work between them.** It never shares

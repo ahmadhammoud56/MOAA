@@ -13,3 +13,5 @@ node_modules/
 .swarm/
 # Claude Code local state and session worktrees
 .claude/
+# editor types Claude Code writes beside a loaded mod
+plugins/*/.claude-plugin/types/

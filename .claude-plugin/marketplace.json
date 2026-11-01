@@ -65,6 +65,26 @@
       "description": "Always on: turns every prompt into a clear brief, asks about ambiguous points with concrete options, and hands the brief (not the raw prompt) to every subagent. Switch off with refiner.py off."
     },
     {
+      "name": "cache-keeper",
+      "source": "./plugins/cache-keeper",
+      "description": "Mod: shows when this chat's prompt cache goes cold and what re-warming costs, keeps it warm on request, and suggests a strata handoff when a cold cache meets a full context."
+    },
+    {
+      "name": "goal-meter",
+      "source": "./plugins/goal-meter",
+      "description": "Mod: a progress bar for /goal from real long-task acceptance checks, karpathy-loop progress, or turns against the goal's limit."
+    },
+    {
+      "name": "collision-guard",
+      "source": "./plugins/collision-guard",
+      "description": "Mod: stops two Claude chats from overwriting each other's files with shared, self-expiring claims, and shows the live chats and their files in a panel."
+    },
+    {
+      "name": "strata-meter",
+      "source": "./plugins/strata-meter",
+      "description": "Mod: a Meters panel with real bars for context against the strata handoff, prompt cache, goal, canary, memory queue and the Obsidian vault."
+    },
+    {
       "name": "team",
       "source": "./plugins/team",
       "description": "Team board: people on separate Claude accounts work on one git repository together, with task claims, path locks, handoffs and messages on a shared board branch. Never shares credentials or usage between accounts."

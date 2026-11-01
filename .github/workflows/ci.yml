@@ -78,6 +78,10 @@ jobs:
         run: |
           claude plugin validate .
           for p in plugins/*/; do claude plugin validate "$p"; done
+      - name: Mod tests (TypeScript mods, Claude Code's own test runner)
+        shell: bash
+        run: |
+          for p in plugins/cache-keeper plugins/goal-meter plugins/collision-guard plugins/strata-meter; do claude plugin test "$p"; done
 
   install:
     name: Clean install (${{ matrix.os }}, ${{ matrix.profile }})

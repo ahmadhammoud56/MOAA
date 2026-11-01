@@ -409,7 +409,8 @@ class ProfileTests(unittest.TestCase):
         # components of its own (its dependencies are already in core); 16th: claude-code-setup, Anthropic's read-only
         # automation recommender (one skill)
         # 17th: prompt-refiner, the always-on prompt-to-brief hook; 18th: team, the board for people on separate
-        # accounts (silent in repositories without a board)
-        self.assertLessEqual(len(core), 18)
+        # accounts (silent in repositories without a board); 19th-22nd: the four mods (cache-keeper, goal-meter,
+        # collision-guard, strata-meter), hooks modules with no skills, so they add nothing to the skill listing
+        self.assertLessEqual(len(core), 22)
         self.assertTrue(all(p.get("profile") in ("core", "full") for p in kit["plugins"]))
         self.assertFalse(any(p.get("optional") for p in kit["plugins"] if p["id"] in core))

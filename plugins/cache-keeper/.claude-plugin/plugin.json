@@ -1,0 +1,17 @@
+{
+  "name": "cache-keeper",
+  "version": "0.1.0",
+  "description": "Shows when this chat's prompt cache goes cold and what re-warming costs; keeps it warm on request; suggests a strata handoff when a cold cache meets a full context",
+  "author": {
+    "name": "Ahmad Hammoud",
+    "url": "https://github.com/ahmadhammoud56"
+  },
+  "homepage": "https://github.com/ahmadhammoud56/MOAA",
+  "repository": "https://github.com/ahmadhammoud56/MOAA",
+  "license": "MIT",
+  "keywords": [
+    "mod",
+    "claude-code"
+  ],
+  "types": "./types/index.d.ts"
+}

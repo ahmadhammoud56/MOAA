@@ -977,6 +977,9 @@ def doctor_checks():
     ]
     checks += [(f"validate {d.name}", ["claude", "plugin", "validate", str(d)], KIT)
                for d in sorted(plugins.iterdir()) if (d / ".claude-plugin" / "plugin.json").is_file()]
+    checks += [(f"{d.name} mod tests", ["claude", "plugin", "test", str(d)], KIT)  # TypeScript mods: the engine's runner
+               for d in sorted(plugins.iterdir()) if (d / "hooks" / "hooks.json").is_file() and (d / "tests").is_dir()
+               and "modules" in (d / "hooks" / "hooks.json").read_text(encoding="utf-8")]
     return checks
 
 

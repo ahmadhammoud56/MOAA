@@ -1,0 +1,17 @@
+{
+  "name": "strata-meter",
+  "version": "0.1.0",
+  "description": "strata at a glance: context against the handoff threshold, canary hits and misses, memory waiting for extraction, engine pause, and the Obsidian vault",
+  "author": {
+    "name": "Ahmad Hammoud",
+    "url": "https://github.com/ahmadhammoud56"
+  },
+  "homepage": "https://github.com/ahmadhammoud56/MOAA",
+  "repository": "https://github.com/ahmadhammoud56/MOAA",
+  "license": "MIT",
+  "keywords": [
+    "mod",
+    "claude-code"
+  ],
+  "types": "./types/index.d.ts"
+}
