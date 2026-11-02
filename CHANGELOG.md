@@ -7,6 +7,9 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 ### Changed
 - **cache-keeper 0.2.1:** token counts read 412k, 1.3M, 2.0B instead of 1267k; one formatter for the status line, band
   and pane, with a test per unit.
+- **specialist-council 1.9.1:** the long-task skill ends a `/goal` turn with the acceptance table (one line per
+  check with its evidence, and the count). The goal check reads only the transcript, so a bare "all checks pass"
+  had it send the turn back twice in the 0.20-0.22 run.
 
 ## [0.24.0] - 2026-11-01
 

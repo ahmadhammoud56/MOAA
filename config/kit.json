@@ -653,7 +653,7 @@
     {
       "id": "specialist-council@moaa",
       "enabled": true,
-      "tested_version": "1.9.0",
+      "tested_version": "1.9.1",
       "profile": "core"
     },
     {

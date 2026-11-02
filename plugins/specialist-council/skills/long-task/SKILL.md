@@ -53,6 +53,10 @@ Give the user this line to run, filled from the brief, so Claude Code keeps work
 `/goal` is a user command; you cannot run it yourself. The goal check is model-judged, so keep hard limits (money,
 runtime) in the brief's constraints and stop on them yourself. `/goal clear` removes it.
 
+The goal check reads only the transcript, not your files. When you believe the goal holds, end that turn with the
+acceptance table itself: one line per check, `<check> - pass - <evidence path or command output>`, and the count
+(`11 of 11 pass`). A bare "all checks pass" makes the Stop hook send you back, turn after turn.
+
 ## 4. Work
 
 - **Stage-output gate:** a step that produces a file counts as done only when the file exists and is not empty;
