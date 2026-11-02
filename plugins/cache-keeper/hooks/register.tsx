@@ -41,6 +41,13 @@ const mmss = (ms: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 }
 
+/** 412k, 1.3M, 2.0B: the thresholds sit where rounding would otherwise print 1000k or 1000.0M. */
+const tok = (n: number) =>
+  n >= 999_950_000 ? `${(n / 1e9).toFixed(1)}B`
+    : n >= 999_500 ? `${(n / 1e6).toFixed(1)}M`
+    : n >= 1000 ? `${Math.round(n / 1000)}k`
+    : String(n)
+
 /** The status line under the prompt: drawn on every surface, Remote Control included (the band is terminal and
  *  desktop only). */
 
@@ -64,7 +71,7 @@ async function pinStatus($: any) {
   const [w0] = priceOf(cfg.price, c.model)
   await snapshot($, 'cache', { leftMs: left, ttlMs: cfg.ttl, tokens: c.tokens, rewarm: (c.tokens * w0) / 1e6, keepWarm: w.on, at: await $.clock.now() })
   if (await read($, isHidden)) return $.ui.status(undefined) // hidden: the status line only; the Meters panel stays
-  const k = `${Math.round(c.tokens / 1000)}k tokens`
+  const k = `${tok(c.tokens)} tokens`
   const warm = w.on ? `keeping warm (${w.pings} pings, $${w.usd.toFixed(2)})` : 'keep warm: /cache-keeper on'
   if (left > 0) return $.ui.status(`cache ${left < 60_000 ? 'cooling' : 'warm'} ${mmss(left)} left · ${k} · ${warm}`)
   const pct = (await $.session.usage()).context.percent ?? 0
@@ -162,7 +169,7 @@ export const register: Register = on => {
       <Box flexDirection="column">
         <Text color={state === 'warm' ? 'green' : state === 'cooling' ? 'yellow' : 'red'}>● cache {state}</Text>
         <Text>{state === 'cold' ? 'expired' : `${mmss(left)} left of ${cfg.ttl / 60_000} min`}</Text>
-        <Text dimColor>{Math.round(c.tokens / 1000)}k tokens · context {Math.round(pct)}%</Text>
+        <Text dimColor>{tok(c.tokens)} tokens · context {Math.round(pct)}%</Text>
         <Text dimColor>re-warm ≈ ${((c.tokens * write) / 1e6).toFixed(2)}, ${((c.tokens * (write - priceOf(cfg.price, c.model)[1])) / 1e6).toFixed(2)} more than warm ({c.model})</Text>
         {state === 'cold' && pct >= cfg.handoffPct && <Text color="yellow">Cheaper: strata handoff to a fresh chat</Text>}
         <Text dimColor>{w.on ? `keeping warm · ${w.pings} pings · $${w.usd.toFixed(2)}` : 'keep-warm off'}</Text>
@@ -198,7 +205,7 @@ export const register: Register = on => {
       <Box>
         <Text color={color}>● cache {state}</Text>
         <Text dimColor>
-          {advice} · {Math.round(c.tokens / 1000)}k tokens
+          {advice} · {tok(c.tokens)} tokens
           {w.on ? ` · keeping warm (${w.pings} pings, $${w.usd.toFixed(2)})` : ''}{' '}
         </Text>
         <Button

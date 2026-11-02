@@ -3,9 +3,9 @@ import { expect, test } from 'claude-code/testing'
 const NOW = 50_000_000
 const BAND = { plugin: 'cache-keeper', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows: 3, bodyColumns: 100, scroll: { offset: 0, bodyRows: 3 }, view: {} } } as const
 
-const seed = (on: any, lastCallAt: number, percent: number) => {
+const seed = (on: any, lastCallAt: number, percent: number, tokens = 412_000) => {
   const values: Record<string, unknown> = {
-    info: { lastCallAt, tokens: 412_000, model: 'claude-opus-5-5' },
+    info: { lastCallAt, tokens, model: 'claude-opus-5-5' },
     warmth: { on: false, lastPromptAt: lastCallAt, pings: 0, usd: 0 },
     tick: 0,
     isHidden: false,
@@ -41,3 +41,12 @@ test('a cold cache with room left shows the re-warm cost', async ($, on) => {
   expect((await ui.find({ type: 'Text', text: /re-writes/ }))?.text).toContain('$2.58')
   await ui.unmount()
 })
+
+for (const [tokens, label] of [[412_000, '412k tokens'], [1_267_000, '1.3M tokens'], [2_000_000_000, '2.0B tokens']] as const) {
+  test(`${tokens} tokens read as ${label}`, async ($, on) => {
+    seed(on, NOW - 60_000, 20, tokens)
+    const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+    expect((await ui.find({ type: 'Text', text: /tokens/ }))?.text).toContain(label)
+    await ui.unmount()
+  })
+}

@@ -1,6 +1,6 @@
 {
   "name": "cache-keeper",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Shows when this chat's prompt cache goes cold and what re-warming costs; keeps it warm on request; suggests a strata handoff when a cold cache meets a full context",
   "author": {
     "name": "Ahmad Hammoud",

@@ -2,8 +2,8 @@
 
 A Claude Code mod that shows when this chat's prompt cache goes cold and what re-warming costs.
 
-- **Status line** (every surface, Remote Control included): `cache warm 52:10 left · 412k tokens`, or when cold the
-  cost of the next prompt, or a strata handoff suggestion when the context is past `MOAA_CACHE_HANDOFF_PCT` (60).
+- **Status line** (every surface, Remote Control included): `cache warm 52:10 left · 412k tokens` (1.3M or 2.0B
+  for bigger counts), or when cold the cost of the next prompt, or a strata handoff suggestion when the context is past `MOAA_CACHE_HANDOFF_PCT` (60).
 - **Band above the prompt** (terminal and desktop) with a **Keep warm** button; `/cache-keeper pane` opens a panel.
 - **Keep warm**, per chat (`/cache-keeper on|off`): shortly before the cache lapses it sends `$.model.fork`, which
   re-sends this chat's own cached prefix, so the API reads and refreshes it. Pings and their estimated cost are

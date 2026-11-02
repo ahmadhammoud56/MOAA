@@ -701,7 +701,7 @@
     {
       "id": "cache-keeper@moaa",
       "enabled": true,
-      "tested_version": "0.2.0",
+      "tested_version": "0.2.1",
       "profile": "core"
     },
     {

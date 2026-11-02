@@ -4,6 +4,10 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Changed
+- **cache-keeper 0.2.1:** token counts read 412k, 1.3M, 2.0B instead of 1267k; one formatter for the status line, band
+  and pane, with a test per unit.
+
 ## [0.24.0] - 2026-11-01
 
 From part D of `docs/research/2026-11-01-llm-infra-second-brain-review.md`.
