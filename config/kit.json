@@ -20,7 +20,7 @@
     {
       "id": "academy-guide@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "dbd4588f9e10",
+      "tested_version": "ca45fc496a34",
       "profile": "full"
     },
     {
@@ -289,7 +289,7 @@
     {
       "id": "claude-api@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "dbd4588f9e10",
+      "tested_version": "ca45fc496a34",
       "profile": "full"
     },
     {
@@ -315,13 +315,13 @@
     {
       "id": "discernment-nudge@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "dbd4588f9e10",
+      "tested_version": "ca45fc496a34",
       "profile": "full"
     },
     {
       "id": "document-skills@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "dbd4588f9e10",
+      "tested_version": "ca45fc496a34",
       "profile": "core"
     },
     {
@@ -333,7 +333,7 @@
     {
       "id": "example-skills@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "dbd4588f9e10",
+      "tested_version": "ca45fc496a34",
       "profile": "full"
     },
     {
@@ -388,7 +388,7 @@
     {
       "id": "ruflo-agent@ruflo",
       "enabled": false,
-      "tested_version": "0.3.4",
+      "tested_version": "0.4.1",
       "profile": "full",
       "pack": true
     },
@@ -402,7 +402,7 @@
     {
       "id": "ruflo-agntcy@ruflo",
       "enabled": false,
-      "tested_version": "0.2.5",
+      "tested_version": "0.2.6",
       "profile": "full",
       "pack": true
     },
@@ -430,34 +430,34 @@
     {
       "id": "ruflo-bbs-federation@ruflo",
       "enabled": false,
-      "tested_version": "0.3.4",
+      "tested_version": "0.3.5",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-browser@ruflo",
       "enabled": false,
-      "tested_version": "0.3.6",
+      "tested_version": "0.3.7",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-business-pods@ruflo",
       "enabled": false,
-      "tested_version": "0.2.4",
+      "tested_version": "0.2.5",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-core@ruflo",
       "enabled": true,
-      "tested_version": "0.2.11",
+      "tested_version": "0.2.13",
       "profile": "full"
     },
     {
       "id": "ruflo-cost-tracker@ruflo",
       "enabled": false,
-      "tested_version": "0.28.2",
+      "tested_version": "0.31.0",
       "profile": "full",
       "pack": true
     },
@@ -485,7 +485,7 @@
     {
       "id": "ruflo-federation@ruflo",
       "enabled": false,
-      "tested_version": "0.3.6",
+      "tested_version": "0.3.7",
       "profile": "full",
       "pack": true
     },
@@ -548,7 +548,7 @@
     {
       "id": "ruflo-metaharness@ruflo",
       "enabled": false,
-      "tested_version": "0.2.6",
+      "tested_version": "0.4.0",
       "profile": "full",
       "pack": true
     },
@@ -583,7 +583,7 @@
     {
       "id": "ruflo-plugin-creator@ruflo",
       "enabled": false,
-      "tested_version": "0.4.3",
+      "tested_version": "0.4.4",
       "profile": "full",
       "pack": true
     },
@@ -597,7 +597,7 @@
     {
       "id": "ruflo-ruvector@ruflo",
       "enabled": false,
-      "tested_version": "0.3.7",
+      "tested_version": "0.3.8",
       "profile": "full",
       "pack": true
     },
@@ -639,14 +639,14 @@
     {
       "id": "ruflo-testgen@ruflo",
       "enabled": false,
-      "tested_version": "0.3.3",
+      "tested_version": "0.3.4",
       "profile": "full",
       "pack": true
     },
     {
       "id": "ruflo-workflows@ruflo",
       "enabled": false,
-      "tested_version": "0.6.7",
+      "tested_version": "0.7.1",
       "profile": "full",
       "pack": true
     },
