@@ -121,7 +121,7 @@ Source: https://github.com/sickn33/agentic-awesome-skills
 
 </details>
 
-<details><summary><b>anthropics/skills</b>: 5 plugins (pinned <code>ca45fc4</code>)</summary>
+<details><summary><b>anthropics/skills</b>: 5 plugins (pinned <code>2c5958e</code>)</summary>
 
 | Install | Description |
 |---|---|

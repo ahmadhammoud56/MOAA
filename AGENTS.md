@@ -5,7 +5,7 @@ file), Codex, Gemini CLI, OpenCode, Cursor and others. Humans should read [CONTR
 
 ## Purpose
 
-MOAA ("Mother of All Agents") is a Claude Code plugin marketplace: MOAA's own plugins under `plugins/`, a catalog of
+MOAA ("Memory, Orchestration, Agents, Automation"; once "Mother of All Agents") is a Claude Code plugin marketplace: MOAA's own plugins under `plugins/`, a catalog of
 pinned third-party plugins in `config/kit.json`, and an installer (`scripts/install.py`). Read
 [ARCHITECTURE.md](ARCHITECTURE.md) for how the parts connect before changing more than one plugin.
 

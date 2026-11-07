@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MOAA (Mother of All Agents) installer. Standard library only; safe to rerun.
+"""MOAA (Memory, Orchestration, Agents, Automation) installer. Standard library only; safe to rerun.
 
   python scripts/install.py                 core profile: 15 plugins, council, arena, allies, strata, skills, rea MCP
   python scripts/install.py --full          everything: 98 plugins (100 with --with-claude-mem) + ansys MCP; the big

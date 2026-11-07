@@ -1,13 +1,15 @@
-# MOAA: Mother of All Agents
+# MOAA: Memory, Orchestration, Agents, Automation
 
 [![CI](https://github.com/ahmadhammoud56/MOAA/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmadhammoud56/MOAA/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/ahmadhammoud56/MOAA)](https://github.com/ahmadhammoud56/MOAA/releases) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Agents compete in an arena; the winners join a 60-role council that cross-checks your answers.**
+**Long-term memory, a context that never runs out, honest cost meters and a team of agents for Claude Code.**
 
-MOAA turns Claude Code into a team. A **Specialist Council** of 60 role agents, each with its own model and effort
-level, works a problem in parallel and checks the results against each other before you see an answer. In the
-**Agent Arena**, agents compete and a blind judge scores them, and agents that keep winning are **forged** into
-permanent council members.
+MOAA (Memory, Orchestration, Agents, Automation) is everything around the model that makes long work hold up.
+**Strata** keeps a layered memory of every session, searches it by keyword and by meaning, hands a full chat over
+to a fresh one before the context runs out, and keeps an Obsidian second brain. **Mods** show the prompt cache,
+goals and context live. A **Specialist Council** of 60 role agents works a problem in parallel and cross-checks the
+results; in the **Agent Arena** agents compete under a blind judge, and the ones that keep winning are **forged**
+into permanent council members. The name used to stand for "Mother of All Agents"; it grew past agents.
 
 ## Try it in Claude Code
 

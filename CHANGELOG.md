@@ -4,7 +4,25 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added
+- **strata 0.10.0, meaning search:** `embed.py` embeds notes and scenes with a local Ollama model
+  (`nomic-embed-text`) and `strata.py search` fuses them with keyword results, so a search finds notes with other
+  words for the same thing. Silent keyword-only fallback without Ollama; off with `embed.py off` or
+  `STRATA_SEMANTIC=off`. **Memory viewer:** `viewer.py` serves a read-only page on 127.0.0.1:37778 with projects,
+  profile, scenes, notes and search. These were the two claude-mem features strata lacked.
+
+- **Vendored plugin updates (moaa-catalog 0.7.0):** once a day a clone install names vendored plugins with a
+  newer upstream release at session start; `scripts/sync_vendored.py NAME` copies one in, re-applies MOAA's patch,
+  validates and tests it, and records it only when everything passes (`--check` lists them; the weekly upstream-drift
+  job reports them). Upstream records live in `config/kit.json` `vendored_plugins`. Off with `MOAA_NO_UPDATE_CHECK=1`.
+
 ### Changed
+- **MOAA now stands for Memory, Orchestration, Agents, Automation** (README, CITATION, marketplace, AGENTS.md). The
+  repository, plugin ids and install commands are unchanged.
+- **flightdeck 0.6.0** (vendored, synced from upstream 0.3.2): a faulting surface module such as `hooks/rail.tsx`
+  is drawn as plain text inside its panel instead of a line cut off past the border; the connector no longer jitters
+  on the desktop app; multi-colour lines stay on one line; the pane draws at its real width down to 24 columns; no
+  more `session.append hook was skipped` notice under the built-in guard.
 - **cache-keeper 0.2.1:** token counts read 412k, 1.3M, 2.0B instead of 1267k; one formatter for the status line, band
   and pane, with a test per unit.
 - **specialist-council 1.9.1:** the long-task skill ends a `/goal` turn with the acceptance table (one line per

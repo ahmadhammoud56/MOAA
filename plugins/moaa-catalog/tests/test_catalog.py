@@ -168,6 +168,31 @@ class Catalog(unittest.TestCase):
             raise OSError("no network")
         self.assertIsNone(catalog.update_notice(Path(tempfile.mkdtemp()), offline))  # nothing known: silent
 
+    def test_vendored_notice_names_newer_releases_once_a_day(self):
+        kit = self.home / "kit"
+        (kit / "config").mkdir(parents=True)
+        (kit / "config" / "kit.json").write_text(json.dumps({"version": "0.24.0", "vendored_plugins": {
+            "flightdeck": {"repo": "a/flightdeck", "version": "0.6.0"},
+            "prismantis": {"repo": "b/prismantis", "version": "0.34.0"},
+            "plot-deck": {"repo": "c/lps", "version": "", "commit": "abc"}}}))
+        market = self.home / "plugins" / "known_marketplaces.json"
+        market.write_text(json.dumps({"moaa": {"source": {"source": "directory"}, "installLocation": str(kit)}}))
+        calls = []
+
+        def fetch(repo):
+            calls.append(repo)
+            return {"a/flightdeck": "0.6.0", "b/prismantis": "0.45.2"}[repo]
+        notice = catalog.vendored_notice(self.home, fetch, now=1000.0)
+        self.assertIn("prismantis 0.45.2 (have 0.34.0)", notice)
+        self.assertNotIn("flightdeck", notice)
+        self.assertIn("sync_vendored.py\" NAME", notice)
+        self.assertEqual(sorted(calls), ["a/flightdeck", "b/prismantis"])  # commit-only upstreams are not fetched
+        self.assertIsNone(catalog.vendored_notice(self.home, fetch, now=1000.0 + 3600))  # once a day
+        self.assertEqual(len(calls), 2)
+        self.assertIn("prismantis", catalog.vendored_notice(self.home, fetch, now=1000.0 + 90000))
+        market.write_text(json.dumps({"moaa": {"source": {"source": "github"}, "installLocation": str(kit)}}))
+        self.assertIsNone(catalog.vendored_notice(self.home, fetch, now=1000.0 + 200000))  # marketplace install
+
     def test_use_serves_indexed_skills_logs_and_suggests_enabling(self):
         for _ in range(catalog.PROMOTE_USES):
             self.assertEqual(catalog.use(self.home, str(self.stripe)), 0)

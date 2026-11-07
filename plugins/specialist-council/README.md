@@ -73,4 +73,4 @@ The 5.5 model IDs need Claude Code 2.1.296 or newer.
 ## Author
 
 Created by Ahmad Hammoud ([@ahmadhammoud56](https://github.com/ahmadhammoud56)). Part of
-[MOAA: Mother of All Agents](https://github.com/ahmadhammoud56/MOAA). MIT licensed; see [LICENSE](LICENSE).
+[MOAA: Memory, Orchestration, Agents, Automation](https://github.com/ahmadhammoud56/MOAA). MIT licensed; see [LICENSE](LICENSE).

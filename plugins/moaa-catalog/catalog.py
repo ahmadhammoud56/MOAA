@@ -371,6 +371,39 @@ def update_notice(home, fetch=latest_release, now=None):
             f"Changes: https://github.com/{UPDATE_REPO}/releases/tag/v{latest}")
 
 
+def vendored_notice(home, fetch=latest_release, now=None):
+    """Once a day, for clone installs: the vendored plugins (kit.json `vendored_plugins`) whose upstream has a newer
+    release, with the command that copies it in after review. Same off switches as the MOAA update check."""
+    if os.environ.get("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC") or os.environ.get("MOAA_NO_UPDATE_CHECK"):
+        return None
+    entry = read_json(home / "plugins" / "known_marketplaces.json").get("moaa") or {}
+    if entry.get("source", {}).get("source") != "directory":  # marketplace installs get them with MOAA releases
+        return None
+    where = Path(entry.get("installLocation", ""))
+    plugins = read_json(where / "config" / "kit.json").get("vendored_plugins", {})
+    now = now or time.time()
+    cache_path = home / "moaa-catalog" / "vendored.json"
+    cache = read_json(cache_path)
+    if "checked" in cache and now - cache["checked"] < UPDATE_EVERY:
+        return None  # checked today; one notice a day at most
+    latest = dict(cache.get("latest", {}))
+    for name, rec in plugins.items():
+        if rec.get("version"):  # release-based upstreams; commit-only ones are left to sync_vendored.py --check
+            try:
+                latest[name] = fetch(rec["repo"])
+            except Exception:
+                pass
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    cache_path.write_text(json.dumps({"checked": now, "latest": latest}), encoding="utf-8")
+    stale = [f"{n} {latest[n]} (have {r['version']})" for n, r in plugins.items()
+             if r.get("version") and version_tuple(latest.get(n, "")) > version_tuple(r["version"])]
+    if not stale:
+        return None
+    script = (where / "scripts" / "sync_vendored.py").as_posix()
+    return (f"Vendored plugin updates: {', '.join(stale)}. To review and copy one in: py \"{script}\" NAME "
+            f"(re-applies MOAA's patch, validates and tests it; then install.py).")
+
+
 RUFLO_EVERY = 3 * 3600  # seconds between checks of the global ruflo CLI (ruflo ships several releases a week)
 RUFLO_RETRY = 600  # seconds between install attempts while `ruflo` is missing from PATH
 RUFLO_LOCK_AGE = 1800  # an update lock older than this belongs to a run that died
@@ -568,6 +601,12 @@ def main(argv):
             notice = update_notice(home)
         except Exception:  # a hook must never block the session
             notice = None
+        try:
+            vendored = vendored_notice(home)
+            if vendored:
+                notice = f"{notice} {vendored}" if notice else vendored
+        except Exception:
+            pass
         try:  # daily, with the update check: the update cache file says whether today's check already ran
             prices = price_notice(home)
             if prices and not (home / "moaa-catalog" / f"prices-{time.strftime('%Y%m%d')}").exists():

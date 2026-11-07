@@ -6,7 +6,7 @@
     "url": "https://github.com/ahmadhammoud56"
   },
   "metadata": {
-    "description": "MOAA: Mother of All Agents. A 60-role Specialist Council, an Agent Arena that forges winning agents into the council, War Room parallel teams, allies (Codex, Gemini, OpenCode) and layered memory. Start with moaa-core."
+    "description": "MOAA: Memory, Orchestration, Agents, Automation. Layered memory with context handoff, cache and context meters, a 60-role Specialist Council, an Agent Arena that forges winning agents into the council, War Room parallel teams, allies (Codex, Gemini, OpenCode) and layered memory. Start with moaa-core."
   },
   "plugins": [
     {
@@ -94,7 +94,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "ca45fc496a3436251f191354091d557da31c15b5"
+        "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579"
       },
       "description": "Recommends relevant Claude Academy courses, tutorials, and use cases when users ask how to use Claude",
       "strict": false,
@@ -1184,7 +1184,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "ca45fc496a3436251f191354091d557da31c15b5"
+        "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579"
       },
       "description": "Appends two or three short follow-up questions after a substantive answer to help users check key facts, probe the reasoning, and notice missing context",
       "strict": false,
@@ -1202,7 +1202,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "ca45fc496a3436251f191354091d557da31c15b5"
+        "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579"
       },
       "description": "Collection of document processing suite including Excel, Word, PowerPoint, and PDF capabilities",
       "strict": false,
@@ -1263,7 +1263,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "ca45fc496a3436251f191354091d557da31c15b5"
+        "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579"
       },
       "description": "Collection of example skills demonstrating various capabilities including skill creation, MCP building, visual design, algorithmic art, internal communications, web testing, artifact building, Slack GIFs, and theme styling",
       "strict": false,
@@ -1292,7 +1292,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "ca45fc496a3436251f191354091d557da31c15b5"
+        "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579"
       },
       "description": "Claude API and SDK documentation skill for building LLM-powered applications. Upstream plugin `claude-api` from anthropic-agent-skills; listed as `llm-api-reference` because `claude-api` is a reserved name.",
       "strict": false,

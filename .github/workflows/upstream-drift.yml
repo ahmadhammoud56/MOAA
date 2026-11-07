@@ -34,3 +34,10 @@ jobs:
           python scripts/sync_skills.py --check | tee -a "$GITHUB_STEP_SUMMARY" || status=$?
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           exit $status
+      - name: Vendored plugins against upstream releases (report only)
+        if: always()
+        run: |
+          echo '## Vendored plugins' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          python scripts/sync_vendored.py | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

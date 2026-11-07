@@ -20,7 +20,7 @@
     {
       "id": "academy-guide@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "ca45fc496a34",
+      "tested_version": "2c5958ecac7c",
       "profile": "full"
     },
     {
@@ -289,7 +289,7 @@
     {
       "id": "claude-api@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "ca45fc496a34",
+      "tested_version": "2c5958ecac7c",
       "profile": "full"
     },
     {
@@ -315,13 +315,13 @@
     {
       "id": "discernment-nudge@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "ca45fc496a34",
+      "tested_version": "2c5958ecac7c",
       "profile": "full"
     },
     {
       "id": "document-skills@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "ca45fc496a34",
+      "tested_version": "2c5958ecac7c",
       "profile": "core"
     },
     {
@@ -333,19 +333,19 @@
     {
       "id": "example-skills@anthropic-agent-skills",
       "enabled": true,
-      "tested_version": "ca45fc496a34",
+      "tested_version": "2c5958ecac7c",
       "profile": "full"
     },
     {
       "id": "flightdeck@moaa",
       "enabled": true,
-      "tested_version": "0.3.2",
+      "tested_version": "0.6.0",
       "profile": "core"
     },
     {
       "id": "strata@moaa",
       "enabled": true,
-      "tested_version": "0.9.0",
+      "tested_version": "0.10.0",
       "profile": "core"
     },
     {
@@ -689,7 +689,7 @@
     {
       "id": "moaa-catalog@moaa",
       "enabled": true,
-      "tested_version": "0.6.0",
+      "tested_version": "0.7.0",
       "profile": "core"
     },
     {
@@ -747,6 +747,40 @@
     "scientific-brainstorming",
     "uncertainty-and-units"
   ],
+  "vendored_plugins": {
+    "flightdeck": {
+      "repo": "scasella/claude-flightdeck",
+      "path": "",
+      "version": "0.6.0",
+      "commit": "536cb33b1e49812a958233118d5092cbfeee7631",
+      "exclude": [
+        ".github"
+      ]
+    },
+    "prismantis": {
+      "repo": "NahumLitvin/prismantis",
+      "path": "",
+      "version": "0.34.0",
+      "commit": "82afde83736b668b0b428299a44e78142ce1408d",
+      "exclude": [
+        ".github",
+        "codex",
+        ".codex-plugin",
+        ".agents",
+        ".claude",
+        "docs/*.png",
+        "docs/*.gif"
+      ],
+      "patch": "png-button.patch"
+    },
+    "plot-deck": {
+      "repo": "kyryl-shtefiienko/LPS",
+      "path": "mods/plot-deck",
+      "version": "",
+      "commit": "a4363de9c894f380f6861980c06b278d3a9d09a7",
+      "exclude": []
+    }
+  },
   "vendored_skills": {
     "networkx": {
       "repo": "https://github.com/K-Dense-AI/scientific-agent-skills",
