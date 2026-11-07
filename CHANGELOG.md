@@ -4,6 +4,8 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-11-07
+
 ### Added
 - **strata 0.10.0, meaning search:** `embed.py` embeds notes and scenes with a local Ollama model
   (`nomic-embed-text`) and `strata.py search` fuses them with keyword results, so a search finds notes with other

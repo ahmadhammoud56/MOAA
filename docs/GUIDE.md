@@ -227,6 +227,12 @@ py plugins/strata/strata.py capture "Try FTS5 trigram for RAG on CJK text"
 /strata:wiki distill                                    # weekly, in any chat
 ```
 
+**Meaning search and the viewer.** With a local Ollama running and `ollama pull nomic-embed-text` done once,
+`strata.py search` also finds notes and scenes by meaning, fused with the keyword results; nothing leaves the machine,
+and without Ollama search stays keyword-only. `py plugins/strata/embed.py status` shows the state, `embed.py off`
+stops it. `py plugins/strata/viewer.py --open` browses the whole memory (projects, profile, scenes, notes, search) in
+a read-only page at http://127.0.0.1:37778. With these, strata covers what claude-mem did.
+
 Strata needs no worker process or background service; claude-mem is still available with `--with-claude-mem`. Details:
 [plugins/strata/README.md](../plugins/strata/README.md).
 
