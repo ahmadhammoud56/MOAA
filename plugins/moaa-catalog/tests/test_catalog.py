@@ -168,6 +168,62 @@ class Catalog(unittest.TestCase):
             raise OSError("no network")
         self.assertIsNone(catalog.update_notice(Path(tempfile.mkdtemp()), offline))  # nothing known: silent
 
+    def market(self, source):
+        kit = self.home / "kit"
+        (kit / "config").mkdir(parents=True, exist_ok=True)
+        (kit / "scripts").mkdir(exist_ok=True)
+        (kit / "scripts" / "install.py").write_text("")
+        (kit / "config" / "kit.json").write_text(json.dumps({"version": "0.24.0"}))
+        (self.home / "plugins" / "known_marketplaces.json").write_text(json.dumps({"moaa": {
+            "source": {"source": source}, "installLocation": str(kit)}}))
+        (self.home / "plugins" / "installed_plugins.json").write_text(json.dumps({"plugins": {
+            "strata@moaa": [], "ecc@ecc": [], "flightdeck@moaa": []}}))
+        return kit
+
+    def test_self_update_plan_per_install_type(self):
+        kit = self.market("directory")
+        plan = catalog.self_update_plan(self.home)
+        self.assertEqual(plan, [[sys.executable, str(kit / "scripts" / "install.py"), "--update", "--release"]])
+        self.market("github")
+        plan = catalog.self_update_plan(self.home, which=lambda _: "claude")
+        self.assertEqual(plan, [["claude", "plugin", "marketplace", "update", "moaa"],
+                                ["claude", "plugin", "update", "flightdeck@moaa"],
+                                ["claude", "plugin", "update", "strata@moaa"]])
+        self.assertIsNone(catalog.self_update_plan(self.home, which=lambda _: None))  # no claude CLI: notice only
+
+    def test_self_update_runs_once_per_release_and_reports_once(self):
+        self.market("directory")
+        self.assertTrue(catalog.self_update_wanted(self.home, "0.25.0", "0.24.0"))
+        self.assertFalse(catalog.self_update_wanted(self.home, "0.24.0", "0.24.0"))
+        (self.home / "moaa-catalog").mkdir(exist_ok=True)
+        (self.home / "moaa-catalog" / "self-update.json").write_text(json.dumps({"target": "0.25.0"}))
+        self.assertFalse(catalog.self_update_wanted(self.home, "0.25.0", "0.24.0"))  # already tried this release
+        ran = []
+
+        class Done:
+            returncode, stdout, stderr = 0, "updated", ""
+        record = catalog.self_update(self.home, run=lambda argv: ran.append(argv) or Done)
+        self.assertTrue(record["ok"])
+        self.assertEqual(len(ran), 1)
+        self.assertIn("updated itself to 0.25.0", catalog.self_update_report(self.home))
+        self.assertIsNone(catalog.self_update_report(self.home))  # once
+
+        class Failed:
+            returncode, stdout, stderr = 1, "", "[moaa] local changes in the MOAA folder; left as it is"
+        catalog.self_update(self.home, run=lambda argv: Failed)
+        self.assertIn("local changes", catalog.self_update_report(self.home))
+
+    def test_auto_update_off_switches(self):
+        self.market("directory")
+        os.environ["MOAA_AUTO_UPDATE"] = "off"
+        try:
+            self.assertFalse(catalog.self_update_wanted(self.home, "0.25.0", "0.24.0"))
+        finally:
+            del os.environ["MOAA_AUTO_UPDATE"]
+        (self.home / "moaa-catalog").mkdir(exist_ok=True)
+        (self.home / "moaa-catalog" / "auto-update-off").touch()
+        self.assertFalse(catalog.self_update_wanted(self.home, "0.25.0", "0.24.0"))
+
     def test_vendored_notice_names_newer_releases_once_a_day(self):
         kit = self.home / "kit"
         (kit / "config").mkdir(parents=True)

@@ -13,6 +13,11 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
   `STRATA_SEMANTIC=off`. **Memory viewer:** `viewer.py` serves a read-only page on 127.0.0.1:37778 with projects,
   profile, scenes, notes and search. These were the two claude-mem features strata lacked.
 
+- **MOAA updates itself (moaa-catalog 0.7.0):** when the daily check finds a newer release, it installs in the
+  background, windowless, for every install type: a clone moves to the newest release tag (`install.py --update
+  --release`, which refuses local changes or local commits), a GitHub marketplace install runs `claude plugin
+  marketplace update moaa` and `claude plugin update` for each MOAA plugin. One try per release, outcome reported
+  once at the next session. Off with `catalog.py auto-update off` or `MOAA_AUTO_UPDATE=off`.
 - **Vendored plugin updates (moaa-catalog 0.7.0):** once a day a clone install names vendored plugins with a
   newer upstream release at session start; `scripts/sync_vendored.py NAME` copies one in, re-applies MOAA's patch,
   validates and tests it, and records it only when everything passes (`--check` lists them; the weekly upstream-drift

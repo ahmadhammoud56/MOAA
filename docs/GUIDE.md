@@ -391,6 +391,7 @@ Both wrappers pass these flags through to `scripts/install.py`:
 | `--lean` | On an install made before 0.9.0, disable the packs the catalog now ships disabled. |
 | `--restore` | Re-enable every plugin `--prune` or `--lean` disabled. |
 | `--update` | Clone installs: `git pull --ff-only`, reinstall with the same profile and mode, print the changelog since your version. |
+| `--update --release` | The same, but only to the newest release tag, and only when the clone has no local changes or commits of its own. moaa-catalog runs this in the background when a release is out (`catalog.py auto-update off` or `MOAA_AUTO_UPDATE=off` to stop). |
 | `--auto-update` | GitHub marketplace installs: set `autoUpdate` on the MOAA marketplace so Claude Code updates it in the background. |
 | `--status --mcp` | Also check every MCP server's connection, with a hint for slow `npx` servers. `--doctor` lists any that fail. |
 | `--doctor` | Run every pre-commit check: all test suites, `MODELS.md`, the catalog, the public-release scan and `claude plugin validate`. For maintainers. |

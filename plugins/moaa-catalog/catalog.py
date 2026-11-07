@@ -23,6 +23,7 @@ import math
 import os
 from pathlib import Path
 import re
+import shutil
 import sys
 import time
 
@@ -371,6 +372,97 @@ def update_notice(home, fetch=latest_release, now=None):
             f"Changes: https://github.com/{UPDATE_REPO}/releases/tag/v{latest}")
 
 
+def auto_update_on(home):
+    """Self-update is on by default; `catalog.py auto-update off` or MOAA_AUTO_UPDATE=off stops it (the notice stays)."""
+    if os.environ.get("MOAA_AUTO_UPDATE", "").lower() in ("off", "0", "false", "no"):
+        return False
+    return not (home / "moaa-catalog" / "auto-update-off").exists()
+
+
+def self_update_plan(home, which=shutil.which):
+    """The commands that bring this install to the newest release, or None. A clone (directory source) moves to the
+    newest release tag through its own installer; a GitHub marketplace install refreshes the marketplace and each
+    installed MOAA plugin through Claude Code."""
+    entry = read_json(home / "plugins" / "known_marketplaces.json").get("moaa") or {}
+    where = Path(entry.get("installLocation", ""))
+    if not entry:
+        return None
+    if entry.get("source", {}).get("source") == "directory":
+        script = where / "scripts" / "install.py"
+        return [[sys.executable, str(script), "--update", "--release"]] if script.is_file() else None
+    claude = which("claude")
+    if not claude:
+        return None
+    installed = read_json(home / "plugins" / "installed_plugins.json").get("plugins", {})
+    return [[claude, "plugin", "marketplace", "update", "moaa"]] + \
+        [[claude, "plugin", "update", pid] for pid in sorted(installed) if pid.endswith("@moaa")]
+
+
+def self_update_wanted(home, latest, installed):
+    """True once per newer release: the release is newer, auto-update is on and no attempt at it has started yet."""
+    if not latest or version_tuple(latest) <= version_tuple(installed or "0"):
+        return False
+    if not auto_update_on(home) or os.environ.get("MOAA_NO_UPDATE_CHECK"):
+        return False
+    return read_json(home / "moaa-catalog" / "self-update.json").get("target") != latest
+
+
+def self_update_in_background(home, latest):
+    """Start `catalog.py self-update` detached with no window; the record is written first, so it starts once."""
+    import subprocess
+    path = home / "moaa-catalog" / "self-update.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"target": latest, "started": time.time()}), encoding="utf-8")
+    argv = [sys.executable, str(Path(__file__).resolve()), "self-update"]
+    quiet = dict(stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if os.name == "nt":
+        subprocess.Popen(argv, creationflags=0x08000000 | 0x00000200, **quiet)  # no window, own process group
+    else:
+        subprocess.Popen(argv, start_new_session=True, **quiet)
+
+
+def self_update(home, run=None):
+    """Run the plan, log every command to moaa-catalog/self-update.log and record the outcome for the next session.
+    Runs in the windowless background process."""
+    import subprocess
+    run = run or (lambda argv: subprocess.run(argv, capture_output=True, text=True, encoding="utf-8",
+                                              errors="replace", timeout=900))
+    path = home / "moaa-catalog" / "self-update.json"
+    record = read_json(path)
+    plan = self_update_plan(home)
+    ok, last = bool(plan), "no way to update this install automatically"
+    with open(home / "moaa-catalog" / "self-update.log", "a", encoding="utf-8") as log:
+        log.write(f"\n=== {time.strftime('%Y-%m-%d %H:%M:%S')} to {record.get('target')}\n")
+        for argv in plan or []:
+            try:
+                done = run(argv)
+                out = ((done.stdout or "") + (done.stderr or "")).strip()
+                code = done.returncode
+            except Exception as e:  # timeout, missing program
+                out, code = str(e), 1
+            log.write(f"$ {' '.join(argv)}\n{out[-4000:]}\nexit {code}\n")
+            if code:
+                ok, last = False, out.strip().splitlines()[-1][:300] if out.strip() else f"exit {code}"
+                break
+    record.update(done=time.time(), ok=ok, message="" if ok else last, shown=False)
+    path.write_text(json.dumps(record), encoding="utf-8")
+    return record
+
+
+def self_update_report(home):
+    """One line about the last background update, shown once at the next session start."""
+    path = home / "moaa-catalog" / "self-update.json"
+    record = read_json(path)
+    if not record.get("done") or record.get("shown"):
+        return None
+    record["shown"] = True
+    path.write_text(json.dumps(record), encoding="utf-8")
+    if record.get("ok"):
+        return f"MOAA updated itself to {record['target']} in the background; restart Claude Code to load it."
+    return (f"MOAA could not update itself to {record['target']} ({record.get('message')}); details in "
+            f"{(home / 'moaa-catalog' / 'self-update.log').as_posix()}. `catalog.py auto-update off` stops these tries.")
+
+
 def vendored_notice(home, fetch=latest_release, now=None):
     """Once a day, for clone installs: the vendored plugins (kit.json `vendored_plugins`) whose upstream has a newer
     release, with the command that copies it in after review. Same off switches as the MOAA update check."""
@@ -546,6 +638,16 @@ def main(argv):
     if argv == ["ruflo-update"]:
         print(ruflo_update(home))
         return 0
+    if argv == ["self-update"]:
+        print(json.dumps(self_update(home)))
+        return 0
+    if argv[:1] == ["auto-update"]:
+        flag = home / "moaa-catalog" / "auto-update-off"
+        if argv[1:] in (["off"], ["on"]):
+            flag.parent.mkdir(parents=True, exist_ok=True)
+            flag.touch() if argv[1] == "off" else flag.unlink(missing_ok=True)
+        print(f"MOAA auto-update {'on' if auto_update_on(home) else 'off'}; plan: {self_update_plan(home)}")
+        return 0
     if argv[:1] == ["search"] and len(argv) > 1:
         found = search(home, " ".join(argv[1:]))
         catalog = Path(__file__).resolve().as_posix()
@@ -601,6 +703,19 @@ def main(argv):
             notice = update_notice(home)
         except Exception:  # a hook must never block the session
             notice = None
+        try:  # a newer release: install it in the background, once; report the outcome at the next session
+            report = self_update_report(home)
+            entry = read_json(home / "plugins" / "known_marketplaces.json").get("moaa") or {}
+            installed = read_json(Path(entry.get("installLocation", "")) / "config" / "kit.json").get("version")
+            latest = read_json(home / "moaa-catalog" / "update.json").get("latest", "")
+            if self_update_wanted(home, latest, installed) and self_update_plan(home):
+                self_update_in_background(home, latest)
+                notice = (f"MOAA {latest} is out and is installing in the background; it loads after a restart "
+                          "(`catalog.py auto-update off` stops automatic updates).")
+            if report:
+                notice = f"{report} {notice}" if notice else report
+        except Exception:
+            pass
         try:
             vendored = vendored_notice(home)
             if vendored:

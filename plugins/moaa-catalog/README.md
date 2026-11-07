@@ -27,7 +27,11 @@ and this plugin makes their skills reachable anyway:
 - **Price freshness.** With the daily update check, it reads `config/prices.json` of the installed MOAA and says once
   a day when the price audit behind Cache Keeper and the cost review is older than its `max_age_days` (90).
   `catalog.py prices` shows it; `MOAA_PRICE_CHECK=off` hides it.
-- **Updates.** Once a day, SessionStart checks GitHub for a newer MOAA release and says so in one line. On a clone
+- **Updates.** Once a day, SessionStart checks GitHub for a newer MOAA release, says so in one line and installs it
+  in the background (windowless): a clone runs `install.py --update --release`, a GitHub marketplace install runs
+  `claude plugin marketplace update moaa` and `claude plugin update` for each MOAA plugin. One try per release; the
+  next session reports the outcome once (log: `moaa-catalog/self-update.log`). `catalog.py auto-update off|on` or
+  `MOAA_AUTO_UPDATE=off` keeps only the notice. On a clone
   install it also checks the vendored plugins (flightdeck, prismantis) for newer upstream releases and names the
   command that copies one in after review, `scripts/sync_vendored.py NAME`; nothing updates by itself.
 - **ruflo CLI.** While a ruflo plugin is enabled, SessionStart and the prompt hook start `catalog.py ruflo-update` in

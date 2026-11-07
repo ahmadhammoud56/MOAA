@@ -8,6 +8,7 @@
                                             science; comma-separated for several), installed and enabled
   python scripts/install.py --prune [--days N] [--yes]  list (and with --yes disable) plugins unused for N days
   python scripts/install.py --update        clone installs: git pull, reinstall with the same profile and mode
+  python scripts/install.py --update --release   only to the newest release tag, never over local work
   python scripts/install.py --auto-update   GitHub marketplace installs: Claude Code auto-updates MOAA
   python scripts/install.py --mode all-on   every pack enabled; skill listing cut to names + short descriptions
   python scripts/install.py --mode lean     big packs disabled, listing limits restored (moaa-catalog serves them)
@@ -886,6 +887,28 @@ def changelog_since(text, old):
     return "\n\n".join(keep)
 
 
+def to_release(kit):
+    """Fast-forward a clone to its newest release tag (v*). Returns the tag moved to, or "" when already there. Refuses
+    (SystemExit) when the clone has local changes or holds commits the tag does not, such as a maintainer's work."""
+    def git(*a):
+        return subprocess.run(["git", "-C", str(kit), *a], capture_output=True, text=True)
+    if git("status", "--porcelain", "--untracked-files=no").stdout.strip():
+        raise SystemExit("[moaa] local changes in the MOAA folder; left as it is")
+    git("fetch", "--quiet", "--tags", "origin")
+    tags = git("tag", "--list", "v*", "--sort=-v:refname").stdout.split()
+    if not tags:
+        raise SystemExit("[moaa] no release tags found")
+    tag = tags[0]
+    if git("merge-base", "--is-ancestor", tag, "HEAD").returncode == 0:
+        return ""  # at or past the newest release
+    if git("merge-base", "--is-ancestor", "HEAD", tag).returncode != 0:
+        raise SystemExit(f"[moaa] this clone has commits that {tag} does not; left as it is")
+    moved = git("merge", "--ff-only", "--quiet", tag)
+    if moved.returncode:
+        raise SystemExit("[moaa] fast-forward failed: " + (moved.stderr or moved.stdout).strip()[-300:])
+    return tag
+
+
 def update(args):
     """Clone installs: pull this repo (fast-forward only), reinstall with the same profile and mode, and show what
     changed. Marketplace installs update through Claude Code instead (--auto-update, or `claude plugin marketplace
@@ -895,7 +918,11 @@ def update(args):
         raise SystemExit("[moaa] --update needs a git clone of MOAA; marketplace installs update with "
                          "`claude plugin marketplace update moaa` (or --auto-update)")
     old = read_json(KIT / "config" / "kit.json", {})["version"]
-    pulled = subprocess.run(["git", "-C", str(KIT), "pull", "--ff-only"], capture_output=True, text=True)
+    if getattr(args, "release", False):
+        moved = to_release(KIT)
+        pulled = subprocess.CompletedProcess([], 0, "Already up to date" if not moved else moved, "")
+    else:
+        pulled = subprocess.run(["git", "-C", str(KIT), "pull", "--ff-only"], capture_output=True, text=True)
     if pulled.returncode:
         raise SystemExit("[moaa] git pull failed (local changes or a diverged branch?): "
                          + (pulled.stderr or pulled.stdout).strip()[-300:])
@@ -1119,6 +1146,9 @@ def main(argv=None):
     p.add_argument("--restore", action="store_true", help="re-enable every plugin --prune or --lean disabled")
     p.add_argument("--update", action="store_true",
                    help="clone installs: git pull, reinstall with the same profile and mode, show the changelog")
+    p.add_argument("--release", action="store_true",
+                   help="with --update: move only to the newest release tag, and only when the clone has no local "
+                        "changes and is not ahead of it (what the background self-update runs)")
     p.add_argument("--auto-update", action="store_true",
                    help="GitHub marketplace installs: turn on Claude Code's background auto-update for MOAA")
     p.add_argument("--mode", choices=("all-on", "lean"),
