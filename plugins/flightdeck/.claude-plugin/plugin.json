@@ -1,6 +1,6 @@
 {
   "name": "flightdeck",
-  "version": "0.3.2",
+  "version": "0.6.0",
   "description": "Flightdeck: a live agent dashboard for Claude Code. Main model vitals, an on-call architect, every permission check, subagent cards and swimlanes, a turn receipt and a session log, all from real session events",
   "author": {
     "name": "Stephen Casella",
@@ -47,8 +47,12 @@
     },
     "motion": {
       "title": "Motion",
-      "description": "Animate the connectors while real work flows, or keep them still Allowed: while-active, off.",
+      "description": "Animate the connectors while real work flows, or keep them still",
       "type": "string",
+      "options": [
+        "while-active",
+        "off"
+      ],
       "default": "while-active"
     },
     "moments": {
@@ -69,16 +73,32 @@
       "type": "number",
       "default": 3
     },
+    "paneColumns": {
+      "title": "Pane width",
+      "description": "Columns the pane asks for when docked beside a fullscreen transcript, 40 or more. Claude Code caps the dock at 45% of the terminal, and a width you dragged it to wins.",
+      "type": "number",
+      "default": 66
+    },
     "layout": {
       "title": "Layout",
-      "description": "auto: a summary of at most 8 rows when the pane sits inline above the prompt, two columns from 110 columns when docked, one column otherwise Allowed: auto, compact, wide, mini.",
+      "description": "auto: a summary of at most 8 rows when the pane sits inline above the prompt, two columns from 110 columns when docked, one column otherwise",
       "type": "string",
+      "options": [
+        "auto",
+        "compact",
+        "wide",
+        "mini"
+      ],
       "default": "auto"
     },
     "palette": {
       "title": "Palette",
-      "description": "theme follows your Claude Code theme (light, dark, colour-blind); pastel is fixed colours tuned for dark terminals Allowed: theme, pastel.",
+      "description": "theme follows your Claude Code theme (light, dark, colour-blind); pastel is fixed colours tuned for dark terminals",
       "type": "string",
+      "options": [
+        "theme",
+        "pastel"
+      ],
       "default": "theme"
     },
     "openOnStart": {

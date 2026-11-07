@@ -1,7 +1,9 @@
 # Flightdeck
 
+[![Release](https://img.shields.io/github/v/release/scasella/claude-flightdeck)](https://github.com/scasella/claude-flightdeck/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Claude Code 2.1.287+](https://img.shields.io/badge/Claude%20Code-2.1.287%2B%20mod-d97757.svg)](https://claude.com/blog/claude-code-mods)
+[![Listed on statuslin.es](https://img.shields.io/badge/listed%20on-statuslin.es-c96442)](https://statuslin.es/mods/flightdeck)
 
 **A Claude Code mod that puts a live agent dashboard in your terminal**: context and cost, an advisor timeline, every permission check, and your subagents as cards or swimlanes. Every number comes from a real session event, and nothing leaves your machine.
 
@@ -10,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="#install">Install</a> · <a href="#what-you-see">What you see</a> · <a href="#what-it-can-reach">What it can reach</a> · <a href="#configure">Configure</a> · <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#install">Install</a> · <a href="#what-you-see">What you see</a> · <a href="#what-it-can-reach">What it can reach</a> · <a href="#configure">Configure</a> · <a href="#troubleshooting">Troubleshooting</a> · <a href="CHANGELOG.md">What's new</a>
 </p>
 
 ## Install
@@ -59,7 +61,7 @@ https://github.com/user-attachments/assets/9ad0fcc3-c81c-427a-a743-f7b6c49f5885
 
 | Panel | Shows | From |
 | --- | --- | --- |
-| **main** | model, effort, permission mode, request count; a context gauge with compactions (⟲); cost and the first two rate-limit windows when your plan reports them | `turn.step`, `session.measure`, `session.compact`, `$.session.usage()` |
+| **main** | model, effort, permission mode, request count; a context gauge with compactions (⟲, or ⟲~ when [estimated](#what-is-inferred-not-measured)), measured against the compaction window when the session compacts in a smaller one than the model's (`autoCompactWindow`, or Claude Code's own); cost and the first two rate-limit windows when your plan reports them, with the time to each reset (↻) from 56 columns; the last main-loop request's time to first token | `turn.step`, `session.measure`, `session.compact`, `$.session.usage()` (at each main-loop request, and its local `summary` breakdown, once per model, for the compaction window); the permission mode from `classic.UserPromptSubmit` and `agent.spawn` |
 | **architect** | consults on a timeline, whether one is running, how long the last took; optionally the moment of each consult; the first line of a subagent architect's advice | a spawn of a matching agent type, or a matching server tool in the assistant's rows |
 | **gate** | one cell per permission check: green allowed without asking, blue decided by the auto-mode classifier or you and then run, amber pending, red ✗ denied, dim if made inside a subagent. Totals, and a drill-down per tool family with credentials masked | `tool.check`, settled by the `tool.call` around it |
 | **agents** | cards side by side while they fit: the task, type, live context and output tokens, steps, a running clock, `max_tokens` in red. Beyond that, swimlanes on one time axis | `agent.spawn`, `turn.step`, `tool.call`, `turn.complete` |
@@ -91,7 +93,7 @@ Focus the pane with `ctrl+x tab`, then:
 
 - **Fullscreen terminal:** docked beside the transcript; two columns from 110 columns wide.
 - **Main-screen terminal:** inline above the prompt, as the 8-row summary.
-- **Desktop app, VS Code, mobile:** the same panels, plus the agents drawn as an SVG time axis. VS Code and mobile can't animate, so connectors and clocks are static there.
+- **Desktop app, VS Code, mobile:** the same panels, plus the agents drawn as an SVG time axis. VS Code and mobile can't animate, so connectors and clocks are static there. (The VS Code extension may show no pane at all yet: see [Troubleshooting](#troubleshooting).)
 
 With `openOnStart`, the pane opens by itself when a session starts, in terminals at least 144 columns wide; below that, `/flightdeck` opens it. Colours come from your Claude Code theme, so light, dark and colour-blind themes all read.
 
@@ -106,6 +108,7 @@ Flightdeck only watches. Every hook passes its event on unchanged: it never deni
 | subagent spawns, their model requests and token usage, and their final answers | `agent.spawn`, `turn.step`, `turn.complete` |
 | your prompts' first 70 characters, for the log | `turn.start` |
 | context, cost and rate-limit readings | `session.measure`, `$.session.usage()` |
+| the context breakdown `/context` shows (its categories, memory-file paths, MCP tools, agents and skills), estimated locally once per model; it keeps only the compaction window from it | `$.session.usage({ breakdown: 'summary' })` |
 | advisor tool calls in the assistant's responses (their content is encrypted) | `session.append` |
 
 What it keeps: short summaries (a tool name plus a path or command, with credentials masked) in session state, which ends with the session. It makes **no** network requests, runs no processes, reads and writes no files, stores nothing across sessions, and calls no model. `claude plugin validate .` prints exactly what it hooks and calls.
@@ -113,14 +116,17 @@ What it keeps: short summaries (a tool name plus a path or command, with credent
 ## What is inferred, not measured
 
 - **Architect moments.** "Before a plan" means no edits yet this turn, "error repeats" means 2+ main-loop errors in a row, "before done" means edits were made. They are labelled `(inferred)`; turn them off with `moments: false`.
+- **Compactions under the built-in guard.** Where Claude Code's guard keeps `session.compact` from Flightdeck (see [Troubleshooting](#troubleshooting)), the count is estimated. Claude Code reports no context fill until the first response after a new session, a `/clear` or a compaction. So a main-loop request that finds no fill after a response came back counts as a compaction. The main box shows `⟲~1`, with `(estimated)` when there's room, and the log says `context compacted (estimated)`. A rewind to your first prompt reads the same way, so it counts too. Wherever `session.compact` runs, its count replaces the estimate.
 - **Server-side advice is encrypted.** For a server tool such as Claude Code's `advisor`, the pane counts and times the consult but cannot show what it said.
 - **Per-agent context is the latest request's whole input** (uncached + cache read + cache write). It is labelled `ctx`, not cost: the API has no per-agent cost.
 - **Other loops** can't tell a workflow agent from a compaction fork; both are model loops no card claims.
 - **A background agent's first step** can arrive before its card exists, so its usage may show one step late.
+- **Context against the compaction window.** When the session compacts in a smaller window than the model's, the gauge, `tokens/window` and the status line's `ctx N%` measure against that window, so they read higher than Claude Code's own status-line percentage (and claude-hud's), which measure against the model's window. Auto-compaction runs a little before 100%, at its threshold inside that window.
+- **Time to first token.** `ttft` is timed at Flightdeck's own `turn.step` hook, so it includes everything beneath it: other plugins' hooks, the engine, the network and any retry. When the model's thinking isn't streamed, the first piece arrives after it, so `ttft` includes the thinking. Measured, not inferred, but not the API's own figure. There is no output rate: the reported tokens include thinking, so a rate over the visible stream isn't a real speed.
 
 ## Configure
 
-In `/config`, or under `pluginConfigs["flightdeck"].options` in `settings.json`:
+In `/config`, or under `pluginConfigs[<id>].options` in your user `settings.json`, where `<id>` is how Claude Code loaded the plugin: `flightdeck@claude-flightdeck` when installed from the marketplace, `flightdeck` (or `flightdeck@inline`) with `--plugin-dir`. An entry under another key, or in project settings (`.claude/settings.json`), is ignored without a warning. From a terminal, `claude plugin configure flightdeck@claude-flightdeck` lists the options and which are unset, and saves them with `--values-stdin`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
@@ -131,6 +137,7 @@ In `/config`, or under `pluginConfigs["flightdeck"].options` in `settings.json`:
 | `panels` | `main,architect,gate,agents,loops,receipt,log` | which panels show, in order |
 | `layout` | `auto` | `mini`, `compact`, `wide`, or `auto` (mini inline, wide from 110 columns docked) |
 | `maxCards` | `3` | cards side by side before swimlanes (1–6); fewer if the pane is too narrow |
+| `paneColumns` | `66` | columns the docked pane asks for, 40 or more. Claude Code caps the dock at 45% of the terminal, and a width you dragged it to, in this session or an earlier one, wins. The wide layout starts at 110, so it needs a terminal of about 245 columns, or `layout: wide` |
 | `motion` | `while-active` | `off` keeps connectors still |
 | `moments` | `true` | show the inferred consult moments |
 | `palette` | `theme` | `pastel` uses fixed colours tuned for dark terminals |
@@ -143,6 +150,13 @@ In `/config`, or under `pluginConfigs["flightdeck"].options` in `settings.json`:
 - Check `claude --version` is 2.1.287 or later, then run `/reload-plugins` and `/flightdeck`.
 - Below 144 columns, Claude Code won't seat a pane nobody asked for; `/flightdeck` opens it at any width.
 - Look in the transcript for a dim line starting `flightdeck:`. It names the hook that failed or the reason the pane was refused. Please [open an issue](https://github.com/scasella/claude-flightdeck/issues) with it.
+- If the pane shows only `draw failed (…)`, its drawing hook threw; include that line in the issue too.
+
+**Nothing shows in the VS Code extension.** In one report its 2.1.296 build ran Flightdeck's hooks but showed no pane, and none for another mod either ([#5](https://github.com/scasella/claude-flightdeck/issues/5)). Run `claude` in VS Code's integrated terminal instead, then `/flightdeck`: an integrated terminal is usually narrower than the 144 columns the pane needs to open by itself.
+
+**Under a Team or Enterprise login, the permission mode is missing or stale, and compactions are estimated.** On a machine with managed settings, or in a session on a Team or Enterprise `/login`, Claude Code loads a built-in guard, `cc-plugin-sec-default`, that never runs a user-installed plugin's hooks on `classic.*` events or `session.compact` (see "Know which hooks of a user's mod don't run" in [Manage mods for your organization](https://code.claude.com/docs/en/plugins/mods/admin)). No other event a user's plugin can hook carries the permission mode except a subagent's start. So the main box shows no mode until a subagent starts, and then the mode as it was at that start. Until then, in auto mode the gate credits the calls the classifier cleared to `you`. Compactions are counted from the context Claude Code reports at each request instead, so the main box marks them `⟲~` and the log says `context compacted (estimated)` (see [What is inferred, not measured](#what-is-inferred-not-measured)). On 2.1.299 or later, `/plugin` shows a note naming those two hooks. The rest of the pane works. An administrator can let the hooks run by installing Flightdeck as one of the organization's own mods ([#23](https://github.com/scasella/claude-flightdeck/issues/23)).
+
+**Options seem ignored.** Check the key in your user `settings.json`: `pluginConfigs["flightdeck@claude-flightdeck"]` when installed, `pluginConfigs["flightdeck"]` with `--plugin-dir`. See [Configure](#configure).
 
 **Colours look wrong.** Set `palette` to `pastel` in `/config`.
 
@@ -158,7 +172,7 @@ In `/config`, or under `pluginConfigs["flightdeck"].options` in `settings.json`:
 | [`hooks/core.ts`](hooks/core.ts) | every reducer, formatter and layout rule as pure functions, so behaviour is testable directly |
 | [`hooks/rail.tsx`](hooks/rail.tsx), [`hooks/elapsed.tsx`](hooks/elapsed.tsx) | surface modules: animated connectors and live clocks that redraw only themselves, on the surface's own frame clock |
 | [`types/index.d.ts`](types/index.d.ts) | the state contract |
-| [`tests/`](tests) | 24 tests: pure behaviour, plus drawings mounted on every surface at 40–120 columns |
+| [`tests/`](tests) | 54 tests: pure behaviour, plus drawings mounted on every surface at 24–120 columns, with every width from 24 to 40 checked for anything that spills past its box |
 
 State lives in `$.state` atoms. Every read is merged over defaults, so a missing or older field never breaks the pane; an update that changes the state's shape may still reset its counters once. New to mods? Start with [Claude Code mods](https://claude.com/blog/claude-code-mods) and [Getting started with Claude Code mods](https://claude.dev/blog/getting-started-with-claude-code-mods/).
 

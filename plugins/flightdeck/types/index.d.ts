@@ -5,16 +5,42 @@ export type Bucket = 'file' | 'shell' | 'other'
 /** rule: settings allowed it. ask: put to the decider, outcome pending. cleared: asked, then ran. deny: refused. */
 export type Verdict = 'rule' | 'ask' | 'cleared' | 'deny'
 
-export type Main = { model: string; effort: string; mode: string; steps: number; isRunning: boolean }
+export type Main = {
+  model: string
+  effort: string
+  mode: string
+  steps: number
+  isRunning: boolean
+  /** The main loop's last answered request: time to its first piece of response. Null until one is
+   *  measured, absent in older state; a `tokPerS` kept by 0.5.0 and earlier is ignored. */
+  speed?: { ttftMs: number } | null
+}
 
 export type Usage = {
   pct: number | null
   tokens: number | null
   window: number
+  /** The compaction window (`autoCompactWindow`, or the host's own) the host measures context against, when auto-compaction
+   *  is on and the window is smaller than the model's; null when none is set or none could be read. */
+  compactWindow: number | null
+  /** The model window `compactWindow` was read for, so a model switch reads it again; 0 = not read yet. */
+  compactFor: number
+  /** Reads for this model window that came back with no breakdown or failed; it stops asking at 3. */
+  compactMisses: number
   costUsd: number | null
-  limits: { kind: string; pct: number; resetsAt?: string }[]
+  /** `resetsAt`: when the window resets, in ms since the epoch; null when the API gave no time,
+   *  absent in state saved before it was kept. */
+  limits: { kind: string; pct: number; resetsAt?: number | null }[]
   compactions: number
   lastCompactAt: number | null
+  /** `compactions` counts main-loop requests that found the context emptied (afterFillRead), not
+   *  session.compact calls, which Claude Code's built-in guard keeps from user plugins. */
+  isCompactEstimate: boolean
+  /** session.compact has reached Flightdeck: from then on the count is that hook's alone. */
+  isCompactHooked: boolean
+  /** A main-loop response has come back since the context last started over (a new session, a /clear,
+   *  a compaction), so `$.session.usage()` reports a fill until the next compaction. */
+  hasFill: boolean
 }
 
 export type Consult = { id: string; at: number; endAt: number | null; moment: Moment; via: string }
