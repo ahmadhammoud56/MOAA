@@ -212,6 +212,25 @@ python rag.py index [--full]                  refresh now (--full re-reads every
 python rag.py on|off                          python rag.py drop
 ```
 
+## Meaning search
+
+`strata.py search` also finds notes and scenes by meaning, so "Windows app pop-ups while agents run" finds the scene
+about console windows from ruflo hooks even where the words differ. `embed.py` embeds each live note and scene with a
+local Ollama model (default `nomic-embed-text`, about 270 MB: `ollama pull nomic-embed-text`) and stores the vectors
+next to the notes; a search fuses the keyword (BM25) list with the nearest notes by reciprocal rank fusion. New notes
+are embedded at the next search. Nothing leaves the machine. Without Ollama, or without the model, search stays
+keyword-only and says nothing.
+
+On by default: `python embed.py off` or `STRATA_SEMANTIC=off`. `python embed.py status` shows the server, the model and
+how much is embedded; `embed.py index` embeds everything now, `embed.py model NAME` switches models
+(`embed.py reindex` then rebuilds); `STRATA_OLLAMA_URL` moves the server.
+
+## Memory viewer
+
+`python viewer.py --open` serves a read-only page at http://127.0.0.1:37778: counts, projects, profile, each project's
+scenes and notes, and search (meaning search included). It listens on this machine only, sends no scripts and changes
+nothing; Ctrl+C stops it.
+
 ## Recall benchmark
 
 `python bench/recall_bench.py --data longmemeval_s.json [--limit N]` measures how often `strata.py search` puts an
@@ -234,6 +253,7 @@ python strata.py canary on|off|status|misses N|floor N
 python strata.py vault status|on|off|init [PATH]|refresh|snapshot [MSG]|guard on|off
 python strata.py capture "TEXT"
 python strata.py stats
+python embed.py status|on|off|index|reindex|model NAME     python viewer.py [--port N] [--open]
 ```
 
 Data lives in `~/.claude/strata/memory.sqlite3` and `rag.sqlite3` (or `$MOAA_STRATA_DIR`). Nothing leaves your machine

@@ -75,7 +75,8 @@ DEFAULTS = {"auto": True, "engine": "claude-haiku", "min_chars": 1500, "max_inpu
             "recall": True, "recall_chars": 4000, "handoff_mode": "handoff",  # virtual context
             "canary": True, "canary_misses": 2, "canary_floor": 30,  # drift detector
             "vault": True, "vault_path": "~/code/brain", "vault_guard": True,
-            "fallback": "local"}  # extraction engine used when `engine` fails: local or none  # second-brain vault
+            "fallback": "local",  # extraction engine used when `engine` fails: local or none  # second-brain vault
+            "semantic": True, "embed_model": "nomic-embed-text"}  # embed.py: meaning search through local Ollama
 OFF = ("off", "0", "false", "no")
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, project TEXT, transcript TEXT, ended REAL, chars INTEGER,
@@ -298,7 +299,11 @@ def search(db, query, project=None, limit=10, scene=None):
             rows.append({"layer": layer, **dict(r)})
     order = {"L1": 0, "L2": 1, "L0": 2}  # upper layers first, as in the design: raw text is the fallback
     rows.sort(key=lambda r: (order[r["layer"]], r["rank"]))
-    return rows[:limit]
+    try:  # meaning matches from local embeddings (embed.py); keyword rows alone without Ollama
+        import embed
+        return embed.blend(db, query, project, rows, limit)
+    except ImportError:
+        return rows[:limit]
 
 
 def strong_matches(db, fts, table, scope, args, rows, terms, need=0.6, common=0.25):

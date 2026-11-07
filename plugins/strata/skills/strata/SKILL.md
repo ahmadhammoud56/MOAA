@@ -28,6 +28,9 @@ Actions:
 - `forget ID`: `M forget ID`, or `--session ID`, `--scene ID`, `--profile KEY`. Show what will go and ask first.
 - `consolidate`: `M consolidate --pending` processes sessions not yet extracted (one Haiku call each; say so
   first). `--dry-run` shows the size only.
+- Meaning search is part of `search` when Ollama runs (`python "${CLAUDE_PLUGIN_ROOT}/embed.py" status` shows
+  it). When the user wants to browse memory, run `python "${CLAUDE_PLUGIN_ROOT}/viewer.py" --open` in the background
+  and give them http://127.0.0.1:37778.
 - `rag QUERY`: `R search "QUERY"`, where `R` means `python "${CLAUDE_PLUGIN_ROOT}/rag.py"`. It searches the
   project's own files (docs, code, notebooks, PDFs) and prints passages with `path:lines`. Use it when the answer
   is probably written down in the project but you do not know where, before reading many files. `R status` shows
