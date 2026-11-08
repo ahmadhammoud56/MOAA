@@ -4,6 +4,11 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added
+- **collision-guard 0.1.1:** `MOAA_COLLISION_GUARD_IGNORE` names files several chats edit on purpose (a shared board,
+  handoff notes), comma separated, as bare file names or path patterns with `*`. Those files are neither refused nor
+  claimed; every other file is guarded as before.
+
 ## [0.25.0] - 2026-11-07
 
 ### Added
