@@ -10,4 +10,7 @@ A Claude Code mod that stops two Claude chats from overwriting each other's file
   locks a file. It also warns when another chat in the same folder switches branch.
 - `/collision-guard` opens a panel listing the live chats (this folder first), their branches and the files they hold.
 - `MOAA_COLLISION_GUARD=warn` only warns; `off` turns it off. A failing guard never stops an edit.
+- `MOAA_COLLISION_GUARD_IGNORE` lists files several chats edit on purpose (a shared board, handoff notes), comma
+  separated: a bare name matches the file name (`board.md`), a pattern with a slash the whole path
+  (`*/docs/handoffs/*`), `*` any run of characters. Those files are neither refused nor claimed.
 - Known limit: Windows 8.3 short paths (`DEATHS~1`) and long paths of the same file may not match.

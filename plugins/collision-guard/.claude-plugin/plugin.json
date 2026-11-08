@@ -1,6 +1,6 @@
 {
   "name": "collision-guard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Stops two Claude chats from overwriting each other's files: shared, self-expiring file claims across sessions, with worktree and team-board suggestions",
   "author": {
     "name": "Ahmad Hammoud",

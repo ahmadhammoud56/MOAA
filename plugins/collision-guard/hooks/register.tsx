@@ -30,6 +30,22 @@ export const holder = (c: Claims, file: string, me: string, now: number) => {
   return s && now - s.at <= ALIVE_MS ? { sid: claim.sid, minutes: Math.max(1, Math.round((now - claim.at) / 60_000)), ...s } : undefined
 }
 
+/** True when `file` (as norm() spells it) matches one of the patterns: a bare name against the file name, a pattern
+ * with a slash against the whole path, `*` for any run of characters. Case-folded with Windows paths, as norm() is. */
+export const ignored = (file: string, patterns: string[]) => {
+  const fold = /^[a-zA-Z]:/.test(file)
+  return patterns.some(raw => {
+    const p = (fold ? raw.toLowerCase() : raw).replace(/\\/g, '/')
+    const target = p.includes('/') ? file : file.slice(file.lastIndexOf('/') + 1)
+    const rx = p.split('*').map(s => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*')
+    return new RegExp(`^${rx}$`).test(target)
+  })
+}
+
+// Files several chats edit on purpose (a shared board, handoff notes): MOAA_COLLISION_GUARD_IGNORE, comma separated.
+const ignoreList = async ($: any) =>
+  String((await $.env.get('MOAA_COLLISION_GUARD_IGNORE')) ?? '').split(',').map(s => s.trim()).filter(Boolean)
+
 export const prune = (c: Claims, now: number): Claims => ({
   sessions: Object.fromEntries(Object.entries(c.sessions).filter(([, s]) => now - s.at < PRUNE_MS)),
   files: Object.fromEntries(Object.entries(c.files).filter(([, f]) => now - f.at < PRUNE_MS)),
@@ -105,6 +121,7 @@ async function guard($: any, e: any, next: any) {
     const target = (e as any).file_path ?? (e as any).notebook_path
     if (m === 'off' || !me || !target) return next(e)
     const file = norm(await realPath($, norm(String(target), cwd)), cwd)
+    if (ignored(file, await ignoreList($))) return next(e) // shared on purpose: neither held nor claimed
     const now = await $.clock.now()
     const other = holder(await load($), file, me, now)
     if (other) {
