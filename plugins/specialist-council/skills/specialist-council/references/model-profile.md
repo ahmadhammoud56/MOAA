@@ -9,7 +9,7 @@ Each `specialist-council:council-<role>` plugin agent carries this model and eff
 - **haiku** (`claude-haiku-5-5`): Fast retrieval, scanning, and organization where breadth and speed matter more than deep reasoning.
 - **sonnet** (`claude-sonnet-5-5`): Production work with observable checks: implementation, pipelines, writing, design, planning.
 - **opus** (`claude-opus-5-5`): Deep analytical or verification work where a wrong derivation silently propagates (mechanics, statistics, validation, debugging, contracts).
-- **fable** (`claude-fable-5-1`): Highest-consequence judgment: final adjudication, adversarial security, hard-to-reverse architecture, subtle causal identification.
+- **fable** (`claude-fable-5-2`): Highest-consequence judgment: final adjudication, adversarial security, hard-to-reverse architecture, subtle causal identification.
 - **Effort**: low = lookup; medium = routine production; high = analysis with verification; xhigh = adversarial or judging work; max = reserved, only by explicit request.
 
 ## Roles

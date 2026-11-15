@@ -26,7 +26,7 @@
     {
       "id": "agent-arena-mode@moaa",
       "enabled": true,
-      "tested_version": "0.9.0",
+      "tested_version": "0.10.0",
       "profile": "core"
     },
     {
@@ -653,7 +653,7 @@
     {
       "id": "specialist-council@moaa",
       "enabled": true,
-      "tested_version": "1.9.1",
+      "tested_version": "1.10.0",
       "profile": "core"
     },
     {
@@ -683,13 +683,13 @@
     {
       "id": "war-room@moaa",
       "enabled": true,
-      "tested_version": "0.7.1",
+      "tested_version": "0.8.0",
       "profile": "core"
     },
     {
       "id": "moaa-catalog@moaa",
       "enabled": true,
-      "tested_version": "0.7.0",
+      "tested_version": "0.8.0",
       "profile": "core"
     },
     {
@@ -713,14 +713,20 @@
     {
       "id": "collision-guard@moaa",
       "enabled": true,
-      "tested_version": "0.1.0",
+      "tested_version": "0.2.0",
       "profile": "core"
     },
     {
       "id": "strata-meter@moaa",
       "enabled": true,
-      "tested_version": "0.1.0",
+      "tested_version": "0.2.0",
       "profile": "core"
+    },
+    {
+      "id": "self-improve@moaa",
+      "enabled": true,
+      "tested_version": "0.1.0",
+      "profile": "full"
     },
     {
       "id": "team@moaa",
@@ -881,6 +887,7 @@
     "plugins/moaa-catalog",
     "plugins/moaa-core",
     "plugins/prompt-refiner",
+    "plugins/self-improve",
     "plugins/specialist-council",
     "plugins/strata",
     "plugins/strata-meter",

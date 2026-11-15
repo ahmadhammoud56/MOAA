@@ -5,7 +5,7 @@
     "haiku": "claude-haiku-5-5",
     "sonnet": "claude-sonnet-5-5",
     "opus": "claude-opus-5-5",
-    "fable": "claude-fable-5-1"
+    "fable": "claude-fable-5-2"
   },
   "effort_levels": ["low", "medium", "high", "xhigh", "max"],
   "policy": {

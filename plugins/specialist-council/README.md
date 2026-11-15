@@ -39,7 +39,7 @@ must-have passes in two runs in a row.
 Every role has a preset model and effort in `profile.json`, chosen by specialty
 ([MODELS.md](https://github.com/ahmadhammoud56/MOAA/blob/main/MODELS.md) lists all 60):
 
-- **fable** (`claude-fable-5-1`): arbiter, architect, security reviewer, causal-inference analyst.
+- **fable** (`claude-fable-5-2`): arbiter, architect, security reviewer, causal-inference analyst.
 - **opus** (`claude-opus-5-5`): 25 deep-analysis roles such as challenger, debugger, FEM, statistics, validation, and APIs.
 - **sonnet** (`claude-sonnet-5-5`): 29 production roles such as builders, engineers, writers, designers, and planners.
 - **haiku** (`claude-haiku-5-5`): scout and information architect.

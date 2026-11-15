@@ -19,6 +19,8 @@ export type Reading = {
   cache: { leftMs: number; ttlMs: number; tokens: number; rewarm: number; keepWarm: boolean } | null
   /** Goal Meter's snapshot for this chat, or null. */
   goal: { text: string; turns: number; limit: number; done: number; total: number; label: string } | null
+  /** Live chats on this machine, from Collision Guard's claims file; 0 when it is not installed. */
+  chats: number
 }
 
 declare module 'claude-code' {

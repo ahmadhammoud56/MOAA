@@ -448,5 +448,50 @@ class NpmInstall(unittest.TestCase):
         self.assertNotIn("newdep", catalog.RUFLO_SCRIPTS)
 
 
+class FableFit(unittest.TestCase):
+    """Fable 5.2 needs Claude Code 2.1.321: older CLIs get 5.1 in the installed copies, newer ones 5.2 back."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.home = Path(tmp.name)
+        self.root = self.home / "plugins" / "cache" / "moaa" / "specialist-council" / "1.0.0"
+        (self.root / "agents").mkdir(parents=True)
+        (self.root / "tests").mkdir()
+        self.agent = self.root / "agents" / "council-arbiter.md"
+        self.agent.write_text('---\nmodel: "claude-fable-5-2"\n---\n', encoding="utf-8")
+        self.test = self.root / "tests" / "t.py"
+        self.test.write_text('"claude-fable-5-2"', encoding="utf-8")
+        (self.home / "plugins" / "installed_plugins.json").write_text(json.dumps(
+            {"plugins": {"specialist-council@moaa": [{"installPath": str(self.root)}]}}), encoding="utf-8")
+
+    def test_old_cli_gets_5_1_and_new_cli_gets_5_2_back(self):
+        self.assertEqual(len(catalog.fable_fit(self.home, (2, 1, 317))), 1)
+        self.assertIn("claude-fable-5-1", self.agent.read_text(encoding="utf-8"))
+        self.assertIn("claude-fable-5-2", self.test.read_text(encoding="utf-8"))  # tests are left alone
+        catalog.fable_fit(self.home, (2, 1, 321))
+        self.assertIn("claude-fable-5-2", self.agent.read_text(encoding="utf-8"))
+
+    def test_unknown_version_changes_nothing(self):
+        self.assertEqual(catalog.fable_fit(self.home, None), [])
+        self.assertIn("claude-fable-5-2", self.agent.read_text(encoding="utf-8"))
+
+    def test_cli_version_parse_and_daily_switch(self):
+        run = lambda argv: mock.Mock(stdout="2.1.317 (Claude Code)\n")  # noqa: E731
+        with mock.patch("shutil.which", return_value="claude"):
+            self.assertEqual(catalog.cli_version(run, env={}), (2, 1, 317))
+            app = {"AI_AGENT": "claude-code_2-1-321_agent"}  # the desktop app's newer build wins
+            self.assertEqual(catalog.cli_version(run, env=app), (2, 1, 321))
+        with mock.patch("shutil.which", return_value=None):
+            self.assertIsNone(catalog.cli_version(run, env={}))
+        with mock.patch.dict(os.environ, {"MOAA_FABLE_FIT": ""}):
+            self.assertTrue(catalog.fable_wanted(self.home))
+            (self.home / "moaa-catalog").mkdir()
+            (self.home / "moaa-catalog" / "fable.json").write_text(json.dumps({"checked": time.time()}))
+            self.assertFalse(catalog.fable_wanted(self.home))
+        with mock.patch.dict(os.environ, {"MOAA_FABLE_FIT": "off"}):
+            self.assertFalse(catalog.fable_wanted(self.home, now=time.time() + 10 ** 6))
+
+
 if __name__ == "__main__":
     unittest.main()

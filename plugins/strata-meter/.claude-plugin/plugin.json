@@ -1,6 +1,6 @@
 {
   "name": "strata-meter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "strata at a glance: context against the handoff threshold, canary hits and misses, memory waiting for extraction, engine pause, and the Obsidian vault",
   "author": {
     "name": "Ahmad Hammoud",

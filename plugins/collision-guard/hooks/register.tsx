@@ -133,7 +133,11 @@ export const register: Register = on => {
     await beat($)
     $.clock.every(60_000, () => beat($))
     await $.command.register({ name: 'collision-guard', description: 'Collision Guard: open its side panel' })
-    void $.ui.open({ id: PANE, title: 'Collision Guard' })
+    // No panel at start (0.2.0): the desktop app gives every mod panel its own column. strata-meter's band counts the
+    // open chats; `/collision-guard` opens the full list, or MOAA_METERS=pane|both restores the panel at start.
+    if (['pane', 'both'].includes(String((await $.env.get('MOAA_METERS')) ?? '').toLowerCase())) {
+      void $.ui.open({ id: PANE, title: 'Collision Guard' })
+    }
     return done
   })
 

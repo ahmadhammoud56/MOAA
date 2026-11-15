@@ -9,5 +9,7 @@ A Claude Code mod that stops two Claude chats from overwriting each other's file
 - Claims expire after 10 minutes and chats count as gone after 3 minutes without a heartbeat, so a crashed chat never
   locks a file. It also warns when another chat in the same folder switches branch.
 - `/collision-guard` opens a panel listing the live chats (this folder first), their branches and the files they hold.
+  Since 0.2.0 the panel no longer opens at start, because the desktop app would give it a column of its own;
+  strata-meter's band counts the open chats. `MOAA_METERS=pane` or `both` opens it at start again.
 - `MOAA_COLLISION_GUARD=warn` only warns; `off` turns it off. A failing guard never stops an edit.
 - Known limit: Windows 8.3 short paths (`DEATHS~1`) and long paths of the same file may not match.

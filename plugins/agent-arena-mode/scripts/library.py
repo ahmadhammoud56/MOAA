@@ -15,7 +15,7 @@ import time
 
 SCHEMA = 2  # 2 adds council_members; version 1 databases upgrade in place
 MODEL_IDS = {"haiku": "claude-haiku-5-5", "sonnet": "claude-sonnet-5-5",
-             "opus": "claude-opus-5-5", "fable": "claude-fable-5-1"}
+             "opus": "claude-opus-5-5", "fable": "claude-fable-5-2"}
 EFFORTS = ("low", "medium", "high", "xhigh", "max")
 
 

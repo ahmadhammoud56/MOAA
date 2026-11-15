@@ -164,7 +164,7 @@ and use `--dry-run` to preview every command.
 
 ## Requirements
 
-- Claude Code 2.1.296 or newer, logged in. The council pins `claude-*-5-5` and `claude-fable-5-1` model IDs.
+- Claude Code 2.1.296 or newer, logged in. The council pins `claude-*-5-5` and `claude-fable-5-2` model IDs; Fable 5.2 needs Claude Code 2.1.321, and until then moaa-catalog points the installed copies at `claude-fable-5-1` (daily check, off with `MOAA_FABLE_FIT=off`).
 - git, Python 3.10+, and Node 20+ (for `npx`).
 - Windows: if marketplace clones fail with `Filename too long`, run `git config --global core.longpaths true` once.
 

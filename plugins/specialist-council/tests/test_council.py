@@ -29,7 +29,7 @@ class CouncilTests(unittest.TestCase):
         tiers = {r["tier"] for r in self.profile["roles"].values()}
         self.assertEqual(tiers, set(council.TIERS))  # all four models are used
         self.assertEqual(self.profile["models"]["opus"], "claude-opus-5-5")
-        self.assertEqual(self.profile["models"]["fable"], "claude-fable-5-1")
+        self.assertEqual(self.profile["models"]["fable"], "claude-fable-5-2")
 
     def test_shipped_agents_match_profile(self):
         self.assertTrue(council.check(ROOT / "agents", self.profile)["ok"])

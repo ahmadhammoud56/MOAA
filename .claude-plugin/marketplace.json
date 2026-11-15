@@ -82,7 +82,12 @@
     {
       "name": "strata-meter",
       "source": "./plugins/strata-meter",
-      "description": "Mod: a Meters panel with real bars for context against the strata handoff, prompt cache, goal, canary, memory queue and the Obsidian vault."
+      "description": "Mod: meters for context against the strata handoff, canary, memory queue, open chats, prompt cache and goal: a band above the prompt by default (no extra column in the desktop app), the full Meters panel on /strata-meter."
+    },
+    {
+      "name": "self-improve",
+      "source": "./plugins/self-improve",
+      "description": "Weekly self-improvement loop: collectors read your recent sessions, git history and a few release feeds, a combined digest ranks recurring problems, and improve-system applies small reversible fixes or writes a review file for your yes. Schedule it in the desktop app or with `selfimprove.py schedule`."
     },
     {
       "name": "team",
@@ -94,7 +99,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579"
+        "sha": "1780c5e5a552fd4d1c9d6a7b0cab26b0c2bef064"
       },
       "description": "Recommends relevant Claude Academy courses, tutorials, and use cases when users ask how to use Claude",
       "strict": false,
@@ -1184,7 +1189,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579"
+        "sha": "1780c5e5a552fd4d1c9d6a7b0cab26b0c2bef064"
       },
       "description": "Appends two or three short follow-up questions after a substantive answer to help users check key facts, probe the reasoning, and notice missing context",
       "strict": false,
@@ -1202,7 +1207,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579"
+        "sha": "1780c5e5a552fd4d1c9d6a7b0cab26b0c2bef064"
       },
       "description": "Collection of document processing suite including Excel, Word, PowerPoint, and PDF capabilities",
       "strict": false,
@@ -1263,7 +1268,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579"
+        "sha": "1780c5e5a552fd4d1c9d6a7b0cab26b0c2bef064"
       },
       "description": "Collection of example skills demonstrating various capabilities including skill creation, MCP building, visual design, algorithmic art, internal communications, web testing, artifact building, Slack GIFs, and theme styling",
       "strict": false,
@@ -1292,7 +1297,7 @@
       "source": {
         "source": "github",
         "repo": "anthropics/skills",
-        "sha": "2c5958ecac7cee2b583967a2c4981d0f4a75c579"
+        "sha": "1780c5e5a552fd4d1c9d6a7b0cab26b0c2bef064"
       },
       "description": "Claude API and SDK documentation skill for building LLM-powered applications. Upstream plugin `claude-api` from anthropic-agent-skills; listed as `llm-api-reference` because `claude-api` is a reserved name.",
       "strict": false,
@@ -1983,7 +1988,7 @@
       "source": {
         "source": "github",
         "repo": "obra/superpowers",
-        "sha": "bb92a77741419a4ab5f06e711a283343f1ada0c3"
+        "sha": "22f0b463e7a5e579904dd6211a520321035526f7"
       },
       "description": "Superpowers teaches Claude brainstorming, subagent driven development with built in code review, systematic debugging, and red/green TDD. Additionally, it teaches Claude how to author and test new skills.",
       "category": "development",

@@ -11,7 +11,7 @@ Every value below is stored inside the plugins themselves (agent frontmatter, `p
 | haiku | `claude-haiku-5-5` |
 | sonnet | `claude-sonnet-5-5` |
 | opus | `claude-opus-5-5` |
-| fable | `claude-fable-5-1` |
+| fable | `claude-fable-5-2` |
 
 Effort levels: low, medium, high, xhigh, max. Personality effort shifts are capped at `xhigh` unless a role's preset is already higher.
 
@@ -25,11 +25,11 @@ Source: `plugins/specialist-council/profile.json`, applied to each `agents/counc
 | additive-manufacturing-specialist | `claude-sonnet-5-5` | medium |
 | analyst | `claude-opus-5-5` | high |
 | api-designer | `claude-opus-5-5` | high |
-| arbiter | `claude-fable-5-1` | xhigh |
-| architect | `claude-fable-5-1` | high |
+| arbiter | `claude-fable-5-2` | xhigh |
+| architect | `claude-fable-5-2` | high |
 | backend-engineer | `claude-sonnet-5-5` | high |
 | builder | `claude-sonnet-5-5` | medium |
-| causal-inference-analyst | `claude-fable-5-1` | high |
+| causal-inference-analyst | `claude-fable-5-2` | high |
 | challenger | `claude-opus-5-5` | xhigh |
 | constitutive-modeler | `claude-opus-5-5` | high |
 | controls-engineer | `claude-opus-5-5` | high |
@@ -72,7 +72,7 @@ Source: `plugins/specialist-council/profile.json`, applied to each `agents/counc
 | scenario-planner | `claude-opus-5-5` | medium |
 | scientific-writer | `claude-sonnet-5-5` | high |
 | scout | `claude-haiku-5-5` | low |
-| security-reviewer | `claude-fable-5-1` | xhigh |
+| security-reviewer | `claude-fable-5-2` | xhigh |
 | statistician | `claude-opus-5-5` | high |
 | systems-thinker | `claude-opus-5-5` | high |
 | technical-documentarian | `claude-sonnet-5-5` | medium |

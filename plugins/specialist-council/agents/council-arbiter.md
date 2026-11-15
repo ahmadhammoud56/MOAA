@@ -2,7 +2,7 @@
 name: "council-arbiter"
 description: "Arbiter. Evaluation and integration Use when delegated this specialist responsibility."
 tools: [Read, Grep, Glob, Bash, Edit, Write, NotebookEdit, WebFetch, WebSearch, TodoWrite, Skill]
-model: "claude-fable-5-1"
+model: "claude-fable-5-2"
 effort: "xhigh"
 ---
 

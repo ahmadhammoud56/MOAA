@@ -1,0 +1,10 @@
+{
+  "name": "self-improve",
+  "version": "0.1.0",
+  "description": "A weekly self-improvement loop for Claude Code: read-only collectors summarize your last week of sessions, git history and a fixed list of upstream changelogs into digests, a combined digest ranks recurring findings, and an improve step applies at most three small reversible fixes (with backups and a change log) and queues everything bigger for your sign-off. Off until you schedule it; `selfimprove.py off` or SELF_IMPROVE=off skips runs.",
+  "author": { "name": "Ahmad Hammoud", "url": "https://github.com/ahmadhammoud56" },
+  "homepage": "https://github.com/ahmadhammoud56/MOAA",
+  "repository": "https://github.com/ahmadhammoud56/MOAA",
+  "license": "MIT",
+  "keywords": ["self-improvement", "digest", "retrospective", "scheduled", "changelog"]
+}

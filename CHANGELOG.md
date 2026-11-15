@@ -4,6 +4,28 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Added
+- **self-improve 0.1.0 (new plugin):** the weekly self-improvement loop as a MOAA plugin. Three read-only collectors
+  (sessions, git history from `repos.txt`, release feeds from `sources.txt`) feed a combined digest of recurring
+  problems. `improve-system` applies at most three small, reversible fixes with backups and a change log, and puts
+  everything else in a dated review file for the user's tick. `selfimprove.py init|schedule|status|stop|remove|on|off`.
+  Recommended schedule: a desktop-app scheduled task (Sunday 10:00); `schedule` writes a Windows task or a cron line
+  where there is no desktop app. Nothing is scheduled without an explicit command.
+
+### Changed
+- **Claude Fable 5.2:** council 1.10.0, arena 0.10.0 and War Room 0.8.0 use `claude-fable-5-2` for the fable tier
+  (council arbiter, architect, security reviewer, causal-inference analyst; the arena's critical judge and slots).
+  Fable 5.2 needs Claude Code 2.1.321. moaa-catalog 0.8.0 checks once a day which Claude Code the machine runs (the
+  running session's build, such as the desktop app's own, and the `claude` on PATH, whichever is newer). On an older
+  CLI it points the installed copies at `claude-fable-5-1`, and back at 5.2 once the CLI is new enough;
+  `install.py` runs the same check. Off: `MOAA_FABLE_FIT=off`.
+- **Meters without an extra column (strata-meter 0.2.0, collision-guard 0.2.0):** the desktop app gives every mod
+  panel its own column, next to its background-tasks column. The meters now show as a band above the prompt
+  (context against the handoff threshold, canary, memory queue, open chats), beside Cache Keeper's and Goal Meter's
+  bands, and no panel opens at start. `/strata-meter` opens the full Meters panel, which gains a Chats row.
+  `/collision-guard` opens the chat list. `MOAA_METERS=pane` restores the old panels; `MOAA_METERS=both` shows the
+  band and the panels.
+
 ## [0.25.0] - 2026-11-07
 
 ### Added

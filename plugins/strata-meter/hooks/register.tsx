@@ -97,6 +97,8 @@ async function refresh($: any) {
     today,
     cache: (await json($, `${home}/.claude/moaa-mods/meters/${sid}.cache.json`)).ttlMs ? await json($, `${home}/.claude/moaa-mods/meters/${sid}.cache.json`) : null,
     goal: (await json($, `${home}/.claude/moaa-mods/meters/${sid}.goal.json`))?.text ? await json($, `${home}/.claude/moaa-mods/meters/${sid}.goal.json`) : null,
+    chats: Object.values((await json($, `${home}/.claude/moaa-mods/claims.json`)).sessions ?? {})
+      .filter((s: any) => now - Number(s?.at ?? 0) <= 3 * 60_000).length,
   }
   await update($, reading, () => r)
   if ((await $.env.get('MOAA_STRATA_METER')) === 'off') return $.ui.status(undefined)
@@ -105,12 +107,25 @@ async function refresh($: any) {
   $.ui.status(`strata ${bar(r.pct, 10)} ${Math.round(r.pct)}%/${r.threshold}% · canary ${r.canaryHits}✓ ${r.canaryMisses}✗${pend}${pause}`)
 }
 
+/** Where the meters show: `band` (default, a row above the prompt and no extra column), `pane` (the Meters panel opens
+ * at start, as before 0.2.0) or `both`. `/strata-meter` opens the panel in every view. */
+export const view = (v: unknown) => {
+  const s = String(v ?? '').toLowerCase()
+  return s === 'pane' || s === 'both' ? s : 'band'
+}
+
+/** The band's one line: context against the handoff threshold, canary, and live chats when there is more than one. */
+export const bandText = (r: Reading) =>
+  `context ${Math.round(r.pct)}%/${r.threshold}% · canary ${r.canaryHits}✓ ${r.canaryMisses}✗` +
+  (r.pending > 0 ? ` · ${r.pending} to extract` : '') + (r.pausedMin ? ` · Haiku paused ${r.pausedMin}m` : '') +
+  (r.chats > 1 ? ` · ${r.chats} chats open` : '')
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const done = await next(e)
     if ((await $.env.get('MOAA_STRATA_METER')) === 'off') return done
-    await $.command.register({ name: 'strata-meter', description: 'Meters panel: context, cache, goal and strata' })
-    void $.ui.open({ id: PANE, title: 'Meters' })
+    await $.command.register({ name: 'strata-meter', description: 'Meters panel: context, cache, goal, chats and strata' })
+    if (view(await $.env.get('MOAA_METERS')) !== 'band') void $.ui.open({ id: PANE, title: 'Meters' })
     await refresh($)
     $.clock.every(30_000, () => refresh($))
     return done
@@ -159,7 +174,25 @@ export const register: Register = on => {
         {row('memory', 'Memory', r.pending >= 0 ? `${r.pending} to extract` : `${r.atoms} notes`, null)}
         {r.pausedMin ? row('engine', 'Engine', `paused ${r.pausedMin}m`, null) : null}
         {row('vault', 'Vault', r.vaultOk ? `${r.today} chats today` : 'missing', null)}
+        {r.chats ? row('chats', 'Chats', `${r.chats} open`, null) : null}
       </Box>
     )
-})
+  })
+
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const r = await read($, reading)
+    if (!r || e.props.hasSurvey || (await $.env.get('MOAA_STRATA_METER')) === 'off' ||
+        view(await $.env.get('MOAA_METERS')) === 'pane') return next(e)
+    const { Box, Text } = $.ui.resolve(e)
+    const near = r.pct >= r.threshold - 10
+    return (
+      <Box flexDirection="column">
+        <Box>
+          <Text color={near ? 'yellow' : 'blue'}>{bar((r.pct / r.threshold) * 100, 10)} </Text>
+          <Text dimColor>{bandText(r)}</Text>
+        </Box>
+        {await next(e)}
+      </Box>
+    )
+  })
 }

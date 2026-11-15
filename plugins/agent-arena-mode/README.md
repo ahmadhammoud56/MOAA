@@ -85,12 +85,12 @@ a pinned model and effort. Mixed worker tiers add method diversity at bounded co
 |---|---|---|---|---|
 | low | 50% haiku-5.5/medium, 50% sonnet-5.5/low | sonnet/medium | opus-5.5/medium | opus/high |
 | medium | 75% sonnet-5.5/medium, 25% haiku-5.5/medium | sonnet/high | opus-5.5/high | opus/high |
-| high | 60% sonnet-5.5/high, 40% opus-5.5/high | opus/high | fable-5.1/high | fable/high |
-| critical | 60% opus/high, 20% fable/high, 20% sonnet/high | opus/xhigh | fable-5.1/xhigh | fable/xhigh |
+| high | 60% sonnet-5.5/high, 40% opus-5.5/high | opus/high | fable-5.2/high | fable/high |
+| critical | 60% opus/high, 20% fable/high, 20% sonnet/high | opus/xhigh | fable-5.2/xhigh | fable/xhigh |
 
 Cascade proposals run one difficulty step cheaper; finalists use the top worker tier. Reused agents keep
 the model they were validated with. Model IDs: `claude-haiku-5-5`, `claude-sonnet-5-5`,
-`claude-opus-5-5`, `claude-fable-5-1` (needs a Claude Code build that knows them; 2.1.295 does, 2.1.268 does not).
+`claude-opus-5-5`, `claude-fable-5-2` (needs a Claude Code build that knows them; Fable 5.2 needs 2.1.321, and on an older CLI moaa-catalog gives the installed copy `claude-fable-5-1`).
 
 ## Library: save and reuse the best agents
 

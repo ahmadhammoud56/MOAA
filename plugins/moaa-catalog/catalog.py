@@ -633,8 +633,101 @@ def ruflo_swap(npm, installed, latest, run):
     return f"ruflo {installed} -> {latest}" + extra
 
 
+# Fable 5.2 needs Claude Code 2.1.321+; an older CLI fails to load an agent that names it. The repo ships 5.2, and on an
+# older CLI the installed copies of these plugins get 5.1 until the CLI is new enough, then 5.2 again.
+FABLE_NEW, FABLE_OLD, FABLE_MIN_CLI = "claude-fable-5-2", "claude-fable-5-1", (2, 1, 321)
+FABLE_PLUGINS = ("specialist-council", "agent-arena-mode", "war-room")
+FABLE_FILES = (".md", ".py", ".json", ".js")
+FABLE_EVERY = 24 * 3600
+
+
+def cli_version(run=None, env=None):
+    """The newest Claude Code this machine runs, as (major, minor, patch), or None. Both the running session's build
+    (`AI_AGENT`, e.g. the desktop app's own CLI) and the `claude` on PATH count, because they share one plugin cache;
+    the desktop app usually runs a newer build than the one on PATH."""
+    import shutil
+    import subprocess
+    env = os.environ if env is None else env
+    found = []
+    running = re.search(r"claude-code_(\d+)-(\d+)-(\d+)", env.get("AI_AGENT", ""))
+    if running:
+        found.append(tuple(int(x) for x in running.groups()))
+    claude = shutil.which("claude")
+    if claude:
+        run = run or (lambda argv: subprocess.run(argv, capture_output=True, text=True, encoding="utf-8",
+                                                  errors="replace", timeout=30))
+        try:
+            hit = re.search(r"(\d+)\.(\d+)\.(\d+)", run([claude, "--version"]).stdout or "")
+            if hit:
+                found.append(tuple(int(x) for x in hit.groups()))
+        except Exception:
+            pass
+    return max(found) if found else None
+
+
+def fable_fit(home, version):
+    """Point the installed council, arena and War Room copies at the Fable ID this CLI can load. Returns the changed
+    files. An unknown version changes nothing."""
+    if version is None:
+        return []
+    src, dst = (FABLE_NEW, FABLE_OLD) if tuple(version) < FABLE_MIN_CLI else (FABLE_OLD, FABLE_NEW)
+    record = read_json(home / "plugins" / "installed_plugins.json").get("plugins", {})
+    changed = []
+    for name in FABLE_PLUGINS:
+        for entry in record.get(f"{name}@moaa", []):
+            root = Path(entry.get("installPath", ""))
+            if not entry.get("installPath") or not root.is_dir():
+                continue
+            for f in root.rglob("*"):
+                if f.suffix not in FABLE_FILES or not f.is_file() or "tests" in f.relative_to(root).parts:
+                    continue
+                try:
+                    text = f.read_text(encoding="utf-8")
+                except (OSError, UnicodeDecodeError):
+                    continue
+                if src in text:
+                    f.write_text(text.replace(src, dst), encoding="utf-8", newline="")
+                    changed.append(f)
+    return changed
+
+
+def fable_wanted(home, now=None):
+    """Once a day; `MOAA_FABLE_FIT=off` stops it."""
+    if os.environ.get("MOAA_FABLE_FIT", "").lower() in ("off", "0", "false", "no"):
+        return False
+    return (now or time.time()) - read_json(home / "moaa-catalog" / "fable.json").get("checked", 0) >= FABLE_EVERY
+
+
+def fable_check(home, run=None):
+    version = cli_version(run)
+    changed = fable_fit(home, version)
+    path = home / "moaa-catalog" / "fable.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    using = FABLE_OLD if version and tuple(version) < FABLE_MIN_CLI else FABLE_NEW
+    note = {"checked": time.time(), "cli": ".".join(map(str, version)) if version else None,
+            "fable": using if version else None, "changed": len(changed)}
+    path.write_text(json.dumps(note), encoding="utf-8")
+    return note
+
+
+def fable_check_in_background(home):
+    import subprocess
+    path = home / "moaa-catalog" / "fable.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"checked": time.time()}), encoding="utf-8")
+    argv = [sys.executable, str(Path(__file__).resolve()), "fable-check"]
+    quiet = dict(stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if os.name == "nt":
+        subprocess.Popen(argv, creationflags=0x08000000 | 0x00000200, **quiet)  # no window, own process group
+    else:
+        subprocess.Popen(argv, start_new_session=True, **quiet)
+
+
 def main(argv):
     home = claude_home()
+    if argv == ["fable-check"]:
+        print(json.dumps(fable_check(home)))
+        return 0
     if argv == ["ruflo-update"]:
         print(ruflo_update(home))
         return 0
@@ -733,6 +826,11 @@ def main(argv):
         try:
             if ruflo_wanted(home):
                 ruflo_update_in_background(home)
+        except Exception:
+            pass
+        try:
+            if fable_wanted(home):
+                fable_check_in_background(home)
         except Exception:
             pass
         if notice:

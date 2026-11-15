@@ -37,7 +37,7 @@ Parse these as skill arguments, not shell code. Everything after `--` is task te
 | `--difficulty LEVEL` | `low`, `medium`, `high`, or `critical`; the coordinator classifies the task before init (see Model assignment) |
 | `--worker-model NAME` | Automatic mix by difficulty; a name forces every worker to that model |
 | `--worker-effort LEVEL` | Automatic by difficulty; a level forces every worker's effort |
-| `--judge-model NAME` | Automatic by difficulty (opus-5.5 or fable-5.1); explicit value wins |
+| `--judge-model NAME` | Automatic by difficulty (opus-5.5 or fable-5.2); explicit value wins |
 | `--judge-effort LEVEL` | Automatic by difficulty (medium to xhigh); explicit value wins |
 | `--seed N` | 42; repeats strategy allocation and pairing, not model outputs |
 | `--communication TYPE` | `auto`: direct messaging if available, otherwise explicit file exchange |
@@ -58,7 +58,7 @@ Classify the frozen task once, before `init`, and pass `--difficulty`:
 - `high`: novel design, unknown-cause debugging, multi-file code, quantitative modeling, research synthesis.
 - `critical`: irreversible or safety/security relevant, publication-grade science, or a task earlier attempts failed.
 
-State the classification and one-line reason in the start update. `init` then assigns every roster slot a model and effort (a seeded mix, for example `high` gives 60% sonnet-5.5/high and 40% opus-5.5/high workers) and fixes judge, validator, critic, synthesizer, and finalist settings in `config.models.roles` (`plan --difficulty` previews them). Dispatch each worker with its slot's `model` and `effort`, and each role call with its role setting, using the Agent tool's per-call `model` and `effort` fields. Record them with `reserve --model --effort`. Explicit user flags override the automatic choice. Reused library agents keep the model they were validated with. Model IDs are pinned: `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5-5`, `claude-fable-5-1`. If the host rejects one, report it and ask before substituting.
+State the classification and one-line reason in the start update. `init` then assigns every roster slot a model and effort (a seeded mix, for example `high` gives 60% sonnet-5.5/high and 40% opus-5.5/high workers) and fixes judge, validator, critic, synthesizer, and finalist settings in `config.models.roles` (`plan --difficulty` previews them). Dispatch each worker with its slot's `model` and `effort`, and each role call with its role setting, using the Agent tool's per-call `model` and `effort` fields. Record them with `reserve --model --effort`. Explicit user flags override the automatic choice. Reused library agents keep the model they were validated with. Model IDs are pinned: `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5-5`, `claude-fable-5-2`. If the host rejects one, report it and ask before substituting.
 
 ## Start
 

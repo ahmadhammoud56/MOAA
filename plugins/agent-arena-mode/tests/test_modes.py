@@ -262,9 +262,9 @@ class Sim(unittest.TestCase):
             self.assertEqual(a, arena.assign(agents, difficulty, seed=42))
         low, crit = arena.assign(8, "low"), arena.assign(8, "critical")
         self.assertEqual(low["roles"]["judge"]["model"], "claude-opus-5-5")
-        self.assertEqual(crit["roles"]["judge"], {"model": "claude-fable-5-1", "effort": "xhigh"})
-        self.assertNotIn("claude-fable-5-1", {s["model"] for s in low["slots"]})
-        self.assertIn("claude-fable-5-1", {s["model"] for s in crit["slots"]})
+        self.assertEqual(crit["roles"]["judge"], {"model": "claude-fable-5-2", "effort": "xhigh"})
+        self.assertNotIn("claude-fable-5-2", {s["model"] for s in low["slots"]})
+        self.assertIn("claude-fable-5-2", {s["model"] for s in crit["slots"]})
         cascade = arena.assign(8, "high", mode="cascade")  # proposals one step cheaper
         self.assertNotIn("claude-opus-5-5", {s["model"] for s in cascade["slots"]})
         forced = arena.assign(6, "high", worker_model="haiku", judge_model="sonnet", judge_effort="low")
@@ -278,7 +278,7 @@ class Sim(unittest.TestCase):
         self.assertTrue(all(s["model"] in arena.MODEL_IDS.values() and s["effort"] in arena.EFFORTS
                             for s in state["roster"]))
         job = arena.reserve(self.state, "judge", "j", "fable", "high")
-        self.assertEqual((job["model"], job["effort"]), ("claude-fable-5-1", "high"))
+        self.assertEqual((job["model"], job["effort"]), ("claude-fable-5-2", "high"))
         with self.assertRaises(arena.ArenaError):
             arena.reserve(self.state, "judge", "j2", "opus", "extreme")
 

@@ -356,6 +356,9 @@ def install(args):
     write_json(home / MANIFEST, record, args.dry_run)
     if not args.dry_run:
         (home / LEGACY_MANIFEST).unlink(missing_ok=True)
+    if not args.dry_run:  # installed copies name the Fable ID this CLI can load (5.2 needs Claude Code 2.1.321+)
+        fit = r.run([sys.executable, str(KIT / "plugins" / "moaa-catalog" / "catalog.py"), "fable-check"])
+        log("fable: " + (fit.stdout.strip() or fit.stderr.strip()[-200:]))
     check = r.run([sys.executable, str(council), "check"])
     log("council check: " + ("ok" if check.returncode == 0 else check.stderr.strip()))
     if failed:
@@ -991,7 +994,7 @@ def doctor_checks():
     plugins = KIT / "plugins"
     checks = [("installer tests", [py, "-m", "unittest", "discover", "-s", "tests"], KIT)]
     for name in ("specialist-council", "agent-arena-mode", "war-room", "allies", "strata", "moaa-catalog",
-                 "prompt-refiner", "team", "moaa-core"):
+                 "prompt-refiner", "team", "moaa-core", "self-improve"):
         checks.append((f"{name} tests", [py, "-m", "unittest", "discover", "-s", "tests"], plugins / name))
     checks += [
         ("war-room bus test", [py, "tests/test_bus.py"], plugins / "war-room"),
