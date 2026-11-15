@@ -1121,7 +1121,16 @@ def uninstall(args):
     return 0
 
 
+def utf8_output():
+    """Print UTF-8 whatever the console. Windows writes a pipe in cp1252, and the Claude CLI's output that log()
+    passes on carries ✔ and ✘, so a piped run (the background self-update) crashed mid-install."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(argv=None):
+    utf8_output()
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--with-claude-mem", action="store_true")
     p.add_argument("--with-omniroute", action="store_true",

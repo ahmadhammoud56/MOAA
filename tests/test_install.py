@@ -414,3 +414,23 @@ class ProfileTests(unittest.TestCase):
         self.assertLessEqual(len(core), 22)
         self.assertTrue(all(p.get("profile") in ("core", "full") for p in kit["plugins"]))
         self.assertFalse(any(p.get("optional") for p in kit["plugins"] if p["id"] in core))
+
+
+class OutputEncodingTests(unittest.TestCase):
+    def test_piped_run_with_a_cp1252_console_prints_cli_marks(self):
+        """The background self-update pipes install.py; on Windows that pipe was cp1252 and ✘ crashed the install."""
+        import subprocess
+        env = dict(__import__("os").environ, PYTHONIOENCODING="cp1252")
+        code = "import sys; sys.path.insert(0, sys.argv[1]); import install; install.utf8_output(); install.log('✘ ✔')"
+        out = subprocess.run([sys.executable, "-c", code, str(Path(install.__file__).parent)], capture_output=True,
+                             env=env)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertIn("✘ ✔", out.stdout.decode("utf-8"))
+
+    def test_next_release_notes_print_on_a_cp1252_pipe(self):
+        """A 0.25.0 clone's update() prints the new release's CHANGELOG section with no UTF-8 fix of its own; one
+        character outside cp1252 there fails a Windows background update after the install succeeded."""
+        import re
+        text = (install.KIT / "CHANGELOG.md").read_text(encoding="utf-8")
+        nxt = re.split(r"(?m)^## \[", text)[1]  # [Unreleased], or the newest release right after the cut
+        nxt.encode("cp1252")

@@ -724,6 +724,9 @@ def fable_check_in_background(home):
 
 
 def main(argv):
+    for stream in (sys.stdout, sys.stderr):  # `use` prints skill text; a Windows pipe is cp1252 otherwise
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     home = claude_home()
     if argv == ["fable-check"]:
         print(json.dumps(fable_check(home)))

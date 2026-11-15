@@ -29,13 +29,19 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 - **Vendored prismantis 0.46.0** (from 0.34.0), unmodified. Upstream now keeps the plugin in `plugin/` and its tests
   in `tests/`; MOAA copies those two folders, as upstream's own test script does, and `sync_vendored.py` gains an
   `also` field for upstream folders outside `path`. MOAA's PNG-button patch is dropped: upstream has had its own
-  `▣ png` button since 0.36.0 (theme colours, Windows and macOS, no Python needed), so `PRISMANTIS_PNG_BUTTON`
+  `png` button since 0.36.0 (theme colours, Windows and macOS, no Python needed), so `PRISMANTIS_PNG_BUTTON`
   no longer does anything. `claude plugin test`: 1175 passed. `scan.py` allows one more upstream test fixture path
   (a made-up Windows user folder in a prismantis test).
 - **ruflo catalog re-pinned** to the plugins installed after the 3.77.1 update (21 of 40 ruflo plugins had newer
   versions, including the security fixes).
 
 ### Fixed
+- **Self-update on Windows clones:** `install.py` printed the Claude CLI's check and cross marks to a pipe that
+  Windows encodes as cp1252, so a background `--update --release` crashed part-way whenever a plugin step failed,
+  and a release note with such a character failed the update after the install had succeeded. `install.py` and
+  `catalog.py` now write UTF-8. Release notes must stay in cp1252 until 0.25.0 clients have moved on, because their
+  old `update()` prints them; a test checks this. Tested end to end: a clone on 0.25.0 moved itself to a local
+  v0.26.0 tag through the session hook, reinstalled, and reported it at the next session.
 - self-improve: the Windows scheduler test now builds its path with Windows rules, so it passes on Linux and macOS CI.
 
 ## [0.25.0] - 2026-11-07
