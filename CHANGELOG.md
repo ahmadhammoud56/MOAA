@@ -4,6 +4,8 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-11-15
+
 ### Added
 - **self-improve 0.1.0 (new plugin):** the weekly self-improvement loop as a MOAA plugin. Three read-only collectors
   (sessions, git history from `repos.txt`, release feeds from `sources.txt`) feed a combined digest of recurring

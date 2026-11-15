@@ -241,9 +241,10 @@ Strata needs no worker process or background service; claude-mem is still availa
 Four mods (TypeScript hooks modules that Claude Code runs itself) install with the core profile and load in every
 chat:
 
-- **Meters panel** (`strata-meter`): one panel in the desktop app with a row and a real bar per meter: context against
-  the strata handoff threshold, the prompt cache, the `/goal` progress, canary hits and misses, sessions waiting for
-  extraction, an engine pause, and the vault. `/strata-meter` reopens it.
+- **Meters** (`strata-meter`): a one-row band above the prompt (context against the strata handoff threshold, canary
+  hits and misses, sessions waiting for extraction, open chats), so the desktop app opens no extra column.
+  `/strata-meter` opens the full panel with a row and a real bar per meter (adds the prompt cache, the `/goal`
+  progress, an engine pause, the vault and open chats). `MOAA_METERS=pane` or `both` brings the panel back at start.
 - **Cache Keeper**: when the prompt cache goes cold, the cost of the next prompt, or a strata handoff suggestion when
   the context is also full; **Keep warm** per chat re-sends the cached prefix just before it lapses (capped by idle
   time). `MOAA_CACHE_TTL_MIN=5` with an API key (60 on a subscription).

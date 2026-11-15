@@ -432,5 +432,5 @@ class OutputEncodingTests(unittest.TestCase):
         character outside cp1252 there fails a Windows background update after the install succeeded."""
         import re
         text = (install.KIT / "CHANGELOG.md").read_text(encoding="utf-8")
-        nxt = re.split(r"(?m)^## \[", text)[1]  # [Unreleased], or the newest release right after the cut
-        nxt.encode("cp1252")
+        parts = re.split(r"(?m)^## \[", text)
+        "".join(parts[1:3]).encode("cp1252")  # [Unreleased] and the newest release
