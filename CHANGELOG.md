@@ -4,6 +4,11 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
 
 ## [Unreleased]
 
+### Changed
+- **strata-meter 0.2.1:** the Meters panel opens at start again, alongside the band above the prompt
+  (`MOAA_METERS=both` is now the default). `MOAA_METERS=band` keeps only the band (no extra column in the desktop
+  app); `MOAA_METERS=pane` keeps only the panel.
+
 ## [0.26.0] - 2026-11-15
 
 ### Added

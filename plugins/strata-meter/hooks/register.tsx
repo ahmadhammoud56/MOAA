@@ -107,11 +107,11 @@ async function refresh($: any) {
   $.ui.status(`strata ${bar(r.pct, 10)} ${Math.round(r.pct)}%/${r.threshold}% · canary ${r.canaryHits}✓ ${r.canaryMisses}✗${pend}${pause}`)
 }
 
-/** Where the meters show: `band` (default, a row above the prompt and no extra column), `pane` (the Meters panel opens
- * at start, as before 0.2.0) or `both`. `/strata-meter` opens the panel in every view. */
+/** Where the meters show: `both` (default since 0.2.1: the band above the prompt and the Meters panel at start),
+ * `band` (the row only, no extra column) or `pane` (the panel only). `/strata-meter` opens the panel in every view. */
 export const view = (v: unknown) => {
   const s = String(v ?? '').toLowerCase()
-  return s === 'pane' || s === 'both' ? s : 'band'
+  return s === 'pane' || s === 'band' ? s : 'both'
 }
 
 /** The band's one line: context against the handoff threshold, canary, and live chats when there is more than one. */

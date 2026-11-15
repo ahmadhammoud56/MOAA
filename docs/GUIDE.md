@@ -242,9 +242,10 @@ Four mods (TypeScript hooks modules that Claude Code runs itself) install with t
 chat:
 
 - **Meters** (`strata-meter`): a one-row band above the prompt (context against the strata handoff threshold, canary
-  hits and misses, sessions waiting for extraction, open chats), so the desktop app opens no extra column.
-  `/strata-meter` opens the full panel with a row and a real bar per meter (adds the prompt cache, the `/goal`
-  progress, an engine pause, the vault and open chats). `MOAA_METERS=pane` or `both` brings the panel back at start.
+  hits and misses, sessions waiting for extraction, open chats), and the full panel at start with a row and a real
+  bar per meter (adds the prompt cache, the `/goal` progress, an engine pause and the vault). `MOAA_METERS=band` keeps
+  only the band, so the desktop app opens no extra column; `MOAA_METERS=pane` keeps only the panel. `/strata-meter`
+  reopens the panel.
 - **Cache Keeper**: when the prompt cache goes cold, the cost of the next prompt, or a strata handoff suggestion when
   the context is also full; **Keep warm** per chat re-sends the cached prefix just before it lapses (capped by idle
   time). `MOAA_CACHE_TTL_MIN=5` with an API key (60 on a subscription).

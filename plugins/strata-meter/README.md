@@ -15,10 +15,10 @@ real rounded meter (SVG on the desktop, a text bar elsewhere).
 
 | Chats | live chats on this machine (from Collision Guard) |
 
-**Where it shows (0.2.0):** by default a one-row band above the prompt (context, canary, memory queue, open chats),
-next to Cache Keeper's and Goal Meter's bands, and no panel at start. The desktop app gives every mod panel its own
-column beside the background-tasks column, so a band keeps the window to one side column. `/strata-meter` opens the
-full Meters panel at any time. `MOAA_METERS=pane` opens the panel at start with no band (the 0.1.0 behaviour), and
-`MOAA_METERS=both` shows both.
+**Where it shows (0.2.1):** by default both a one-row band above the prompt (context, canary, memory queue, open
+chats), next to Cache Keeper's and Goal Meter's bands, and the full Meters panel at start. The desktop app gives every
+mod panel its own column beside the background-tasks column. `MOAA_METERS=band` keeps the window to the band only (no
+extra column; the 0.2.0 default), and `MOAA_METERS=pane` shows the panel only (the 0.1.0 behaviour). `/strata-meter`
+opens the panel in every view.
 
 The status line carries the same in one line. `MOAA_STRATA_METER=off` turns it all off.
