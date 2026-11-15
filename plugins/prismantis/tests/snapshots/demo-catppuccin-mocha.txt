@@ -171,6 +171,730 @@
   <Text color=#585b70>
     "└───────────────┴─────────────────────────┴───────────────────────┴───────┘"
 <Box>
+  <Text color=#f9e2af bold>
+    <Text>
+      "Attachments"
+  <Text color=#f9e2af>
+    "━━━━━━━━━━━"
+<Text>
+  <Text>
+    "Long paths and checksums never split mid-word, so a column cannot shrink below them. When those minimum widths no longer fit the reply, "
+  <Text color=#89dceb>
+    "tableLayout"
+  <Text>
+    " "
+  <Text color=#89dceb>
+    "auto"
+  <Text>
+    " and "
+  <Text color=#89dceb>
+    "stacked"
+  <Text>
+    " draw the table as one card per row, and "
+  <Text color=#89dceb>
+    "compact"
+  <Text>
+    " keeps the columns at their longest word:"
+<Box>
+  <Text color=#585b70>
+    "┌─────────────────────────────────────────────────┬────────────────────────────────────────────────┐"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Scroll"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Checksum"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "╞═════════════════════════════════════════════════╪════════════════════════════════════════════════╡"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text color=#89dceb>
+          "~/jade-palace/noodle-scrolls/scrolls/scroll-07-"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b82"
+    <Text color=#585b70>
+      " │"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text color=#89dceb>
+          "training-notes.md"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "2cd15d6c15b0f00a08"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "├─────────────────────────────────────────────────┼────────────────────────────────────────────────┤"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text color=#89dceb>
+          "/srv/dojo/moves.md"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "2c26b46b68ffc68ff99b453c1d30413413422d706483bf"
+    <Text color=#585b70>
+      " │"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "a0f98a5e886266e7ae"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "└─────────────────────────────────────────────────┴────────────────────────────────────────────────┘"
+<Box>
+  <Text color=#f9e2af bold>
+    <Text>
+      "Status matrix"
+  <Text color=#f9e2af>
+    "━━━━━━━━━━━━━"
+<Text>
+  <Text>
+    "When a table has a status column — the one whose cells are things like ✓, passed, failed or pending — "
+  <Text color=#89dceb>
+    "statusMatrix"
+  <Text>
+    " "
+  <Text color=#89dceb>
+    "color"
+  <Text>
+    " draws those cells in theme colors: green for a pass, red for a failure, amber for a warning, gray for a wait. "
+  <Text color=#89dceb>
+    "summary"
+  <Text>
+    " adds a count line under the table and "
+  <Text color=#89dceb>
+    "group"
+  <Text>
+    " reorders rows by status with a heavy rule where the status changes. The default "
+  <Text color=#89dceb>
+    "off"
+  <Text>
+    " keeps tables as written:"
+<Box>
+  <Text color=#585b70>
+    "┌─────────────┬───────┬─────────┐"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Suite"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Cases"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Result"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "╞═════════════╪═══════╪═════════╡"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "Unit"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "412"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "✓"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "├─────────────┼───────┼─────────┤"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "Propagation"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "88"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "failed"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "├─────────────┼───────┼─────────┤"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "Smoke"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "24"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "pending"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "├─────────────┼───────┼─────────┤"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "Regression"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "130"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "✓"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "└─────────────┴───────┴─────────┘"
+<Box>
+  <Text color=#f9e2af bold>
+    <Text>
+      "Test report"
+  <Text color=#f9e2af>
+    "━━━━━━━━━━━"
+<Text>
+  <Text>
+    "When a table draws a run — a status column of things like ✓ or failed next to durations like "
+  <Text color=#a6e3a1>
+    "120"
+  <Text>
+    " ms — "
+  <Text color=#89dceb>
+    "testMatrix"
+  <Text>
+    " "
+  <Text color=#89dceb>
+    "report"
+  <Text>
+    " adds a line under the table with how much of the run passed, a count of every other kind of result and the time all of it took. The line reuses the status colors and replaces the "
+  <Text color=#89dceb>
+    "statusMatrix"
+  <Text>
+    " count line when both draw. The default "
+  <Text color=#89dceb>
+    "off"
+  <Text>
+    " keeps tables as written:"
+<Box>
+  <Text color=#585b70>
+    "┌─────────┬────────┬─────────┐"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Check"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Time"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Result"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "╞═════════╪════════╪═════════╡"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "parse"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "120"
+        <Text>
+          " ms"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "✓"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "├─────────┼────────┼─────────┤"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "draw"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "4"
+        <Text>
+          " s"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "✓"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "├─────────┼────────┼─────────┤"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "scan"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "130"
+        <Text>
+          " ms"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "failed"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "├─────────┼────────┼─────────┤"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "typeset"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "2.6"
+        <Text>
+          " s"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "pending"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "└─────────┴────────┴─────────┘"
+<Box>
+  <Text color=#f9e2af bold>
+    <Text>
+      "Benchmarks"
+  <Text color=#f9e2af>
+    "━━━━━━━━━━"
+<Text>
+  <Text>
+    "When a table compares benchmarks — a column of changes like "
+  <Text color=#a6e3a1>
+    "-10%"
+  <Text>
+    " or +"
+  <Text color=#a6e3a1>
+    "3%"
+  <Text>
+    " beside two columns of runs — "
+  <Text color=#89dceb>
+    "benchTable"
+  <Text>
+    " draws each change in theme colors, green for an improvement and red for a regression; timings read as lower is better unless a header speaks of req/s, throughput or a score. "
+  <Text color=#89dceb>
+    "trend"
+  <Text>
+    " also draws a sparkline of the runs under the table, each step colored by whether it improved. The default "
+  <Text color=#89dceb>
+    "off"
+  <Text>
+    " keeps tables as written:"
+<Box>
+  <Text color=#585b70>
+    "┌───────────┬─────────┬─────────┬────────┐"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Benchmark"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Before"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "After"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Change"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "╞═══════════╪═════════╪═════════╪════════╡"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "parse"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "12.4"
+        <Text>
+          " ms"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "11.1"
+        <Text>
+          " ms"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "-10%"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "├───────────┼─────────┼─────────┼────────┤"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "layout"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "19.6"
+        <Text>
+          " ms"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "22.4"
+        <Text>
+          " ms"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "+"
+        <Text color=#a6e3a1>
+          "14%"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "├───────────┼─────────┼─────────┼────────┤"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "paint"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "2.1"
+        <Text>
+          " ms"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "0.8"
+        <Text>
+          " ms"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text color=#a6e3a1>
+          "-62%"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "└───────────┴─────────┴─────────┴────────┘"
+<Box>
+  <Text color=#f9e2af bold>
+    <Text>
+      "Schema"
+  <Text color=#f9e2af>
+    "━━━━━━"
+<Text>
+  <Text>
+    "When a table describes a database schema — a column of fields beside a column of types — "
+  <Text color=#89dceb>
+    "schemaTable"
+  <Text>
+    " draws the type cells by their family: text types like varchar in the string color, numeric types like int in the number color, booleans in the emphasis color, time types like timestamp in the link color. "
+  <Text color=#89dceb>
+    "keys"
+  <Text>
+    " draws the constraint cells — PK in the accent color, FK in the link color, unique and index cells in gray — and "
+  <Text color=#89dceb>
+    "full"
+  <Text>
+    " does both. The default "
+  <Text color=#89dceb>
+    "off"
+  <Text>
+    " keeps tables as written:"
+<Box>
+  <Text color=#585b70>
+    "┌────────────┬──────────────┬──────────────┬─────────┐"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Column"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Type"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Key"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text color=#f9e2af bold>
+        "Default"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "╞════════════╪══════════════╪══════════════╪═════════╡"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "id"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "uuid"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "PK"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "├────────────┼──────────────┼──────────────┼─────────┤"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "email"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "varchar("
+        <Text color=#a6e3a1>
+          "255"
+        <Text>
+          ")"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "UNIQUE"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "├────────────┼──────────────┼──────────────┼─────────┤"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "org_id"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "bigint"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "FK → orgs.id"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "├────────────┼──────────────┼──────────────┼─────────┤"
+  <Box row>
+    <Text color=#585b70>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "created_at"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "timestamp"
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+    <Text color=#585b70>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "now()"
+    <Text color=#585b70>
+      " │"
+  <Text color=#585b70>
+    "└────────────┴──────────────┴──────────────┴─────────┘"
+<Box>
   <Box row>
     <Text color=#cba6f7>
       "1. "
@@ -776,7 +1500,7 @@
           "└──────┘"
 <Box>
   <Text color=#6c7086>
-    "diagram is 180 cols, terminal is 100"
+    "diagram is 180 cols, 98 fit"
   <Box row>
     <Text color=#6c7086>
       "── mermaid"
@@ -1049,6 +1773,8 @@
       "━━━━━"
 <Box>
   <Text>
+    <Text>
+      "."
     <Link>
       <Text color=#89b4fa>
         "רושיק"
@@ -1065,11 +1791,6 @@
     <Text color=#ffffff bold>
       <Text>
         "םירבח םולש"
-  <Text>
-    <Text>
-      "."
-    <Text>
-      "(https://github.com/NahumLitvin/prismantis)"
 <Box>
   <Box row>
     <Box>

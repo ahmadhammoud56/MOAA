@@ -33,13 +33,20 @@ const ratex = (on: On, answer: (formulas: string[]) => string = ok, png: string 
     runs.push({ argv: e.argv, formulas })
     return { value: { exitCode: 0, stdout: answer(formulas), stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
   })
-  on('fs.read', (_, e) => {
+  const fileOf = (path: string) => {
     const run = runs.at(-1)
     const dir = run?.argv[run.argv.indexOf('--output-dir') + 1]
-    const file = e.path.replace(/\\/g, '/')
+    const file = path.replace(/\\/g, '/')
     const index = Number(/\/(\d{4})\.png$/.exec(file)?.[1])
-    if (!run || index < 1 || index > run.formulas.length || !file.endsWith(`${dir}/${String(index).padStart(4, '0')}.png`)) return { deny: `no such file ${e.path}` }
-    return { value: { base64: typeof png === 'string' ? png : png(run) } }
+    return !run || index < 1 || index > run.formulas.length || !file.endsWith(`${dir}/${String(index).padStart(4, '0')}.png`) ? null : typeof png === 'string' ? png : png(run)
+  }
+  on('fs.stat', (_, e) => {
+    const file = fileOf(e.path)
+    return file === null ? { deny: `no such file ${e.path}` } : { value: { kind: 'file' as const, size: (file.length * 3) / 4, mtimeMs: 0, isLink: false } }
+  })
+  on('fs.read', (_, e) => {
+    const file = fileOf(e.path)
+    return file === null ? { deny: `no such file ${e.path}` } : { value: { base64: file } }
   })
   return runs
 }
@@ -192,6 +199,22 @@ test('a prompt sent while the renderer check is still running is not held up and
   await clock.settle()
 })
 
+test('a formula still draws as an image when the engine refuses its first store write mid-render', async ($, on) => {
+  mock.env(on, KITTY)
+  const clock = mock.clock(on)
+  ratex(on)
+  let refused = 0
+  on('state.set', (_, e, next) => (e.key === 'formulas' && refused++ === 0 ? { deny: 'state.set: denied: it was made while ui.render is being dispatched' } : next(e)))
+  const ui = await $.ui.mount(reply(REPLY))
+  await clock.advance(1000)
+  expect((await ui.find({ type: 'Image' }))?.props.alt).toBe('\\int_0^1 x^2\\,dx')
+  const next = await $.ui.mount(reply('$$a^2 + b^2 = c^2$$'))
+  await clock.advance(1000)
+  expect((await next.find({ type: 'Image' }))?.props.alt).toBe('a^2 + b^2 = c^2')
+  await ui.unmount()
+  await next.unmount()
+})
+
 test('after the renderer fails once, later formulas stay text and it is not run again', async ($, on) => {
   mock.env(on, KITTY)
   const clock = mock.clock(on)
@@ -205,6 +228,7 @@ test('after the renderer fails once, later formulas stay text and it is not run 
       ? { value: { exitCode: 0, stdout: ok(formulas), stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
       : { deny: 'renderer crashed' }
   })
+  on('fs.stat', () => ({ value: { kind: 'file' as const, size: 100, mtimeMs: 0, isLink: false } }))
   on('fs.read', () => ({ value: { base64: PNG_160x80 } }))
 
   const first = await $.ui.mount(reply(REPLY))
@@ -235,6 +259,7 @@ test('after a later run fails, formulas already drawn stay drawn and new ones st
       ? { value: { exitCode: 0, stdout: ok(formulas), stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
       : { deny: 'renderer crashed' }
   })
+  on('fs.stat', () => ({ value: { kind: 'file' as const, size: 100, mtimeMs: 0, isLink: false } }))
   on('fs.read', () => ({ value: { base64: PNG_160x80 } }))
 
   const drawn = await $.ui.mount(reply(REPLY))
@@ -553,7 +578,7 @@ test('back-to-back formulas stack one per line instead of sharing a row', async 
   await ui.unmount()
 })
 
-for (const [color, hex] of [['ansi256(114)', '#87d787'], ['cyanBright', '#00ffff'], ['rgb(166, 227, 161)', '#a6e3a1'], ['#fc0', '#fc0']] as const) {
+for (const [color, hex] of [['ansi256(114)', '#87d787'], ['cyanBright', '#00ffff'], ['rgb(166, 227, 161)', '#a6e3a1'], ['#fc0', '#ffcc00']] as const) {
   test(`the diagram text color ${color} reaches the renderer as ${hex}, a color it accepts`, { options: { diagramTextColor: color } }, async ($, on) => {
     mock.env(on, KITTY)
     const clock = mock.clock(on)
@@ -570,16 +595,55 @@ for (const [color, hex] of [['ansi256(114)', '#87d787'], ['cyanBright', '#00ffff
 const keys = (from: number, to: number) => Array.from({ length: to - from }, (_, i) => `k${from + i}`)
 const storeOf = (names: string[]) => Object.fromEntries(names.map(name => [name, name]))
 
-test('the formula store keeps the newest 50, dropping the oldest', async () => {
-  const kept = keepFormulas(storeOf(keys(0, 50)), [['k50', 'k50']], new Set())
+const MB = 1024 * 1024
+const formulaOf = (bytes: number) => ({ png: 'A'.repeat((bytes * 4) / 3), width: 1, height: 1 })
 
-  expect(Object.keys(kept)).toEqual(keys(1, 51))
+test('the formula store keeps the newest formulas under 32 MB, dropping the oldest', async () => {
+  const store = Object.fromEntries(keys(0, 20).map(key => [key, formulaOf(1.9 * MB)]))
+  const kept = keepFormulas(store, [['k20', formulaOf(1.9 * MB)]], new Set())
+
+  expect(Object.keys(kept)).toEqual(keys(5, 21))
 })
 
-test('the formula store never drops a formula a draw still wants, even past 50', async () => {
-  const kept = keepFormulas(storeOf(keys(0, 50)), [['k50', 'k50']], new Set(keys(0, 50)))
+test('the formula store keeps many small formulas', async () => {
+  const kept = keepFormulas(storeOf(keys(0, 80)), [['k80', 'k80']], new Set())
 
-  expect(Object.keys(kept)).toEqual(keys(0, 51))
+  expect(Object.keys(kept)).toEqual(keys(0, 81))
+})
+
+test('the formula store never drops a formula a draw still wants, even past 32 MB', async () => {
+  const store = Object.fromEntries(keys(0, 30).map(key => [key, formulaOf(1.5 * MB)]))
+  const kept = keepFormulas(store, [['k30', formulaOf(1.5 * MB)]], new Set(keys(0, 30)))
+
+  expect(Object.keys(kept)).toEqual(keys(0, 31))
+})
+
+test('a formula png over 2 MB is never read, and at most 4 are read at once', async ($, on) => {
+  mock.env(on, KITTY)
+  const clock = mock.clock(on)
+  on('session.surfaces', () => ({ value: ['terminal'] as const }))
+  on('session.id', () => ({ value: 'sess-1' }))
+  on('process.run', (_, e) => ({ value: { exitCode: 0, stdout: ok((e.init?.stdin ?? '').split('\n').filter(line => line !== '')), stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
+  const big = Array.from({ length: 12 }, (_, i) => i === 3)
+  on('fs.stat', (_, e) => ({ value: { kind: 'file' as const, size: big[Number(/(\d{4})\.png$/.exec(e.path)?.[1]) - 1] ? 3 * MB : 100, mtimeMs: 0, isLink: false } }))
+  const reads: string[] = []
+  let open = 0
+  let most = 0
+  on('fs.read', async (_, e) => {
+    reads.push(e.path)
+    most = Math.max(most, ++open)
+    for (let k = 0; k < 5; k++) await Promise.resolve()
+    open--
+    return { value: { base64: PNG_160x80 } }
+  })
+
+  const ui = await $.ui.mount(reply(big.map((_, i) => `$$x_{${i}}$$`).join('\n\n')))
+  await clock.settle()
+
+  expect(reads.some(path => path.endsWith('/0004.png'))).toBe(false)
+  expect(most).toBeLessThanOrEqual(4)
+  expect(await ui.findAll({ type: 'Image' })).toHaveLength(11)
+  await ui.unmount()
 })
 
 test('a reply that streams in more formulas than the store keeps renders each formula once', { timeoutMs: 20000 }, async ($, on) => {
@@ -627,6 +691,24 @@ test('in Warp a formula draws as Unicode text, not as its TeX source', async ($,
   const ui = await $.ui.mount(reply(REPLY))
   expect(await ui.find({ type: 'Text', text: /^∫₀¹ x² dx$/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /\\int/ })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('deeply nested or unbalanced TeX comes back as its source', () => {
+  const deep = `${'{'.repeat(100000)}x${'}'.repeat(100000)}`
+  expect(texText(deep)).toBe(deep)
+  expect(texText(String.raw`\frac{1}{`)).toBe(String.raw`\frac{1}{`)
+  expect(texText('x}')).toBe('x}')
+})
+
+test('display math with unbalanced braces draws as source in a math block', async ($, on) => {
+  mock.env(on, { TERM_PROGRAM: 'WarpTerminal' })
+  on('session.surfaces', () => ({ value: ['terminal'] as const }))
+  const ui = await $.ui.mount(reply('$$\\frac{1}{$$\n\n$$\n{x\n$$'))
+  expect(await ui.find({ type: 'Text', text: /1\/\(\)/ })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: /^\\frac\{1\}\{$/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^\{x$/ })).toBeDefined()
+  expect((await ui.findAll({ type: 'Text', text: /── math/ })).length).toBe(2)
   await ui.unmount()
 })
 

@@ -375,7 +375,7 @@
     {
       "id": "prismantis@moaa",
       "enabled": false,
-      "tested_version": "0.34.0",
+      "tested_version": "0.46.0",
       "profile": "core"
     },
     {
@@ -765,19 +765,13 @@
     },
     "prismantis": {
       "repo": "NahumLitvin/prismantis",
-      "path": "",
-      "version": "0.34.0",
-      "commit": "82afde83736b668b0b428299a44e78142ce1408d",
-      "exclude": [
-        ".github",
-        "codex",
-        ".codex-plugin",
-        ".agents",
-        ".claude",
-        "docs/*.png",
-        "docs/*.gif"
+      "path": "plugin",
+      "also": [
+        "tests"
       ],
-      "patch": "png-button.patch"
+      "version": "0.46.0",
+      "commit": "404b89a7a9e5f4e49157583bf5f615e08ce6d802",
+      "exclude": []
     },
     "plot-deck": {
       "repo": "kyryl-shtefiienko/LPS",

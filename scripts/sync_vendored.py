@@ -7,7 +7,8 @@ config/kit.json) in step with upstream. Standard library only.
                                                     validate and test it, and record the new version
 
 The sync never deletes: files that upstream dropped are listed for you to remove. MOAA's own files in the folder
-(MODIFICATIONS.md, PERMISSION.md, the patch) are kept. Nothing is committed or installed; run
+(MODIFICATIONS.md, PERMISSION.md, the patch) are kept. `path` picks the upstream folder that becomes plugins/NAME,
+and `also` adds upstream folders from outside it (such as tests/). Nothing is committed or installed; run
 `python scripts/install.py` after reviewing the diff.
 """
 import argparse
@@ -97,7 +98,10 @@ def sync(name, ref=None, kit=KIT):
     dst = kit / "plugins" / name
     with tempfile.TemporaryDirectory() as tmp:
         top = fetch(rec["repo"], commit, tmp)
-        copied, gone = copy_over(top / rec.get("path", ""), dst, rec)
+        src = top / rec.get("path", "")
+        for extra in rec.get("also", []):  # upstream folders outside `path` that MOAA keeps too, such as tests/
+            shutil.copytree(top / extra, src / extra, dirs_exist_ok=True)
+        copied, gone = copy_over(src, dst, rec)
     report = {"plugin": name, "from": rec.get("version") or rec["commit"][:7], "to": version or commit[:7],
               "files": len(copied), "dropped_upstream": gone}
     if rec.get("patch"):

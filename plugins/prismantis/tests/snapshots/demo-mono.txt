@@ -171,6 +171,730 @@
   <Text>
     "└───────────────┴─────────────────────────┴───────────────────────┴───────┘"
 <Box>
+  <Text bold>
+    <Text>
+      "Attachments"
+  <Text>
+    "━━━━━━━━━━━"
+<Text>
+  <Text>
+    "Long paths and checksums never split mid-word, so a column cannot shrink below them. When those minimum widths no longer fit the reply, "
+  <Text>
+    "tableLayout"
+  <Text>
+    " "
+  <Text>
+    "auto"
+  <Text>
+    " and "
+  <Text>
+    "stacked"
+  <Text>
+    " draw the table as one card per row, and "
+  <Text>
+    "compact"
+  <Text>
+    " keeps the columns at their longest word:"
+<Box>
+  <Text>
+    "┌─────────────────────────────────────────────────┬────────────────────────────────────────────────┐"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text bold>
+        "Scroll"
+    <Text>
+      " │ "
+    <Box>
+      <Text bold>
+        "Checksum"
+    <Text>
+      " │"
+  <Text>
+    "╞═════════════════════════════════════════════════╪════════════════════════════════════════════════╡"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "~/jade-palace/noodle-scrolls/scrolls/scroll-07-"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b82"
+    <Text>
+      " │"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "training-notes.md"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "2cd15d6c15b0f00a08"
+    <Text>
+      " │"
+  <Text>
+    "├─────────────────────────────────────────────────┼────────────────────────────────────────────────┤"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "/srv/dojo/moves.md"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "2c26b46b68ffc68ff99b453c1d30413413422d706483bf"
+    <Text>
+      " │"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "a0f98a5e886266e7ae"
+    <Text>
+      " │"
+  <Text>
+    "└─────────────────────────────────────────────────┴────────────────────────────────────────────────┘"
+<Box>
+  <Text bold>
+    <Text>
+      "Status matrix"
+  <Text>
+    "━━━━━━━━━━━━━"
+<Text>
+  <Text>
+    "When a table has a status column — the one whose cells are things like ✓, passed, failed or pending — "
+  <Text>
+    "statusMatrix"
+  <Text>
+    " "
+  <Text>
+    "color"
+  <Text>
+    " draws those cells in theme colors: green for a pass, red for a failure, amber for a warning, gray for a wait. "
+  <Text>
+    "summary"
+  <Text>
+    " adds a count line under the table and "
+  <Text>
+    "group"
+  <Text>
+    " reorders rows by status with a heavy rule where the status changes. The default "
+  <Text>
+    "off"
+  <Text>
+    " keeps tables as written:"
+<Box>
+  <Text>
+    "┌─────────────┬───────┬─────────┐"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text bold>
+        "Suite"
+    <Text>
+      " │ "
+    <Box>
+      <Text bold>
+        "Cases"
+    <Text>
+      " │ "
+    <Box>
+      <Text bold>
+        "Result"
+    <Text>
+      " │"
+  <Text>
+    "╞═════════════╪═══════╪═════════╡"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "Unit"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "412"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "✓"
+    <Text>
+      " │"
+  <Text>
+    "├─────────────┼───────┼─────────┤"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "Propagation"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "88"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "failed"
+    <Text>
+      " │"
+  <Text>
+    "├─────────────┼───────┼─────────┤"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "Smoke"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "24"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "pending"
+    <Text>
+      " │"
+  <Text>
+    "├─────────────┼───────┼─────────┤"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "Regression"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "130"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "✓"
+    <Text>
+      " │"
+  <Text>
+    "└─────────────┴───────┴─────────┘"
+<Box>
+  <Text bold>
+    <Text>
+      "Test report"
+  <Text>
+    "━━━━━━━━━━━"
+<Text>
+  <Text>
+    "When a table draws a run — a status column of things like ✓ or failed next to durations like "
+  <Text>
+    "120"
+  <Text>
+    " ms — "
+  <Text>
+    "testMatrix"
+  <Text>
+    " "
+  <Text>
+    "report"
+  <Text>
+    " adds a line under the table with how much of the run passed, a count of every other kind of result and the time all of it took. The line reuses the status colors and replaces the "
+  <Text>
+    "statusMatrix"
+  <Text>
+    " count line when both draw. The default "
+  <Text>
+    "off"
+  <Text>
+    " keeps tables as written:"
+<Box>
+  <Text>
+    "┌─────────┬────────┬─────────┐"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text bold>
+        "Check"
+    <Text>
+      " │ "
+    <Box>
+      <Text bold>
+        "Time"
+    <Text>
+      " │ "
+    <Box>
+      <Text bold>
+        "Result"
+    <Text>
+      " │"
+  <Text>
+    "╞═════════╪════════╪═════════╡"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "parse"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "120"
+        <Text>
+          " ms"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "✓"
+    <Text>
+      " │"
+  <Text>
+    "├─────────┼────────┼─────────┤"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "draw"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "4"
+        <Text>
+          " s"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "✓"
+    <Text>
+      " │"
+  <Text>
+    "├─────────┼────────┼─────────┤"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "scan"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "130"
+        <Text>
+          " ms"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "failed"
+    <Text>
+      " │"
+  <Text>
+    "├─────────┼────────┼─────────┤"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "typeset"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "2.6"
+        <Text>
+          " s"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "pending"
+    <Text>
+      " │"
+  <Text>
+    "└─────────┴────────┴─────────┘"
+<Box>
+  <Text bold>
+    <Text>
+      "Benchmarks"
+  <Text>
+    "━━━━━━━━━━"
+<Text>
+  <Text>
+    "When a table compares benchmarks — a column of changes like "
+  <Text>
+    "-10%"
+  <Text>
+    " or +"
+  <Text>
+    "3%"
+  <Text>
+    " beside two columns of runs — "
+  <Text>
+    "benchTable"
+  <Text>
+    " draws each change in theme colors, green for an improvement and red for a regression; timings read as lower is better unless a header speaks of req/s, throughput or a score. "
+  <Text>
+    "trend"
+  <Text>
+    " also draws a sparkline of the runs under the table, each step colored by whether it improved. The default "
+  <Text>
+    "off"
+  <Text>
+    " keeps tables as written:"
+<Box>
+  <Text>
+    "┌───────────┬─────────┬─────────┬────────┐"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text bold>
+        "Benchmark"
+    <Text>
+      " │ "
+    <Box>
+      <Text bold>
+        "Before"
+    <Text>
+      " │ "
+    <Box>
+      <Text bold>
+        "After"
+    <Text>
+      " │ "
+    <Box>
+      <Text bold>
+        "Change"
+    <Text>
+      " │"
+  <Text>
+    "╞═══════════╪═════════╪═════════╪════════╡"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "parse"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "12.4"
+        <Text>
+          " ms"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "11.1"
+        <Text>
+          " ms"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "-10%"
+    <Text>
+      " │"
+  <Text>
+    "├───────────┼─────────┼─────────┼────────┤"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "layout"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "19.6"
+        <Text>
+          " ms"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "22.4"
+        <Text>
+          " ms"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "+"
+        <Text>
+          "14%"
+    <Text>
+      " │"
+  <Text>
+    "├───────────┼─────────┼─────────┼────────┤"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "paint"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "2.1"
+        <Text>
+          " ms"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "0.8"
+        <Text>
+          " ms"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "-62%"
+    <Text>
+      " │"
+  <Text>
+    "└───────────┴─────────┴─────────┴────────┘"
+<Box>
+  <Text bold>
+    <Text>
+      "Schema"
+  <Text>
+    "━━━━━━"
+<Text>
+  <Text>
+    "When a table describes a database schema — a column of fields beside a column of types — "
+  <Text>
+    "schemaTable"
+  <Text>
+    " draws the type cells by their family: text types like varchar in the string color, numeric types like int in the number color, booleans in the emphasis color, time types like timestamp in the link color. "
+  <Text>
+    "keys"
+  <Text>
+    " draws the constraint cells — PK in the accent color, FK in the link color, unique and index cells in gray — and "
+  <Text>
+    "full"
+  <Text>
+    " does both. The default "
+  <Text>
+    "off"
+  <Text>
+    " keeps tables as written:"
+<Box>
+  <Text>
+    "┌────────────┬──────────────┬──────────────┬─────────┐"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text bold>
+        "Column"
+    <Text>
+      " │ "
+    <Box>
+      <Text bold>
+        "Type"
+    <Text>
+      " │ "
+    <Box>
+      <Text bold>
+        "Key"
+    <Text>
+      " │ "
+    <Box>
+      <Text bold>
+        "Default"
+    <Text>
+      " │"
+  <Text>
+    "╞════════════╪══════════════╪══════════════╪═════════╡"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "id"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "uuid"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "PK"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+    <Text>
+      " │"
+  <Text>
+    "├────────────┼──────────────┼──────────────┼─────────┤"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "email"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "varchar("
+        <Text>
+          "255"
+        <Text>
+          ")"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "UNIQUE"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+    <Text>
+      " │"
+  <Text>
+    "├────────────┼──────────────┼──────────────┼─────────┤"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "org_id"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "bigint"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "FK → orgs.id"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+    <Text>
+      " │"
+  <Text>
+    "├────────────┼──────────────┼──────────────┼─────────┤"
+  <Box row>
+    <Text>
+      "│ "
+    <Box>
+      <Text>
+        <Text>
+          "created_at"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "timestamp"
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+    <Text>
+      " │ "
+    <Box>
+      <Text>
+        <Text>
+          "now()"
+    <Text>
+      " │"
+  <Text>
+    "└────────────┴──────────────┴──────────────┴─────────┘"
+<Box>
   <Box row>
     <Text>
       "1. "
@@ -362,7 +1086,7 @@
           "└───────┘   └──────┘"
 <Box>
   <Text>
-    "diagram is 180 cols, terminal is 100"
+    "diagram is 180 cols, 98 fit"
   <Box row>
     <Text>
       "── mermaid"
@@ -562,7 +1286,7 @@
       <Text>
         ""skadoosh""
 <Box border=round>
-  <Text color=green bold>
+  <Text bold>
     "Tip"
   <Box>
     <Text>
@@ -635,6 +1359,8 @@
       "━━━━━"
 <Box>
   <Text>
+    <Text>
+      "."
     <Link>
       <Text>
         "רושיק"
@@ -651,11 +1377,6 @@
     <Text bold>
       <Text>
         "םירבח םולש"
-  <Text>
-    <Text>
-      "."
-    <Text>
-      "(https://github.com/NahumLitvin/prismantis)"
 <Box>
   <Box row>
     <Box>

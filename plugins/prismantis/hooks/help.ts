@@ -16,7 +16,11 @@ Colored markdown for Claude Code replies: **bold**, *italic*, ~~struck~~, \`inli
 
 Paths like ~/src/app.ts, ./README.md and /tmp/app.ts open on click in a terminal that draws hyperlinks, and so does a local link that shows its own path, like [/tmp/notes.md](file:///tmp/notes.md), while slash commands like /config stay text. A local link with any other name, like [notes](file:///tmp/notes.md), draws as its name and target, so it cannot hide where a click goes.
 
+Paths written without ./, like docs/guide/ or src/app.ts:42, and Windows paths like C:\\work\\plan.md link too, once a check finds them on disk; prose like and/or stays text.
+
 Programs and launchers stay plain text, so a click never runs one: ./install.sh, ~/Desktop/setup.command and /Applications/Calculator.app keep the path color without a link.
+
+Obsidian links that open a note open on click, like [a note](obsidian://open?vault=notes&file=todo), while one that writes, like [a new note](obsidian://new?vault=notes&name=x&content=y), and other app links like [diagnostics](ms-msdt:/id) stay text.
 
 Code-shaped prose stays as written: f(*args, **kwargs), a link with parentheses [Foo_(bar)](https://en.wikipedia.org/wiki/Foo_(bar)), a file link [\`render.tsx\`](https://github.com/NahumLitvin/prismantis/blob/main/hooks/render.tsx) and **bold with *italic* inside**.
 
@@ -27,7 +31,7 @@ Code-shaped prose stays as written: f(*args, **kwargs), a link with parentheses 
 | \`/prismantis\` | This screen |
 | \`/prismantis theme <name>\` | Switch theme on the spot (\`/prismantis <name>\` works too), \`random\` for a new dark one now and each time the mod loads |
 | \`/prismantis copy\` | Copy the last reply, or \`copy code\` for its last code block |
-| \`/prismantis setup\` | Pick a theme and how tables, tasks, headings, copy buttons, prompts, times, tool rows, tool output, diffs and pie charts look, from drawn samples |
+| \`/prismantis setup\` | Pick a theme and how prompts, replies, tables, code blocks and tool output look, from drawn samples; \`/prismantis setup more\` goes on to diffs, tool rows, headings, tasks, bubble labels, times, pie charts and the table extras |
 | \`/config\` | Edit any option |
 
 > [!NOTE]
@@ -53,12 +57,64 @@ Code-shaped prose stays as written: f(*args, **kwargs), a link with parentheses 
 
 ### Copy tables
 
-Use \`⧉ md\` for Markdown, \`⧉ art\` for chat, or \`⧉ html\` for a formatted table. \`⧉ html\` shows in a local macOS, Linux or Windows terminal and writes HTML and tab-separated plain text together; Linux needs CopyQ running. Pasted into Slack it makes a native table; Slack keeps cell text but drops bold, links and alignment. If that fails, it copies the plain text alone. Set \`copyButtonStyle\` to \`hover\` in \`/config\` and each block shows a dim ⧉ instead: point at it for its buttons.
+Use \`⧉ md\` for Markdown, \`⧉ art\` for chat, or \`⧉ html\` for a formatted table. \`⧉ html\` shows in a local macOS, Linux or Windows terminal and writes HTML and tab-separated plain text together; Linux needs CopyQ running. Pasted into Slack it makes a native table; Slack keeps cell text but drops bold, links and alignment. If that fails, it copies the plain text alone. \`▣ png\` puts a picture of the drawn table, diagram or chart on the clipboard in the theme's colors, ready to paste into Slack, docs or slides; it shows in a local macOS or Windows terminal. The buttons draw dim and light up under the pointer; set \`copyButtonStyle\` to \`inline\` in \`/config\` for the accent color, or to \`hover\` and each block shows a dim ⧉ instead: point at it for its buttons. Set \`textCopyButtons\` to \`false\` to keep only the buttons on code, tables, diagrams and the reply.
 
 | Item | Quantity[^count] | Status |
 |:-----|---------:|:------:|
 | **Apples** | 3 | *Ready* |
 | Oranges | 5 | Pending |
+
+### Very wide tables
+
+Long paths and checksums never split mid-word, so a column cannot shrink below them. When those minimum widths no longer fit the reply, \`tableLayout\` \`auto\` and \`stacked\` draw the table as one card per row, and \`compact\` keeps the columns at their longest word:
+
+| Scroll | Checksum |
+|:-------|:---------|
+| ~/jade-palace/noodle-scrolls/scrolls/scroll-07-training-notes.md | 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08 |
+| /srv/dojo/moves.md | 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae |
+
+### Status matrix
+
+When a table has a status column — the one whose cells are things like ✓, passed, failed or pending — its cells draw in theme colors: green for a pass, red for a failure, amber for a warning, gray for a wait. \`statusMatrix\` \`summary\` adds a count line under the table and \`group\` reorders rows by status with a heavy rule where the status changes:
+
+| Suite | Cases | Result |
+|:------|------:|:-------|
+| Unit | 412 | ✓ |
+| Propagation | 88 | failed |
+| Smoke | 24 | pending |
+| Regression | 130 | ✓ |
+
+### Test report
+
+When a table draws a run — a status column of things like ✓ or failed next to durations like 120 ms — \`testMatrix\` \`report\` adds a line under the table with how much of the run passed, a count of every other kind of result and the time all of it took. The line reuses the status colors and replaces the \`statusMatrix\` count line when both draw. The default \`off\` keeps tables as written:
+
+| Check | Time | Result |
+|:------|-----:|:-------|
+| parse | 120 ms | ✓ |
+| draw | 4 s | ✓ |
+| scan | 130 ms | failed |
+| typeset | 2.6 s | pending |
+
+### Benchmarks
+
+When a table compares benchmarks - a column of changes like -10% or +3% beside two columns of runs - \`benchTable\` draws each change in theme colors, green for an improvement and red for a regression; timings read as lower is better unless a header speaks of req/s, throughput or a score. \`trend\` also draws a sparkline of the runs under the table, each step colored by whether it improved. The default \`off\` keeps tables as written:
+
+| Benchmark | Before | After | Change |
+|:----------|-------:|------:|:-------|
+| parse | 12.4 ms | 11.1 ms | -10% |
+| layout | 19.6 ms | 22.4 ms | +14% |
+| paint | 2.1 ms | 0.8 ms | -62% |
+
+### Schema
+
+When a table describes a database schema — a column of fields beside a column of types — \`schemaTable\` draws the type cells by their family: text types like varchar in the string color, numeric types like int in the number color, booleans in the emphasis color, time types like timestamp in the link color. \`keys\` draws the constraint cells — PK in the accent color, FK in the link color, unique and index cells in gray — and \`full\` does both. The default \`off\` keeps tables as written:
+
+| Column | Type | Key | Default |
+|:-------|:-----|:----|:--------|
+| id | uuid | PK | |
+| email | varchar(255) | UNIQUE | |
+| org_id | bigint | FK → orgs.id | |
+| created_at | timestamp | | now() |
 
 ### Alerts
 
@@ -80,13 +136,15 @@ Use \`⧉ md\` for Markdown, \`⧉ art\` for chat, or \`⧉ html\` for a formatt
   - [ ] Diagrams on the desktop app
 - [ ] Ship the next release
 
+Set \`listMarker\` to dash in \`/config\` and bullets draw as \`-\`, so a list you select with the mouse pastes as markdown.
+
 ### Your prompts
 
-Scroll up: what you typed draws in a bubble. \`promptStyle\` switches to \`wide\`, \`bar\`, \`chevron\` or \`off\` in \`/config\`. Set \`clock\` to \`24h\` or \`12h\` and each prompt shows when you sent it, and each turn's last line when it finished. A paste of 4 lines or more draws in a double frame of its own, folded to one button that opens it as highlighted code.
+Scroll up: what you typed sits on the right under \`You ⬤\` and Claude's replies on the left under \`⬤ Claude\`, each in a bubble of its own, like a chat app. \`promptStyle\` switches to \`framed\`, \`wide\`, \`bar\`, \`chevron\` or \`off\` in \`/config\`, which also brings back the dot before Claude's replies; \`replyStyle\` picks \`solid\`, \`framed\` or \`off\` for Claude's side, and \`bubbleLabels\` draws both labels with a \`small\` dot or turns them \`off\`. Set \`clock\` to \`24h\` or \`12h\` and each prompt shows when you sent it, and each turn's last line when it finished. A paste of 4 lines or more draws in a double frame of its own, folded to one button that opens it as highlighted code.
 
 ### Tool rows
 
-Tool calls draw as one line, dimmed on the right by default, and the file each one read or edited opens on click in a terminal that draws hyperlinks. Set \`toolStyle\` in \`/config\` to \`chat\`, \`tree-dim\`, \`tree-bold\` or \`classic\`. \`toolOutput: quiet\` in \`/config\` hides what Claude only read and says in plain words what each call did: \`Read src/app.ts lines 1–40\`, \`Searched src/ for "TODO"\`.
+Tool calls draw as one line, dimmed on the right by default, and the file each one read or edited opens on click in a terminal that draws hyperlinks. Set \`toolStyle\` in \`/config\` to \`chat\`, \`tree-dim\`, \`tree-bold\` or \`classic\`. \`toolOutput: quiet\` in \`/config\` hides what Claude only read and says in plain words what each call did: \`Read src/app.ts lines 1–40\`, \`Searched src/ for "TODO"\`. A call still running shows a still \`◌\`; \`runningDot: blink\` makes it a \`●\` that blinks every half second, and \`unreadPrompts\` keeps each prompt you send grey and blinking until Claude starts on it, so one queued mid-turn stands out.
 
 Each edit draws as a diff card headed \`+N −M\`: code highlighted in the file's language, added and removed lines on a tint of the theme's own green and red with the changed words in a deeper tint, kept readable in every theme, long lines wrapped, the first 20 lines and a \`+K more lines\` button that opens the rest, as does a click anywhere on the card. Files a shell command changes (\`sed -i\`, a script) get the same card, one per file, headed by its path. Set \`diffStyle\` in \`/config\` for the look: \`card\`, \`full\`, \`marks\` or \`bar\`.
 
@@ -110,11 +168,13 @@ A line that holds only a tag draws dim, so wrapper tags show the reply's structu
 
 ### Code
 
+Set \`codeStyle\` in \`/config\` for the look: \`plain\`, \`framed\`, \`filled\` or \`card\`.
+
 \`\`\`json
 { "theme": "dracula", "headingStyle": "banner", "mermaid": true }
 \`\`\`
 
-Blocks of 10 lines or more get line numbers. Past 30 lines they fold to the first 20 and a \`+M more lines\` button, \`show less\` folds them back; \`⧉ copy\` still copies the whole block.
+Blocks of 10 lines or more get line numbers. Past 30 lines they fold to the first 20 and a \`+M more lines\` button, \`show less\` folds them back; \`⧉ copy\` still copies the whole block. Set \`folds\` to \`open\` in \`/config\` and long blocks start whole instead, with \`show less\` to fold them again.
 
 \`\`\`ts
 type Item = { name: string; price: number; qty: number }
@@ -211,7 +271,7 @@ xychart-beta
     line "west" [12, 18, 25, 20, 14]
 \`\`\`
 
-A pie draws round with a legend. Set \`pieStyle\` to \`bars\` in \`/config\` for one bar per slice:
+A pie draws round with a legend, as a smooth picture in kitty and Ghostty. Set \`pieStyle\` to \`bars\` in \`/config\` for one bar per slice:
 
 \`\`\`mermaid
 pie showData title Time per reply stage
@@ -267,7 +327,7 @@ export const helpText = (themes: readonly string[]): string => `
 |---------|------|
 | \`/prismantis theme <name>\` | Switch theme on the spot (\`/prismantis <name>\` works too), \`random\` for a new dark one now and each time the mod loads |
 | \`/prismantis copy\` | Copy the last reply, or \`copy code\` for its last code block |
-| \`/prismantis setup\` | Pick a theme and how tables, tasks, headings, copy buttons, prompts, times, tool rows, tool output, diffs and pie charts look, from drawn samples |
+| \`/prismantis setup\` | Pick a theme and how prompts, replies, tables, code blocks and tool output look, from drawn samples; \`/prismantis setup more\` goes on to diffs, tool rows, headings, tasks, bubble labels, times, pie charts and the table extras |
 | \`/prismantis demo\` | Full showcase, every element and diagram, plus a section in your language (Korean so far, or \`demo ko\`) |
 | \`/prismantis demo-rtl\` | Hebrew right-to-left showcase |
 
@@ -285,8 +345,9 @@ Docs and issues: https://github.com/NahumLitvin/prismantis
 ### Task lists
 
 - [x] Tables, diagrams and charts drawn in the terminal
-- [x] Copy tables as Markdown, art or HTML (macOS/Linux)
+- [x] Copy tables as Markdown, art or HTML (macOS/Linux), and tables, diagrams and charts as a PNG image (macOS/Windows)
 - [ ] Pick a \`taskStyle\` in \`/config\`: checks, ticks, box or progress
+- [ ] Set \`listMarker\` to dash so a list you select with the mouse pastes as markdown
 
 \`\`\`mermaid
 flowchart LR
@@ -347,6 +408,11 @@ flowchart LR
 \`\`\`
 `
 
+export const NARROW_PANE = 100
+
+export const narrowHint = (columns: number): string =>
+  `This terminal pane is ${columns} columns wide, and a diagram wider than the pane draws as its source. Keep diagrams narrow: flowchart TD, never LR, node and edge labels of 1 to 3 words, at most 3 boxes side by side, and at most 3 sequence diagram participants.`
+
 export const ISSUE_HINT = 'If the user says prismantis drew something wrong, offer (ask first) a minimal repro issue at https://github.com/NahumLitvin/prismantis/issues.'
 const KOREAN_SHOWCASE = `
 ## 한국어
@@ -379,30 +445,46 @@ flowchart LR
 
 export const languageShowcase = (lang: string): string => (/^ko/i.test(lang) ? KOREAN_SHOWCASE : '')
 
-export type SetupStep = { name: string; key: 'theme' | 'tableStyle' | 'taskStyle' | 'headingStyle' | 'copyButtonStyle' | 'promptStyle' | 'clock' | 'toolStyle' | 'toolOutput' | 'diffStyle' | 'pieStyle'; title: string; note: string; options: readonly string[]; sample: string }
+export type SetupStep = { name: string; key: 'theme' | 'tableStyle' | 'tableLayout' | 'statusMatrix' | 'testMatrix' | 'benchTable' | 'schemaTable' | 'taskStyle' | 'listMarker' | 'headingStyle' | 'copyButtonStyle' | 'promptStyle' | 'replyStyle' | 'bubbleLabels' | 'clock' | 'toolStyle' | 'toolOutput' | 'diffStyle' | 'codeStyle' | 'pieStyle'; title: string; note: string; options: readonly string[]; sample: string }
 
 export const setupSteps = (themes: readonly string[]): SetupStep[] => [
   { name: 'theme', key: 'theme', title: 'Theme', note: 'Each theme draws the same line. `random` picks a new dark one each time the mod loads.', options: themes, sample: '**Bold**, `inline code`, 250ms and ~/src/app.ts.' },
+  { name: 'prompts', key: 'promptStyle', title: 'Your prompts', note: 'How what you type draws in the transcript. `bubble` puts it on the right like a chat app, under `You ⬤`, and Claude\'s replies in a bubble of their own. `framed` draws it the same way with no fill. The other styles keep Claude\'s replies as they were. `off` keeps Claude Code\'s own look.', options: ['bubble', 'framed', 'wide', 'bar', 'chevron', 'off'], sample: '' },
+  { name: 'replies', key: 'replyStyle', title: 'Claude\'s replies', note: 'How Claude\'s replies draw in the transcript. `auto` draws them as `bubble` while your prompts are a `bubble`, so the transcript reads as a chat, and as `off` with any other prompt style. `bubble` puts each one under `⬤ Claude` in a rounded frame of Claude\'s orange on a fill a step off the background, `solid` fills it to the edge with no frame, `framed` keeps the frame with no fill. A reply that calls tools between its sentences draws one bubble per block of text. `off` keeps a dot before the first line.', options: ['auto', 'bubble', 'solid', 'framed', 'off'], sample: '' },
   { name: 'tables', key: 'tableStyle', title: 'Tables', note: 'How markdown tables draw.', options: ['box', 'rules', 'grid', 'minimal'], sample: '| Item | Qty |\n|:-----|----:|\n| Apples | 3 |\n| Pears | 5 |' },
-  { name: 'tasks', key: 'taskStyle', title: 'Tasks', note: 'How `- [ ]` and `- [x]` items draw.', options: ['checks', 'ticks', 'box', 'progress'], sample: '- [x] Parse the reply\n- [x] Draw it\n- [ ] Ship it' },
-  { name: 'headings', key: 'headingStyle', title: 'Headings', note: 'How `#` and `##` headings draw. Terminals have one font size, so headings stand out through style and color.', options: ['banner', 'bold', 'underline', 'uppercase'], sample: '# Release notes\n\n## Fixes\n\nTables keep their width.' },
-  { name: 'copy', key: 'copyButtonStyle', title: 'Copy buttons', note: 'Where the copy buttons on tables, code, diagrams and replies sit. `inline` shows them beside or above each block. `hover` puts a dim ⧉ beside each block instead and shows its buttons only while the pointer is on that ⧉, so they take no line; ctrl+x tab does not reach a hidden one, and the mobile app draws them inline. Needs `copyButtons` on.', options: ['inline', 'hover'], sample: '' },
-  { name: 'prompts', key: 'promptStyle', title: 'Your prompts', note: 'How what you type draws in the transcript. `off` keeps Claude Code\'s own look.', options: ['bubble', 'wide', 'bar', 'chevron', 'off'], sample: '' },
-  { name: 'clock', key: 'clock', title: 'Times', note: 'Whether your prompts show when you sent them and the line that closes each turn when it finished. A time from another day gets its date.', options: ['off', '24h', '12h'], sample: '' },
-  { name: 'tools', key: 'toolStyle', title: 'Tool rows', note: 'How tool rows sit next to Claude\'s sentences. Sharing sessions as screenshots? `chat` and `tree-dim` draw tool rows in dim gray, the first thing to blur when an image gets resized, so pick `tree-bold` or `classic`.', options: ['chat', 'tree-dim', 'tree-bold', 'classic'], sample: '' },
+  { name: 'code', key: 'codeStyle', title: 'Code blocks', note: 'How code blocks draw. `plain` has no frame, so a mouse selection copies only the code. `framed` adds a rounded box, whose characters land in a mouse selection; the copy button leaves them out. `filled` adds a background, or the box in a theme with no colors to fill with. `card` adds both.', options: ['plain', 'framed', 'filled', 'card'], sample: '```ts\nconst retries = 3\n```' },
   { name: 'output', key: 'toolOutput', title: 'Tool output', note: 'How much of a tool call shows. `full` keeps Claude Code\'s own results under each row. `quiet` names a shell call by what it does and shows a failure\'s last real line instead of its whole output; it also shows reads, searches and listings as their row only and drops approval lines. Edits keep their diff either way. Needs `toolRows` on.', options: ['full', 'quiet'], sample: '' },
   { name: 'diffs', key: 'diffStyle', title: 'Diffs', note: 'How an edit or a new file draws under its row. `card` frames the lines in a rounded box, `full` drops the box and tints each changed line across the width, `marks` drops the tint and colors only the `+` and `−` marks, `bar` puts a colored `▌` before each changed line. Every look highlights the code and the words that changed. Needs `toolRows` on.', options: ['card', 'full', 'marks', 'bar'], sample: '' },
-  { name: 'pies', key: 'pieStyle', title: 'Pie charts', note: 'How mermaid `pie` charts draw. `round` falls back to bars in ascii mode, with more slices than the theme has distinct colors (mono always) or in a narrow terminal.', options: ['round', 'bars'], sample: '```mermaid\npie title Time per reply stage\n    "Draw" : 9\n    "Paint" : 5\n    "Parse" : 3\n```' },
+  { name: 'tools', key: 'toolStyle', title: 'Tool rows', note: 'How tool rows sit next to Claude\'s sentences. Sharing sessions as screenshots? `chat` and `tree-dim` draw tool rows in dim gray, the first thing to blur when an image gets resized, so pick `tree-bold` or `classic`.', options: ['chat', 'tree-dim', 'tree-bold', 'classic'], sample: '' },
+  { name: 'headings', key: 'headingStyle', title: 'Headings', note: 'How `#` and `##` headings draw. Terminals have one font size, so headings stand out through style and color.', options: ['banner', 'bold', 'underline', 'uppercase'], sample: '# Release notes\n\n## Fixes\n\nTables keep their width.' },
+  { name: 'table-layout', key: 'tableLayout', title: 'Table layout', note: 'How markdown tables fit the width. `classic` keeps today\'s look: columns share the width and shrink to the terminal. `auto` stretches like `classic` and stacks each row as label and value pairs when not even its longest words fit. `compact` sits every column at its longest word, so long cells wrap and the table stays narrow. `stacked` always draws label and value pairs. The desktop app lays tables to a share of the reply\'s width, so auto and stacked keep it there. The sample\'s columns cannot shrink below their longest words, so `classic` wraps the cells and `auto` and `stacked` draw cards.', options: ['classic', 'auto', 'compact', 'stacked'], sample: '| Scroll | Checksum |\n|:-------|:---------|\n| ~/jade-palace/noodle-scrolls/scrolls/scroll-07-training-notes.md | 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08 |\n| /srv/dojo/moves.md | 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae |' },
+  { name: 'tasks', key: 'taskStyle', title: 'Tasks', note: 'How `- [ ]` and `- [x]` items draw.', options: ['checks', 'ticks', 'box', 'progress'], sample: '- [x] Parse the reply\n- [x] Draw it\n- [ ] Ship it' },
+  { name: 'lists', key: 'listMarker', title: 'List bullets', note: 'How bullet list items draw. `dash` draws `-` at every level, so a list you select with the mouse pastes as a markdown list into Slack, GitHub or a doc.', options: ['dots', 'dash'], sample: '- Parse the reply\n  - Find the lists\n- Draw it' },
+  { name: 'copy', key: 'copyButtonStyle', title: 'Copy buttons', note: 'Where the copy buttons on tables, code, diagrams and replies sit. `dim` shows them as bare labels beside or above each block, dim until the pointer or the focus is on one. `inline` draws the same buttons in the accent color. `hover` puts a dim ⧉ beside each block instead and shows its buttons only while the pointer is on that ⧉, so they take no line; ctrl+x tab does not reach a hidden one, and the mobile app draws them inline. Needs `copyButtons` on.', options: ['dim', 'inline', 'hover'], sample: '' },
+  { name: 'labels', key: 'bubbleLabels', title: 'Bubble labels', note: 'The `You ⬤` label above your prompts and the `⬤ Claude` label above Claude\'s replies. `large` draws the ⬤ as Claude Code does, `small` draws the dot ●, `off` drops both labels and keeps the frames. `You` needs `promptStyle: bubble` or `framed`, `Claude` a `replyStyle` other than `off`.', options: ['large', 'small', 'off'], sample: '' },
+  { name: 'clock', key: 'clock', title: 'Times', note: 'Whether your prompts show when you sent them and the line that closes each turn when it finished. A time from another day gets its date.', options: ['off', '24h', '12h'], sample: '' },
+  { name: 'pies', key: 'pieStyle', title: 'Pie charts', note: 'How mermaid `pie` charts draw. `round` draws a smooth picture in kitty and Ghostty and text elsewhere, and falls back to bars in ascii mode, with more slices than the theme has distinct colors (mono always) or in a narrow terminal.', options: ['round', 'bars'], sample: '```mermaid\npie title Time per reply stage\n    "Draw" : 9\n    "Paint" : 5\n    "Parse" : 3\n```' },
+  { name: 'status-matrix', key: 'statusMatrix', title: 'Status matrix', note: 'How the status cells of a table draw: the column whose cells are things like ✓, passed, failed or pending. `off` keeps tables as written. `color` draws them in theme colors, `summary` adds a count line under the table, and `group` also reorders rows by status and draws a heavy rule where the status changes.', options: ['color', 'summary', 'group', 'off'], sample: '| Suite | Cases | Result |\n|:------|------:|:-------|\n| Unit | 412 | ✓ |\n| Propagation | 88 | failed |\n| Smoke | 24 | pending |' },
+  { name: 'test-report', key: 'testMatrix', title: 'Test report', note: 'What a table of test results reports: a status column of things like ✓ or failed next to durations like 120 ms. `off` keeps tables as written. `report` draws a line under the table with the share of the run that passed, a count of every other kind of result and the time all of it took.', options: ['report', 'off'], sample: '| Check | Time | Result |\n|:------|-----:|:-------|\n| parse | 120 ms | ✓ |\n| draw | 4 s | ✓ |\n| scan | 130 ms | failed |\n| typeset | 2.6 s | pending |' },
+  { name: 'bench-table', key: 'benchTable', title: 'Benchmarks', note: 'How a table that compares benchmarks draws: a column of changes like -10% or +3%. `off` keeps tables as written. `color` draws each change in theme colors, green for an improvement and red for a regression, and `trend` also draws a sparkline of the runs under the table.', options: ['trend', 'color', 'off'], sample: '| Benchmark | Before | After | Change |\n|:----------|-------:|------:|:-------|\n| parse | 12.4 ms | 11.1 ms | -10% |\n| layout | 19.6 ms | 22.4 ms | +14% |\n| paint | 2.1 ms | 0.8 ms | -62% |' },
+  { name: 'schema-table', key: 'schemaTable', title: 'Schema', note: 'How a table that describes a database schema draws: a column of fields beside a column of types. `off` keeps tables as written. `types` draws each type cell in theme colors by its family: text types like varchar in the string color, numeric types like int in the number color, booleans in the emphasis color, time types like timestamp in the link color. `keys` draws the constraint cells: PK in the accent color, FK in the link color, unique and index cells in gray. `full` does both.', options: ['full', 'types', 'keys', 'off'], sample: '| Column | Type | Key | Default |\n|:-------|:-----|:----|:--------|\n| id | uuid | PK | |\n| email | varchar(255) | UNIQUE | |\n| org_id | bigint | FK → orgs.id | |\n| created_at | timestamp | | now() |' },
 ]
+
+export const ESSENTIAL_STEPS = 6
+
+export const SETUP_MORE = 'more'
+
+export const SETUP_ESSENTIALS_DONE = `Essentials set. \`/prismantis setup more\` walks ${setupSteps([]).length - ESSENTIAL_STEPS} more styles, from diffs and headings to tables of test results, and \`/config\` has every option.`
 
 export type SetupParts = { head: string; options: { value: string; text: string }[]; tail: string }
 
 export const setupParts = (themes: readonly string[], at: number): SetupParts => {
   const steps = setupSteps(themes)
   const step = steps[at]!
-  const next = steps[at + 1]
+  const next = at + 1 === ESSENTIAL_STEPS ? undefined : steps[at + 1]
+  const tier = at < ESSENTIAL_STEPS ? `Setup ${at + 1}/${ESSENTIAL_STEPS}` : `More styles ${at + 1 - ESSENTIAL_STEPS}/${steps.length - ESSENTIAL_STEPS}`
   return {
-    head: `## Setup ${at + 1}/${steps.length}: ${step.title}\n\n${step.note}`,
+    head: `## ${tier}: ${step.title}\n\n${step.note}`,
     options: step.options.map((value, i) => ({ value, text: `### ${i + 1}. ${value}${step.key === 'theme' && value !== 'mono' && !RANDOM_THEMES.includes(value) ? ' (for a light terminal)' : ''}${step.sample ? `\n\n${step.sample}` : ''}` })),
     tail: `Pick with \`/prismantis setup ${step.name} <number or name>\`${step.key === 'theme' ? ' or `random`' : ''}.${next ? ` Skip with \`/prismantis setup ${next.name}\`.` : ''} Stop any time, \`/prismantis setup\` starts over.`,
   }

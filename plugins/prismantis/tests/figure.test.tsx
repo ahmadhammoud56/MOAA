@@ -4,7 +4,7 @@ import { expect, test } from 'claude-code/testing'
 import { FIGURE_GLYPHS, FIGURE_HINT, FIGURE_MAX_COLUMNS, FIGURE_MAX_LINES, FIGURE_SAFE_COLUMNS, checkFigure, figureRoleColors, figureRuns, figureText, isFigureLang, reframe } from '../hooks/figure'
 import { FIGURE_ROLES } from '../hooks/markdown'
 import { PRESETS } from '../hooks/presets'
-import { width } from '../hooks/render'
+import { width } from '../hooks/layout'
 
 const lines = (text: string) => text.split('\n')
 
@@ -368,6 +368,26 @@ test('a figure with an emoji or a markup error stays a code block', async ($, on
   }
 })
 
+test('a figure that stays a code block strips role markup from its lines on terminal', async ($, on) => {
+  engine(on)
+  const ui = await $.ui.mount(reply(['```figure', '┌────┐ 🚀', '{ok:done} {accent:line}', '```'].join('\n'), 'terminal'))
+  expect(await ui.find({ type: 'Text', text: /^── figure$/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /\{ok:/ })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: /\{accent:/ })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('a figure that stays a code block strips role markup from its lines on desktop', async ($, on) => {
+  engine(on)
+  const ui = await $.ui.mount(reply(['```figure', '┌────┐ 🚀', '{ok:done} {accent:line}', '```'].join('\n'), 'desktop'))
+  expect(await ui.find({ type: 'Text', text: /^── figure$/ })).toBeDefined()
+  const source = String((await ui.find({ type: 'Code' }))?.props.source ?? '')
+  expect(source).not.toContain('{ok:')
+  expect(source).not.toContain('{accent:')
+  expect(source).toContain('done')
+  await ui.unmount()
+})
+
 test('a figure whose frame slips is reframed and one that does not close is drawn as written, without a note', async ($, on) => {
   engine(on)
   for (const surface of ['terminal', 'desktop'] as const) {
@@ -392,7 +412,7 @@ test('a figure wider than the terminal stays a code block', async ($, on) => {
   }
 })
 
-test('a figure as wide as the hint allows draws in an 80-column window, one column more does not', async ($, on) => {
+test('a figure as wide as the hint allows draws in an 80-column window, one column more does not', { options: { replyStyle: 'off' } }, async ($, on) => {
   engine(on)
   for (const surface of ['terminal', 'desktop'] as const) {
     const safe = await $.ui.mount(reply(['```figure', `{accent:${'─'.repeat(FIGURE_SAFE_COLUMNS)}}`, '```'].join('\n'), surface, 80))
@@ -485,7 +505,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
     expect(await finding.find({ type: 'Text', text: /^figure line 3: "🚀" may draw as an emoji, use a text glyph$/ })).toBeDefined()
     await finding.unmount()
     const wide = await $.ui.mount(reply(['```figure', `{accent:${'─'.repeat(70)}}`, '```'].join('\n'), surface, 60))
-    expect(await wide.find({ type: 'Text', text: /^figure is 70 cols, terminal is \d+$/ })).toBeDefined()
+    expect(await wide.find({ type: 'Text', text: /^figure is 70 cols, \d+ fit$/ })).toBeDefined()
     await wide.unmount()
     const long = await $.ui.mount(reply(['```figure', ...Array.from({ length: FIGURE_MAX_LINES + 1 }, (_, i) => `row ${i}`), '```'].join('\n'), surface))
     expect(await long.find({ type: 'Text', text: new RegExp(`^figure has ${FIGURE_MAX_LINES + 1} lines, at most ${FIGURE_MAX_LINES}$`) })).toBeDefined()

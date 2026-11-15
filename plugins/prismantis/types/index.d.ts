@@ -22,6 +22,9 @@ declare module 'claude-code' {
       setupAt: number
       setupFocus: string
       setupLand: string
+      foundPaths: string[]
+      awaiting: { key: string; at: number }[]
+      blink: boolean
       drawn: StateFamily<number>
     }
   }

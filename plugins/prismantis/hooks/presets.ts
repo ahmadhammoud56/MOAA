@@ -106,6 +106,13 @@ export const PRESETS = {
     rule: '#eee8d5', tableRule: '#93a1a1', bullet: '#6c71c4', diagram: '#268bd2', diagramText: '#586e75',
     diffAdded: '#849800', diffRemoved: '#dc322f',
   },
+  neon: {
+    accent: '#00e5ff', heading: '#00e5ff', tableHeader: '#00e5ff', strong: '#00e5ff', emphasis: '#a77bff',
+    inlineCode: '#ffcc33', codeText: '#c9d4f2', codeCommand: '#a77bff', codeFlag: '#ff3ea5', codeString: '#3dff9a',
+    codeComment: '#66708f', link: '#a77bff', path: '#ffcc33', number: '#3dff9a', quote: '#c9d4f2',
+    rule: '#343c5c', tableRule: '#343c5c', bullet: '#8b95b8', diagram: '#66708f', diagramText: '#c9d4f2',
+    diffAdded: '#3dff9a', diffRemoved: '#ff4d6d',
+  },
   mono: {} as Theme,
 } satisfies Record<string, Theme>
 
@@ -128,4 +135,5 @@ export const PRESET_BACKGROUNDS: Partial<Record<PresetName, string>> = {
   'one-dark': '#282c34',
   'solarized-dark': '#002b36',
   'solarized-light': '#fdf6e3',
+  neon: '#0b0e1a',
 }

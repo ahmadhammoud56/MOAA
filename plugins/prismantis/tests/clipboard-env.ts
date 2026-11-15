@@ -36,3 +36,5 @@ export const recordToasts = (on: On) => {
   })
   return toasts
 }
+
+export const payloadOf = (stdin: string) => JSON.parse(stdin.replace(/^var payload = (.*)\n[\s\S]*$/, '$1'))

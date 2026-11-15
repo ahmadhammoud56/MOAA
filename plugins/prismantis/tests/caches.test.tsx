@@ -1,17 +1,6 @@
-import { expect, mock, test } from 'claude-code/testing'
+import { expect, test } from 'claude-code/testing'
 
 import { remember } from '../hooks/render'
-
-const mount = (text: string, isFullscreen = false) => ({
-  plugin: 'prismantis',
-  component: 'AssistantMessage' as const,
-  props: { text, isFirstOfReply: true },
-  viewport: { columns: 120, rows: 40, isFullscreen },
-  surface: 'terminal' as const,
-})
-
-const drawn = (node: unknown): string =>
-  typeof node === 'string' ? node : ((node as { children?: unknown[] }).children ?? []).map(drawn).join('')
 
 test('a cached entry read again outlives newer ones', async () => {
   const cache = new Map<string, string>()
@@ -24,21 +13,12 @@ test('a cached entry read again outlives newer ones', async () => {
   expect(cache.size).toBe(3)
 })
 
-test('highlighted code keeps each right-to-left shape apart under one theme', { options: { rtl: 'apple-terminal' } }, async ($, on) => {
-  mock.env(on, {})
-  on('session.start', () => ({ cwd: '/tmp' }))
-  await $.session.start({ cwd: '/tmp', surface: 'terminal', isInteractive: true })
-  const text = '```js\nconst port = 8080 // שלום kubectl עולם\n```'
-  const line = async (isFullscreen: boolean) => {
-    const ui = await $.ui.mount(mount(text, isFullscreen))
-    const row = (await ui.findAll({ type: 'Text' })).map(drawn).find(t => t.startsWith('const port'))
-    await ui.unmount()
-    return row
-  }
-  const windowed = await line(false)
-  const fullscreen = await line(true)
-  expect(fullscreen).not.toBe(windowed)
-  expect(await line(false)).toBe(windowed)
+test('a streaming reply keeps a bounded number of characters cached, not its last 200 prefixes', async () => {
+  const cache = new Map<string, number>()
+  const reply = 'word '.repeat(20000)
+  for (let end = 100; end <= reply.length; end += 100) remember(cache, reply.slice(0, end), () => end)
+  expect([...cache.keys()].reduce((sum, key) => sum + key.length, 0)).toBeLessThanOrEqual(1000000)
+  expect(cache.get(reply)).toBe(reply.length)
 })
 
 test('the terminal is looked up once, not on every prompt', async ($, on) => {
@@ -70,4 +50,22 @@ test('only the 500 most recently expanded tool calls stay expanded', async ($, o
   }
   expect(await isEngine('bounded-500')).toBe(true)
   expect(await isEngine('bounded-0')).toBe(false)
+})
+
+test('a cache miss in a full cache reads a few keys, not all 2000', async () => {
+  let reads = 0
+  class Counted extends Map<string, number> {
+    override *keys(): MapIterator<string> {
+      for (const key of super.keys()) {
+        reads++
+        yield key
+      }
+    }
+  }
+  const cache = new Counted()
+  for (let i = 0; i < 2500; i++) remember(cache, `paragraph ${i}`, () => i, 2000)
+  reads = 0
+  remember(cache, 'one more paragraph', () => 0, 2000)
+  expect(reads).toBeLessThan(10)
+  expect(cache.size).toBe(2000)
 })

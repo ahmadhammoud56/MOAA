@@ -1,7 +1,7 @@
-import type { Block, Inline } from './markdown'
+import type { Block, Inline, TableCell } from './markdown'
 import { displayText, isWebLink } from './markdown'
 
-const tsvCell = (cell: Inline[]): string => {
+const tsvCell = (cell: TableCell): string => {
   const text = displayText(cell)
   return /[\t\r\n"]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
 }
@@ -23,16 +23,16 @@ const inlineHtml = (nodes: Inline[]): string => nodes.map(node => {
     case 'link': return isWebLink(node.href)
       ? `<a href="${escapeHtml(node.href)}">${escapeHtml(node.text)}</a>`
       : escapeHtml(node.text)
-    default: return escapeHtml(node.text)
+    default: return escapeHtml(node.text).replace(/\n/g, '<br>')
   }
 }).join('')
 
-export const tableHtml = (table: Extract<Block, { kind: 'table' }>): string => {
-  const row = (cells: Inline[][], tag: 'th' | 'td') => `    <tr>${cells.map((cell, i) =>
-    `<${tag} style="text-align: ${table.align[i] ?? 'left'}">${inlineHtml(cell)}</${tag}>`,
+export const tableHtml = (table: Extract<Block, { kind: 'table' }>, rtl = false): string => {
+  const row = (cells: TableCell[], tag: 'th' | 'td') => `    <tr>${cells.map((cell, i) =>
+    `<${tag} style="text-align: ${table.align[i]!}">${inlineHtml(cell)}</${tag}>`,
   ).join('')}</tr>`
   return [
-    '<table>',
+    rtl ? '<table dir="rtl">' : '<table>',
     '  <thead>',
     row(table.header, 'th'),
     '  </thead>',

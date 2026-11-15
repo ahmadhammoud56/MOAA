@@ -39,13 +39,30 @@ export const ratexColor = (color: string): string => {
   return `#${ANSI16[base === 'gray' || base === 'grey' ? 8 : ANSI_NAMES.indexOf(base) + 8]}`
 }
 
-const MAX_FORMULAS = 50
+export const CACHE_BYTES = 32 * 1024 * 1024
+
+export const oldestOver = <T,>(entries: Iterable<readonly [string, T]>, bytes: (key: string, value: T) => number, keep: (key: string) => boolean = () => false): Set<string> => {
+  const all = [...entries]
+  let total = all.reduce((sum, [key, value]) => sum + bytes(key, value), 0)
+  const dropped = new Set<string>()
+  for (const [key, value] of all) {
+    if (total <= CACHE_BYTES) break
+    if (keep(key)) continue
+    dropped.add(key)
+    total -= bytes(key, value)
+  }
+  return dropped
+}
+
+const pngBytes = (value: unknown): number => (typeof value === 'object' && value !== null && 'png' in value && typeof value.png === 'string' ? (value.png.length * 3) / 4 : 0)
+
+const formulaBytes = (key: string, value: unknown): number =>
+  key.length + pngBytes(value) + (typeof value === 'object' && value !== null && 'padded' in value ? pngBytes(value.padded) : 0)
 
 export const keepFormulas = <T,>(store: Record<string, T>, fresh: readonly (readonly [string, T])[], wanted: ReadonlySet<string>): Record<string, T> => {
   const added = new Set(fresh.map(([key]) => key))
   const entries = [...Object.entries(store).filter(([key]) => !added.has(key)), ...fresh]
-  const spare = entries.filter(([key]) => !wanted.has(key) && !added.has(key)).map(([key]) => key)
-  const dropped = new Set(spare.slice(0, Math.max(0, entries.length - MAX_FORMULAS)))
+  const dropped = oldestOver(entries, formulaBytes, key => wanted.has(key) || added.has(key))
   return Object.fromEntries(entries.filter(([key]) => !dropped.has(key)))
 }
 
