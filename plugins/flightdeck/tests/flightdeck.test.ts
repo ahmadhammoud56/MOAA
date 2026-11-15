@@ -1,6 +1,6 @@
-import type { On } from 'claude-code'
+import type { On, RenderElement } from 'claude-code'
 import { expect, mock, test } from 'claude-code/testing'
-import type { TestBody } from 'claude-code/testing'
+import type { Plugin, TestBody } from 'claude-code/testing'
 
 import {
   DEFAULT_ARCHITECT,
@@ -15,6 +15,7 @@ import {
   claimCompactRead,
   faultKey,
   forgetCompactRead,
+  knowsMono,
   resumeCard,
   afterCall,
   applyStep,
@@ -946,6 +947,20 @@ test("a surface module's fault key is the same for the hook's path, either separ
   expect(faultKey('terminal', 'hooks/elapsed.tsx')).not.toBe(faultKey('desktop', 'hooks/elapsed.tsx'))
 })
 
+test("Text's monospaced face is asked of 2.1.299 and later only, read from the release", () => {
+  const at = (version: string, base?: string) => knowsMono({ version, ...(base !== undefined ? { base } : {}) })
+  expect([at('2.1.287', '2.1.287'), at('2.1.295', '2.1.295'), at('2.1.298', '2.1.298')]).toEqual([false, false, false])
+  expect([at('2.1.299', '2.1.299'), at('2.1.309', '2.1.309'), at('2.2.0', '2.2.0'), at('3.0.0', '3.0.0')]).toEqual([true, true, true, true])
+  expect([at('2.0.999', '2.0.999'), at('1.9.400', '1.9.400')]).toEqual([false, false])
+  // A development build: its base names the release, its version the build.
+  expect(at('2.1.300-dev.20261001.t101500.sha1a2b3c4', '2.1.300-dev')).toBe(true)
+  expect(at('2.1.296-dev.20260920.t101500.sha1a2b3c4', '2.1.296-dev')).toBe(false)
+  // No base: the version itself, when it is spelled as a release.
+  expect([at('2.1.310'), at('2.1.290')]).toEqual([true, false])
+  // Nothing to read: no face.
+  expect([at('local'), at(''), knowsMono(null), knowsMono(undefined)]).toEqual([false, false, false, false])
+})
+
 test('switching to another model with the same window reads its compaction window afresh', async ($, on) => {
   mock.clock(on)
   on('ui.status', () => ({ value: undefined }))
@@ -1234,9 +1249,50 @@ test('a single agent card fits from 24 columns, and the time axis scales to the 
   expect(failures).toEqual([])
 })
 
-test('a running connector keeps its length every frame: one face, clipped at its width, the dot still moving', async ($, on) => {
+/** The engine's answer to `$.session.version()`: a release, or a refusal; a function is asked at each call. */
+const engineAt = (on: On, version: string | null | (() => string | null)) =>
+  on('session.version', () => {
+    const v = typeof version === 'function' ? version() : version
+    return v === null ? { deny: 'no version here' } : { value: { version: v, base: v } }
+  })
+
+/** A plugin whose pane is one Text in the monospaced face, for `kitHasMono`. */
+const monoProbe: Plugin = {
+  name: 'mono-probe',
+  register(on) {
+    on('ui.render', { component: 'Pane', requestId: 'mono-probe' }, ($, e) => {
+      const { Text } = $.ui.resolve(e)
+      return h(Text, { mono: true }, '─') as RenderElement
+    })
+  },
+}
+
+/**
+ * Whether the engine `claude plugin test` runs on draws `Text`'s `mono` (2.1.299 and later), as CI runs the
+ * tests on the oldest Claude Code the README names as well as a newer one. Nothing in the kit answers
+ * `$.session.version()` (a test pins it with engineAt), so a drawing is asked instead: `monoProbe`'s, which
+ * the test loads in `plugins`. False when the engine refuses the prop. It is a call on `$`, so the test's
+ * hooks go in before it.
+ */
+const kitHasMono = async ($: Parameters<TestBody>[0]): Promise<boolean> => {
+  try {
+    const ui = await $.ui.mount({ ...pane(24), plugin: 'mono-probe', requestId: 'mono-probe', surface: 'terminal' })
+    await ui.drawn()
+    await ui.unmount()
+    return true
+  } catch (err) {
+    if (/Text prop "mono" is not allowed/.test(String(err))) return false
+    throw err
+  }
+}
+
+test('a running connector keeps its length every frame: one face, clipped at its width, the dot still moving', { plugins: [monoProbe] }, async ($, on) => {
   engine(on)
+  // The monospaced face where the engine running the tests has it; before 2.1.299 an engine of that age, and none.
+  let hasMono = false
+  engineAt(on, () => (hasMono ? '2.1.309' : '2.1.295'))
   on('tool.check', () => ({ decision: 'allow' }))
+  hasMono = await kitHasMono($)
   await $.tool.check({ tool: 'Read', input: { file_path: '/a' }, tool_use_id: 'r1' })
   await $.turn.start({ text: 'go', turnId: 'R1' }) // a turn running: the connectors animate
   for (const surface of ['desktop', 'terminal'] as const) {
@@ -1256,7 +1312,7 @@ test('a running connector keeps its length every frame: one face, clipped at its
       // The box is the line's width and clips; its text is that width and four spare cells, every frame.
       expect([tree.type, tree.props?.width, tree.props?.overflow]).toEqual(['Box', 64, 'hidden'])
       expect(cellsOf(line)).toBe(64 + 4)
-      expect(texts.every(t => t.props?.mono === true)).toBe(true)
+      expect(texts.every(t => t.props?.mono === (hasMono ? true : undefined))).toBe(true)
       expect(/^[─●•┬┴]+$/.test(line)).toBe(true)
       const head = [...line].slice(0, 64).indexOf('●')
       if (head >= 0) heads.add(head)
@@ -1265,4 +1321,85 @@ test('a running connector keeps its length every frame: one face, clipped at its
     expect(heads.size > 5).toBe(true) // the dot travels along the line
     await ui.unmount()
   }
+})
+
+/** Every Text in a drawing that names `mono`, true or false: an engine before 2.1.299 has no such prop. */
+const monoTexts = (n: unknown, out: string[], path: string): string[] => {
+  if (!isDrawn(n)) return out
+  const here = `${path}/${String(n.props?.key ?? n.type)}`
+  if (n.type === 'Text' && n.props !== undefined && 'mono' in n.props) out.push(here)
+  ;(n.children ?? []).forEach((c, i) => monoTexts(c, out, `${here}[${i}]`))
+  return out
+}
+
+/**
+ * A turn running with a check in the gate, on an engine at `version` (null: one that won't say; a function:
+ * the release to pin, told whether the engine running the tests draws the face, with `monoProbe` loaded),
+ * drawn at 64 columns on the terminal and the desktop app for a few frames: the Texts that name `mono`, in
+ * the pane and in its animated connectors, the connectors' lines (each a Client, or a still Text with motion
+ * off), and what kitHasMono said when it was asked.
+ */
+const facesAt = async ($: Parameters<TestBody>[0], on: On, version: string | null | ((hasMono: boolean) => string)) => {
+  engine(on)
+  let pinned = typeof version === 'function' ? null : version
+  engineAt(on, () => pinned)
+  on('tool.check', () => ({ decision: 'allow' }))
+  let hasMono: boolean | undefined
+  if (typeof version === 'function') {
+    hasMono = await kitHasMono($)
+    pinned = version(hasMono)
+  }
+  await $.tool.check({ tool: 'Read', input: { file_path: '/a' }, tool_use_id: 'r1' })
+  await $.turn.start({ text: 'go', turnId: 'R1' })
+  const named: string[] = []
+  const lines: string[] = []
+  const walkLines = (n: unknown) => {
+    if (!isDrawn(n)) return
+    if (n.type === 'Text' && /^─{64}$/.test(textOf(n))) lines.push(textOf(n))
+    else (n.children ?? []).forEach(walkLines)
+  }
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount({ ...pane(64), surface })
+    for (let frame = 0; frame < 3; frame += 1) {
+      const tree = await ui.drawn()
+      monoTexts(tree, named, surface)
+      walkLines(tree)
+      for (const key of ['link-gate', 'link-receipt']) {
+        if ((await ui.find({ key }))?.type !== 'Client') continue
+        const rail = await ui.drawn({ in: key })
+        monoTexts(rail, named, `${surface}:${key}`)
+        lines.push(textOf(rail))
+      }
+      await ui.advance(110)
+    }
+    await ui.unmount()
+  }
+  return { named, lines, hasMono }
+}
+
+// #28: on 2.1.295 the pane went empty at the first prompt, when the first connector was drawn with `mono`.
+test('on an engine before 2.1.299 nothing asks for the monospaced face, and the connectors still run', async ($, on) => {
+  const { named, lines } = await facesAt($, on, '2.1.295')
+  expect(named).toEqual([])
+  // Both connectors, on both surfaces, every frame: still animated, still clipped at 64 from 68 cells.
+  expect(lines.length).toBe(2 * 2 * 3)
+  expect(lines.every(l => cellsOf(l) === 64 + 4 && /^[─●•┬┴]+$/.test(l))).toBe(true)
+  expect(lines.some(l => /[●•]/.test(l))).toBe(true)
+})
+
+test('an engine that will not say its version gets no monospaced face either', async ($, on) => {
+  expect((await facesAt($, on, null)).named).toEqual([])
+})
+
+test('with motion off, the still connector is drawn without the face before 2.1.299', { options: { motion: 'off' } }, async ($, on) => {
+  const { named, lines } = await facesAt($, on, '2.1.295')
+  expect(named).toEqual([])
+  expect(lines.length).toBe(2 * 2 * 3)
+})
+
+test('with motion off, the still connector keeps the face from 2.1.299', { plugins: [monoProbe], options: { motion: 'off' } }, async ($, on) => {
+  // An engine running the tests that predates the face refuses it: there, one of that age, and no face.
+  const { named, lines, hasMono } = await facesAt($, on, kit => (kit ? '2.1.299' : '2.1.295'))
+  expect(lines.length).toBe(2 * 2 * 3)
+  expect(named.length).toBe(hasMono ? lines.length : 0)
 })

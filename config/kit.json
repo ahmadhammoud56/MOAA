@@ -339,7 +339,7 @@
     {
       "id": "flightdeck@moaa",
       "enabled": true,
-      "tested_version": "0.6.0",
+      "tested_version": "0.6.1",
       "profile": "core"
     },
     {
@@ -757,8 +757,8 @@
     "flightdeck": {
       "repo": "scasella/claude-flightdeck",
       "path": "",
-      "version": "0.6.0",
-      "commit": "536cb33b1e49812a958233118d5092cbfeee7631",
+      "version": "0.6.1",
+      "commit": "bf433171558f63a2fef46e8b92560968b2033e4f",
       "exclude": [
         ".github"
       ]

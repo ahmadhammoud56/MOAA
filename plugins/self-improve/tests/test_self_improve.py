@@ -2,7 +2,7 @@
 import base64
 import json
 import os
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import shlex
 import subprocess
 import sys
@@ -132,7 +132,7 @@ class Schedulers(unittest.TestCase):
         self.assertIn("other-job", selfimprove.cron_update(disabled, mode="remove"))
 
     def test_windows_argv_handles_spaces_and_quotes(self):
-        script = Path(r"C:\Users\you\O'Brien data\run.cmd")
+        script = PureWindowsPath(r"C:\Users\you\O'Brien data\run.cmd")  # Windows rules on every CI runner
         argv = selfimprove.windows_schedule_argv(script, script.parent, "SUN", "10:00")
         self.assertEqual(argv[:4], ["powershell", "-NoProfile", "-NonInteractive", "-EncodedCommand"])
         ps = base64.b64decode(argv[4]).decode("utf-16-le")

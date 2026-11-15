@@ -25,6 +25,12 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
   bands, and no panel opens at start. `/strata-meter` opens the full Meters panel, which gains a Chats row.
   `/collision-guard` opens the chat list. `MOAA_METERS=pane` restores the old panels; `MOAA_METERS=both` shows the
   band and the panels.
+- **Vendored flightdeck 0.6.1** synced from upstream; validated and tested.
+- **ruflo catalog re-pinned** to the plugins installed after the 3.77.1 update (21 of 40 ruflo plugins had newer
+  versions, including the security fixes).
+
+### Fixed
+- self-improve: the Windows scheduler test now builds its path with Windows rules, so it passes on Linux and macOS CI.
 
 ## [0.25.0] - 2026-11-07
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+- On Claude Code before 2.1.299 the pane no longer empties, session log and all, once the first prompt is sent. Since 0.5.1 the connectors between panels asked for `Text`'s monospaced face (`mono`), which Claude Code has only from 2.1.299, and the first connector is drawn when a turn starts. Flightdeck now asks for that face only where `$.session.version()` reports 2.1.299 or later. Older versions draw the connectors in the default face, so on a graphical surface a running connector's right end may jitter again, as before 0.5.1. ([#29](https://github.com/scasella/claude-flightdeck/pull/29); [#28](https://github.com/scasella/claude-flightdeck/issues/28), thanks @Bexxs75 for tracing it to 0.5.1)
+- Flightdeck needs Claude Code 2.1.289 or later, and the README now says so; it said 2.1.287. Since 0.5.0 Flightdeck hooks `ui.fault`, to draw a connector or clock that faulted as plain text, and that event came in 2.1.289. On 2.1.287 and 2.1.288 the session says `flightdeck: hooks module did not load: … "ui.fault" is not an event` and nothing of Flightdeck runs. ([#30](https://github.com/scasella/claude-flightdeck/pull/30))
+- CI runs `claude plugin validate` and the tests on that floor, 2.1.289, as well as on 2.1.309, so a prop or event newer than the floor fails CI instead of a session. The tests that check the connectors' monospaced face ask the engine running them whether it draws that face. ([#30](https://github.com/scasella/claude-flightdeck/pull/30))
+
 ## 0.6.0
 
 - Under a Team or Enterprise login, or on a machine with managed settings, the session no longer shows `flightdeck: its session.append hook was skipped`. The hook now takes only the response rows it reads, not the attachment, hook-context and compaction rows that Claude Code's built-in guard keeps from user plugins. ([#21](https://github.com/scasella/claude-flightdeck/pull/21), thanks @jeanfbrito; [#23](https://github.com/scasella/claude-flightdeck/issues/23), thanks @guglielmo)
