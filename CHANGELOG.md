@@ -31,7 +31,7 @@ All notable changes to MOAA. The format follows [Keep a Changelog](https://keepa
   `also` field for upstream folders outside `path`. MOAA's PNG-button patch is dropped: upstream has had its own
   `▣ png` button since 0.36.0 (theme colours, Windows and macOS, no Python needed), so `PRISMANTIS_PNG_BUTTON`
   no longer does anything. `claude plugin test`: 1175 passed. `scan.py` allows one more upstream test fixture path
-  (`C:\Users\x`).
+  (a made-up Windows user folder in a prismantis test).
 - **ruflo catalog re-pinned** to the plugins installed after the 3.77.1 update (21 of 40 ruflo plugins had newer
   versions, including the security fixes).
 
